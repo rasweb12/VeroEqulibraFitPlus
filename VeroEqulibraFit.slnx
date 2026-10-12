@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/backend/">
+    <Project Path="backend/VeroEqulibraFit.Api/VeroEqulibraFit.Api.csproj" />
+    <Project Path="backend/VeroEqulibraFit.Application/VeroEqulibraFit.Application.csproj" />
+    <Project Path="backend/VeroEqulibraFit.Contracts/VeroEqulibraFit.Contracts.csproj" />
+    <Project Path="backend/VeroEqulibraFit.Domain/VeroEqulibraFit.Domain.csproj" />
+    <Project Path="backend/VeroEqulibraFit.Infrastructure/VeroEqulibraFit.Infrastructure.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,12 @@
+[project]
+name = "vero-equilibrafit-ai"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = ["fastapi>=0.116.0", "uvicorn[standard]>=0.35.0", "pydantic-settings>=2.10.0", "google-genai>=1.0.0"]
+[project.optional-dependencies]
+dev = ["pytest>=8.4.0", "ruff>=0.12.0"]
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+[tool.ruff]
+line-length = 120

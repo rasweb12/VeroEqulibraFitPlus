@@ -1,0 +1,6 @@
+@VeroEqulibraFit.Api_HostAddress = http://localhost:5211
+
+GET {{VeroEqulibraFit.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
