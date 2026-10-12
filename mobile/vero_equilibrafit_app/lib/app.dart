@@ -72,6 +72,11 @@ class PlansPage extends ConsumerWidget {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _createPlan(context, ref),
+        icon: const Icon(Icons.add),
+        label: const Text('Nova ficha'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -170,6 +175,52 @@ class PlansPage extends ConsumerWidget {
       );
     }
   }
+
+  Future<void> _createPlan(BuildContext context, WidgetRef ref) async {
+    final name = TextEditingController();
+    final objective = TextEditingController();
+    final create = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Nova ficha de treino'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: name,
+              decoration: const InputDecoration(labelText: 'Nome'),
+            ),
+            TextField(
+              controller: objective,
+              decoration: const InputDecoration(labelText: 'Objetivo'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Criar'),
+          ),
+        ],
+      ),
+    );
+    if (create == true && name.text.trim().isNotEmpty && context.mounted) {
+      ref
+          .read(plansProvider.notifier)
+          .create(
+            name: name.text,
+            objective: objective.text.trim().isEmpty
+                ? 'Objetivo a definir'
+                : objective.text,
+          );
+    }
+    name.dispose();
+    objective.dispose();
+  }
 }
 
 class ExerciseLibraryPage extends ConsumerWidget {
@@ -179,6 +230,11 @@ class ExerciseLibraryPage extends ConsumerWidget {
     final exercises = ref.watch(exercisesProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Adicionar exercício')),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _createCustomExercise(context, ref),
+        icon: const Icon(Icons.add),
+        label: const Text('Criar exercício'),
+      ),
       body: Column(
         children: [
           Padding(
@@ -211,5 +267,67 @@ class ExerciseLibraryPage extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _createCustomExercise(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final name = TextEditingController();
+    final muscle = TextEditingController();
+    final equipment = TextEditingController();
+    final create = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Exercício personalizado'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: name,
+                decoration: const InputDecoration(labelText: 'Nome'),
+              ),
+              TextField(
+                controller: muscle,
+                decoration: const InputDecoration(labelText: 'Grupo muscular'),
+              ),
+              TextField(
+                controller: equipment,
+                decoration: const InputDecoration(labelText: 'Equipamento'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+    if (create == true && name.text.trim().isNotEmpty && context.mounted) {
+      ref
+          .read(trainingRepositoryProvider)
+          .createCustom(
+            name: name.text,
+            primaryMuscle: muscle.text.trim().isEmpty
+                ? 'Não informado'
+                : muscle.text,
+            equipment: equipment.text.trim().isEmpty
+                ? 'Não informado'
+                : equipment.text,
+          );
+      final revision = ref.read(catalogRevisionProvider.notifier);
+      revision.state = revision.state + 1;
+    }
+    name.dispose();
+    muscle.dispose();
+    equipment.dispose();
   }
 }

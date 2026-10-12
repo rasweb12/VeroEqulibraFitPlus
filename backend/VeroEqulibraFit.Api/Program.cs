@@ -2,11 +2,18 @@ using VeroEqulibraFit.Application.Exercises;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using VeroEqulibraFit.Infrastructure;
+using VeroEqulibraFit.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<ExerciseSearchService>();
 builder.Services.AddControllers();
 builder.Services.AddHealthChecks();
+builder.Services.AddHttpClient<GeminiAiClient>(client =>
+{
+    var baseUrl = builder.Configuration["AI:BaseUrl"];
+    if (!string.IsNullOrWhiteSpace(baseUrl)) client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromSeconds(35);
+});
 var connectionString = builder.Configuration.GetConnectionString("Postgres");
 if (!string.IsNullOrWhiteSpace(connectionString))
     builder.Services.AddVeroEqulibraFitInfrastructure(connectionString);

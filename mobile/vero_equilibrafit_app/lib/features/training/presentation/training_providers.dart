@@ -28,11 +28,18 @@ class PlansController extends StateNotifier<List<TrainingPlan>> {
     _repository.duplicate(id);
     state = _repository.activePlans();
   }
+
+  void create({required String name, required String objective}) {
+    _repository.createPlan(name: name, objective: objective);
+    state = _repository.activePlans();
+  }
 }
 
 final exerciseSearchProvider = StateProvider<String>((ref) => '');
-final exercisesProvider = Provider<List<Exercise>>(
-  (ref) => ref
+final catalogRevisionProvider = StateProvider<int>((ref) => 0);
+final exercisesProvider = Provider<List<Exercise>>((ref) {
+  ref.watch(catalogRevisionProvider);
+  return ref
       .read(trainingRepositoryProvider)
-      .search(ref.watch(exerciseSearchProvider)),
-);
+      .search(ref.watch(exerciseSearchProvider));
+});

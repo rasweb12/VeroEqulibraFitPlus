@@ -3,15 +3,7 @@ import '../domain/training_plan.dart';
 
 /// Local-first repository boundary; the Isar adapter will queue synced work.
 class TrainingRepository {
-  TrainingRepository()
-    : _plans = [
-        const TrainingPlan(
-          id: 'plan-strength-a',
-          name: 'Força A',
-          objective: 'Força e consistência',
-          exercises: ['Agachamento com barra', 'Supino inclinado com halteres'],
-        ),
-      ];
+  TrainingRepository() : _plans = [];
   final List<TrainingPlan> _plans;
   final List<Exercise> _customExercises = [];
   static const catalog = <Exercise>[
@@ -91,6 +83,17 @@ class TrainingRepository {
     );
     _plans.add(copy);
     return copy;
+  }
+
+  TrainingPlan createPlan({required String name, required String objective}) {
+    final plan = TrainingPlan(
+      id: 'plan-${DateTime.now().microsecondsSinceEpoch}',
+      name: name.trim(),
+      objective: objective.trim(),
+      exercises: const [],
+    );
+    _plans.add(plan);
+    return plan;
   }
 
   Exercise createCustom({

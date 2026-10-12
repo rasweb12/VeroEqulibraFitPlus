@@ -6,7 +6,9 @@ import 'package:vero_equilibrafit_app/features/training/data/training_repository
 void main() {
   test('logical deletion hides a plan and keeps it recoverable', () {
     final repository = TrainingRepository();
-    final id = repository.activePlans().single.id;
+    final id = repository
+        .createPlan(name: 'Força A', objective: 'Consistência')
+        .id;
     repository.softDelete(id);
     expect(repository.activePlans(), isEmpty);
     repository.restore(id);
