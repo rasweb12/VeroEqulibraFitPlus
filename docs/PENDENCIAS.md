@@ -1,6 +1,7 @@
 # Pendências
 
-- Finalizar auditoria de arquivos de origem e mapear interfaces reutilizáveis sem copiar segredos.
-- Implementar Isar, login/JWT, Neon/EF migrations, sincronização, alimentação, coach, hábitos, Blazor, Docker, Render e CI.
+- Integrar a fila Isar às ações de plano e criar persistência local cifrada para catálogo, planos e sessões.
+- Finalizar login/JWT com provedor isolado, Neon/EF migrations aplicadas somente após autorização, sincronização, alimentação, coach, hábitos, Blazor funcional, CI e testes REST.
+- Reexecutar o build APK em ambiente Gradle com tempo suficiente.
 - Verificar licenças de mídia antes de qualquer uso distribuível.
 - Obter credenciais isoladas e autorização para criar Neon/Render ou executar chamadas Gemini reais.
