@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using VeroEqulibraFit.Application.Exercises;
 using VeroEqulibraFit.Contracts.Exercises;
 namespace VeroEqulibraFit.Api.Controllers;
-[ApiController, Route("api/v1/exercises")]
+[ApiController, Authorize, Route("api/v1/exercises")]
 public sealed class ExercisesController(ExerciseSearchService searchService) : ControllerBase
 {
     [HttpPost("search-before-ai")]
