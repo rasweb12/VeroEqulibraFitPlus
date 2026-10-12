@@ -33,6 +33,16 @@ class PlansController extends StateNotifier<List<TrainingPlan>> {
     _repository.createPlan(name: name, objective: objective);
     state = _repository.activePlans();
   }
+
+  void addExercise(String planId, String exerciseId) {
+    _repository.addExerciseToPlan(planId, exerciseId);
+    state = _repository.activePlans();
+  }
+
+  void removeExercise(String planId, String exerciseId) {
+    _repository.removeExerciseFromPlan(planId, exerciseId);
+    state = _repository.activePlans();
+  }
 }
 
 final exerciseSearchProvider = StateProvider<String>((ref) => '');

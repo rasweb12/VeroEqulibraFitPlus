@@ -34,8 +34,20 @@ class VeroEqulibraFitApp extends ConsumerWidget {
           builder: (context, state) => const PlansPage(),
         ),
         GoRoute(
+          path: '/training/:planId',
+          builder: (context, state) => TrainingPlanPage(
+            planId: state.pathParameters['planId']!,
+          ),
+        ),
+        GoRoute(
           path: '/exercises',
           builder: (context, state) => const ExerciseLibraryPage(),
+        ),
+        GoRoute(
+          path: '/training/:planId/exercises',
+          builder: (context, state) => ExerciseLibraryPage(
+            planId: state.pathParameters['planId'],
+          ),
         ),
         GoRoute(
           path: '/habits',
@@ -107,6 +119,7 @@ class PlansPage extends ConsumerWidget {
                         subtitle: Text(
                           '${plan.objective} · ${plan.exercises.length} exercícios',
                         ),
+                        onTap: () => context.go('/training/${plan.id}'),
                         trailing: PopupMenuButton<String>(
                           onSelected: (action) =>
                               _action(context, ref, plan.id, action),
@@ -223,8 +236,80 @@ class PlansPage extends ConsumerWidget {
   }
 }
 
+class TrainingPlanPage extends ConsumerWidget {
+  const TrainingPlanPage({super.key, required this.planId});
+  final String planId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final matchingPlans = ref
+        .watch(plansProvider)
+        .where((item) => item.id == planId)
+        .toList(growable: false);
+    if (matchingPlans.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(child: Text('Esta ficha não está disponível.')),
+      );
+    }
+    final plan = matchingPlans.first;
+    return Scaffold(
+      appBar: AppBar(title: Text(plan.name)),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.go('/training/$planId/exercises'),
+        icon: const Icon(Icons.add),
+        label: const Text('Adicionar exercício'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Text(plan.objective, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 16),
+          if (plan.exercises.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(top: 36),
+              child: Center(
+                child: Text('Adicione exercícios para começar esta ficha.'),
+              ),
+            ),
+          for (final exerciseId in plan.exercises)
+            _PlanExerciseTile(planId: planId, exerciseId: exerciseId),
+          const SizedBox(height: 96),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlanExerciseTile extends ConsumerWidget {
+  const _PlanExerciseTile({required this.planId, required this.exerciseId});
+  final String planId;
+  final String exerciseId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final exercise = ref.read(trainingRepositoryProvider).exerciseById(exerciseId);
+    if (exercise == null) return const SizedBox.shrink();
+    return Card(
+      child: ListTile(
+        leading: const CircleAvatar(child: Icon(Icons.fitness_center)),
+        title: Text(exercise.name),
+        subtitle: Text('${exercise.primaryMuscle} · ${exercise.equipment}'),
+        trailing: IconButton(
+          tooltip: 'Remover da ficha',
+          onPressed: () => ref
+              .read(plansProvider.notifier)
+              .removeExercise(planId, exerciseId),
+          icon: const Icon(Icons.remove_circle_outline),
+        ),
+      ),
+    );
+  }
+}
+
 class ExerciseLibraryPage extends ConsumerWidget {
-  const ExerciseLibraryPage({super.key});
+  const ExerciseLibraryPage({super.key, this.planId});
+  final String? planId;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final exercises = ref.watch(exercisesProvider);
@@ -259,7 +344,20 @@ class ExerciseLibraryPage extends ConsumerWidget {
                   subtitle: Text(
                     '${exercise.primaryMuscle} · ${exercise.equipment}${exercise.isCustom ? ' · Personalizado' : ''}',
                   ),
-                  trailing: const Icon(Icons.add_circle_outline),
+                  trailing: Icon(
+                    planId == null ? Icons.info_outline : Icons.add_circle_outline,
+                  ),
+                  onTap: planId == null
+                      ? null
+                      : () {
+                          ref
+                              .read(plansProvider.notifier)
+                              .addExercise(planId!, exercise.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('${exercise.name} adicionado à ficha.')),
+                          );
+                          context.go('/training/$planId');
+                        },
                 );
               },
             ),

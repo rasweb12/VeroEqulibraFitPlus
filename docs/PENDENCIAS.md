@@ -1,6 +1,6 @@
 # Pendências
 
-- Integrar a fila Isar às ações de plano, hábitos, refeições e sessões, com persistência local cifrada e sincronização de conflitos.
+- Integrar a fila Isar às ações de plano, hábitos, refeições e sessões, com persistência local cifrada e sincronização de conflitos. Os fluxos de criar ficha, montar ficha, registrar refeição e hábitos já funcionam na sessão local; ainda não devem ser apresentados como persistência offline entre reinícios.
 - Finalizar login/JWT com provedor isolado, testes REST autenticados, Neon/EF migrations aplicadas somente após autorização e isolamento de contas ponta a ponta.
 - Conectar alimentação, hábitos e administração à API autenticada. O Coach já possui fluxo Flutter → API .NET → FastAPI Gemini, mas requer sessão JWT e configurações de ambiente para execução real.
 - Completar metadados técnicos de mídia com ffprobe e associar vídeos a exercícios estáveis.

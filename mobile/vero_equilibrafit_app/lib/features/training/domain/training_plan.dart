@@ -12,12 +12,18 @@ class TrainingPlan {
   final List<String> exercises;
   final DateTime? deletedAt;
   bool get isDeleted => deletedAt != null;
-  TrainingPlan copyWith({String? id, String? name, DateTime? deletedAt}) =>
+  TrainingPlan copyWith({
+    String? id,
+    String? name,
+    String? objective,
+    List<String>? exercises,
+    DateTime? deletedAt,
+  }) =>
       TrainingPlan(
         id: id ?? this.id,
         name: name ?? this.name,
-        objective: objective,
-        exercises: exercises,
+        objective: objective ?? this.objective,
+        exercises: exercises ?? this.exercises,
         deletedAt: deletedAt,
       );
 }

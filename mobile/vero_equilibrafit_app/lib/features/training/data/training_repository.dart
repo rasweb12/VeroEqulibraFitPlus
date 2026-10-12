@@ -96,6 +96,36 @@ class TrainingRepository {
     return plan;
   }
 
+  TrainingPlan? planById(String id) {
+    for (final plan in _plans) {
+      if (plan.id == id && !plan.isDeleted) return plan;
+    }
+    return null;
+  }
+
+  void addExerciseToPlan(String planId, String exerciseId) {
+    final index = _plans.indexWhere((plan) => plan.id == planId && !plan.isDeleted);
+    if (index < 0 || _plans[index].exercises.contains(exerciseId)) return;
+    final plan = _plans[index];
+    _plans[index] = plan.copyWith(exercises: [...plan.exercises, exerciseId]);
+  }
+
+  void removeExerciseFromPlan(String planId, String exerciseId) {
+    final index = _plans.indexWhere((plan) => plan.id == planId && !plan.isDeleted);
+    if (index < 0) return;
+    final plan = _plans[index];
+    _plans[index] = plan.copyWith(
+      exercises: plan.exercises.where((id) => id != exerciseId).toList(growable: false),
+    );
+  }
+
+  Exercise? exerciseById(String id) {
+    for (final exercise in [...catalog, ..._customExercises]) {
+      if (exercise.id == id) return exercise;
+    }
+    return null;
+  }
+
   Exercise createCustom({
     required String name,
     required String primaryMuscle,
