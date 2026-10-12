@@ -40,6 +40,12 @@ dependencies:
   isar_flutter_libs: ^3.1.0+1
   shared_preferences: ^2.5.3
 
+dependency_overrides:
+  # Vendored only to add the Android namespace required by AGP 9.
+  # The Dart/Isar API and native binaries remain version 3.1.0+1.
+  isar_flutter_libs:
+    path: third_party/isar_flutter_libs
+
 dev_dependencies:
   build_runner: 2.4.13
   flutter_test:
@@ -63,6 +69,8 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/videos/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

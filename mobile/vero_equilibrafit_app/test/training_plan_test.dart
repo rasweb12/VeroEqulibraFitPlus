@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vero_equilibrafit_app/features/habits/presentation/habits_page.dart';
 import 'package:vero_equilibrafit_app/features/training/data/training_repository.dart';
 
 void main() {
@@ -13,5 +15,14 @@ void main() {
 
   test('search finds accent-insensitive aliases before any AI request', () {
     expect(TrainingRepository().search('agachamento livre').single.id, 'squat');
+  });
+
+  test('hydration is only increased by an explicit local registration', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    expect(container.read(habitsProvider).waterMl, 0);
+    container.read(habitsProvider.notifier).addWater();
+    expect(container.read(habitsProvider).waterMl, 250);
   });
 }

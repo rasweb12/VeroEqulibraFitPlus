@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'features/training/presentation/training_providers.dart';
+import 'features/dashboard/presentation/dashboard_page.dart';
+import 'features/habits/presentation/habits_page.dart';
+import 'features/nutrition/presentation/nutrition_page.dart';
+import 'features/coach/presentation/coach_page.dart';
 
 class VeroEqulibraFitApp extends ConsumerWidget {
   const VeroEqulibraFitApp({super.key});
@@ -24,11 +28,24 @@ class VeroEqulibraFitApp extends ConsumerWidget {
     ),
     routerConfig: GoRouter(
       routes: [
-        GoRoute(path: '/', builder: (context, state) => const PlansPage()),
+        GoRoute(path: '/', builder: (context, state) => const DashboardPage()),
+        GoRoute(
+          path: '/training',
+          builder: (context, state) => const PlansPage(),
+        ),
         GoRoute(
           path: '/exercises',
           builder: (context, state) => const ExerciseLibraryPage(),
         ),
+        GoRoute(
+          path: '/habits',
+          builder: (context, state) => const HabitsPage(),
+        ),
+        GoRoute(
+          path: '/nutrition',
+          builder: (context, state) => const NutritionPage(),
+        ),
+        GoRoute(path: '/coach', builder: (context, state) => const CoachPage()),
       ],
     ),
   );
@@ -43,6 +60,11 @@ class PlansPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('VeroEqulibraFit+'),
         actions: [
+          IconButton(
+            tooltip: 'Dashboard',
+            onPressed: () => context.go('/'),
+            icon: const Icon(Icons.dashboard_outlined),
+          ),
           IconButton(
             tooltip: 'Biblioteca de exercícios',
             onPressed: () => context.go('/exercises'),
