@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using VeroEqulibraFit.Domain.Training;
+using VeroEqulibraFit.Domain.Nutrition;
 
 namespace VeroEqulibraFit.Infrastructure.Data;
 
@@ -9,6 +10,8 @@ public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbC
     public DbSet<TrainingPlanExercise> TrainingPlanExercises => Set<TrainingPlanExercise>();
     public DbSet<TrainingSession> TrainingSessions => Set<TrainingSession>();
     public DbSet<SyncOperation> SyncOperations => Set<SyncOperation>();
+    public DbSet<MealEntry> MealEntries => Set<MealEntry>();
+    public DbSet<NutritionPlan> NutritionPlans => Set<NutritionPlan>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -43,6 +46,21 @@ public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbC
             entity.Property(operation => operation.OperationType).HasMaxLength(80).IsRequired();
             entity.Property(operation => operation.PayloadHash).HasMaxLength(128).IsRequired();
             entity.HasIndex(operation => new { operation.OwnerId, operation.IdempotencyKey }).IsUnique();
+        });
+        modelBuilder.Entity<MealEntry>(entity =>
+        {
+            entity.ToTable("meal_entries");
+            entity.Property(meal => meal.Description).HasMaxLength(1000).IsRequired();
+            entity.HasIndex(meal => new { meal.OwnerId, meal.ConsumedAt });
+            entity.HasQueryFilter(meal => meal.DeletedAt == null);
+        });
+        modelBuilder.Entity<NutritionPlan>(entity =>
+        {
+            entity.ToTable("nutrition_plans");
+            entity.Property(plan => plan.Name).HasMaxLength(160).IsRequired();
+            entity.Property(plan => plan.ContentJson).HasColumnType("jsonb").IsRequired();
+            entity.HasIndex(plan => new { plan.OwnerId, plan.DeletedAt });
+            entity.HasQueryFilter(plan => plan.DeletedAt == null);
         });
     }
 }
