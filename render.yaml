@@ -1,0 +1,54 @@
+services:
+  - type: web
+    name: vero-equilibrafit-api
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./backend/VeroEqulibraFit.Api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: off
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__Postgres
+        sync: false
+      - key: AI__BaseUrl
+        fromService:
+          type: pserv
+          name: vero-equilibrafit-ai
+          property: hostport
+      - key: AI__InternalApiKey
+        fromService:
+          type: pserv
+          name: vero-equilibrafit-ai
+          envVarKey: internal_api_key
+  - type: pserv
+    name: vero-equilibrafit-ai
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./ai/vero_equilibrafit_ai/Dockerfile
+    dockerContext: ./ai/vero_equilibrafit_ai
+    healthCheckPath: /health
+    autoDeployTrigger: off
+    envVars:
+      - key: PORT
+        value: "8001"
+      - key: environment
+        value: production
+      - key: internal_api_key
+        generateValue: true
+      - key: gemini_api_key
+        sync: false
+      - key: gemini_model
+        value: gemini-3.5-flash-lite
+  - type: web
+    name: vero-equilibrafit-admin
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./admin/VeroEqulibraFit.Admin/Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    autoDeployTrigger: off
