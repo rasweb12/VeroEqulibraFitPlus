@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.5" />
     <ProjectReference Include="..\VeroEqulibraFit.Domain\VeroEqulibraFit.Domain.csproj" />
     <ProjectReference Include="..\VeroEqulibraFit.Contracts\VeroEqulibraFit.Contracts.csproj" />
   </ItemGroup>

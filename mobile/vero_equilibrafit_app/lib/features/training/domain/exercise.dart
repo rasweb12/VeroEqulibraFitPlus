@@ -6,6 +6,7 @@ class Exercise {
     required this.equipment,
     this.aliases = const [],
     this.isCustom = false,
+    this.demoVideoAsset,
   });
   final String id;
   final String name;
@@ -13,4 +14,7 @@ class Exercise {
   final String equipment;
   final List<String> aliases;
   final bool isCustom;
+
+  /// Local media is shown only when its exercise mapping was manually verified.
+  final String? demoVideoAsset;
 }

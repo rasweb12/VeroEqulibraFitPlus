@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'features/training/presentation/training_providers.dart';
 import 'features/training/domain/planned_exercise.dart';
+import 'features/training/domain/exercise.dart';
+import 'features/training/presentation/exercise_demo_player.dart';
 import 'features/dashboard/presentation/dashboard_page.dart';
 import 'features/habits/presentation/habits_page.dart';
 import 'features/nutrition/presentation/nutrition_page.dart';
 import 'features/coach/presentation/coach_page.dart';
 import 'features/measurements/presentation/measurements_page.dart';
+import 'features/auth/presentation/auth_page.dart';
 
 class VeroEqulibraFitApp extends ConsumerWidget {
   const VeroEqulibraFitApp({super.key});
@@ -37,9 +40,8 @@ class VeroEqulibraFitApp extends ConsumerWidget {
         ),
         GoRoute(
           path: '/training/:planId',
-          builder: (context, state) => TrainingPlanPage(
-            planId: state.pathParameters['planId']!,
-          ),
+          builder: (context, state) =>
+              TrainingPlanPage(planId: state.pathParameters['planId']!),
         ),
         GoRoute(
           path: '/exercises',
@@ -47,9 +49,8 @@ class VeroEqulibraFitApp extends ConsumerWidget {
         ),
         GoRoute(
           path: '/training/:planId/exercises',
-          builder: (context, state) => ExerciseLibraryPage(
-            planId: state.pathParameters['planId'],
-          ),
+          builder: (context, state) =>
+              ExerciseLibraryPage(planId: state.pathParameters['planId']),
         ),
         GoRoute(
           path: '/habits',
@@ -60,7 +61,11 @@ class VeroEqulibraFitApp extends ConsumerWidget {
           builder: (context, state) => const NutritionPage(),
         ),
         GoRoute(path: '/coach', builder: (context, state) => const CoachPage()),
-        GoRoute(path: '/measurements', builder: (context, state) => const MeasurementsPage()),
+        GoRoute(
+          path: '/measurements',
+          builder: (context, state) => const MeasurementsPage(),
+        ),
+        GoRoute(path: '/auth', builder: (context, state) => const AuthPage()),
       ],
     ),
   );
@@ -75,6 +80,11 @@ class PlansPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('VeroEqulibraFit+'),
         actions: [
+          IconButton(
+            tooltip: 'Conta',
+            onPressed: () => context.go('/auth'),
+            icon: const Icon(Icons.account_circle_outlined),
+          ),
           IconButton(
             tooltip: 'Dashboard',
             onPressed: () => context.go('/'),
@@ -285,24 +295,77 @@ class TrainingPlanPage extends ConsumerWidget {
 }
 
 class _PlanExerciseTile extends ConsumerWidget {
-  const _PlanExerciseTile({required this.planId, required this.plannedExercise});
+  const _PlanExerciseTile({
+    required this.planId,
+    required this.plannedExercise,
+  });
   final String planId;
   final PlannedExercise plannedExercise;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final exercise = ref.read(trainingRepositoryProvider).exerciseById(plannedExercise.exerciseId);
+    final exercise = ref
+        .read(trainingRepositoryProvider)
+        .exerciseById(plannedExercise.exerciseId);
     if (exercise == null) return const SizedBox.shrink();
     return Card(
       child: ListTile(
         leading: const CircleAvatar(child: Icon(Icons.fitness_center)),
         title: Text(exercise.name),
-        subtitle: Text('${exercise.primaryMuscle} · ${plannedExercise.sets} séries × ${plannedExercise.repetitions} · descanso ${plannedExercise.restSeconds}s${plannedExercise.targetLoadKg == null ? '' : ' · ${plannedExercise.targetLoadKg!.toStringAsFixed(1)} kg'}'),
-        onTap: () => _edit(context, ref),
+        subtitle: Text(
+          '${exercise.primaryMuscle} · ${plannedExercise.sets} séries × ${plannedExercise.repetitions} · descanso ${plannedExercise.restSeconds}s${plannedExercise.targetLoadKg == null ? '' : ' · ${plannedExercise.targetLoadKg!.toStringAsFixed(1)} kg'}',
+        ),
+        onTap: () => _showExercise(context, ref, exercise),
         trailing: IconButton(
           tooltip: 'Remover da ficha',
-          onPressed: () => ref.read(plansProvider.notifier).removeExercise(planId, plannedExercise.exerciseId),
+          onPressed: () => ref
+              .read(plansProvider.notifier)
+              .removeExercise(planId, plannedExercise.exerciseId),
           icon: const Icon(Icons.remove_circle_outline),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showExercise(
+    BuildContext context,
+    WidgetRef ref,
+    Exercise exercise,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  exercise.name,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 12),
+                if (exercise.demoVideoAsset != null)
+                  ExerciseDemoPlayer(assetPath: exercise.demoVideoAsset!)
+                else
+                  const Text(
+                    'Ainda não há demonstração autorizada associada a este exercício.',
+                  ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _edit(context, ref);
+                  },
+                  icon: const Icon(Icons.tune),
+                  label: const Text('Configurar exercício'),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -310,28 +373,91 @@ class _PlanExerciseTile extends ConsumerWidget {
 
   Future<void> _edit(BuildContext context, WidgetRef ref) async {
     final sets = TextEditingController(text: plannedExercise.sets.toString());
-    final repetitions = TextEditingController(text: plannedExercise.repetitions);
-    final load = TextEditingController(text: plannedExercise.targetLoadKg?.toString() ?? '');
-    final rest = TextEditingController(text: plannedExercise.restSeconds.toString());
+    final repetitions = TextEditingController(
+      text: plannedExercise.repetitions,
+    );
+    final load = TextEditingController(
+      text: plannedExercise.targetLoadKg?.toString() ?? '',
+    );
+    final rest = TextEditingController(
+      text: plannedExercise.restSeconds.toString(),
+    );
     final notes = TextEditingController(text: plannedExercise.notes);
-    final save = await showDialog<bool>(context: context, builder: (dialogContext) => AlertDialog(
-      title: const Text('Configurar exercício'),
-      content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        _field(sets, 'Séries', number: true), _field(repetitions, 'Repetições'), _field(load, 'Carga alvo em kg (opcional)', number: true), _field(rest, 'Descanso em segundos', number: true),
-        TextField(controller: notes, maxLines: 2, decoration: const InputDecoration(labelText: 'Observações (opcional)')),
-      ])),
-      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancelar')), FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Salvar'))],
-    ));
+    final save = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Configurar exercício'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _field(sets, 'Séries', number: true),
+              _field(repetitions, 'Repetições'),
+              _field(load, 'Carga alvo em kg (opcional)', number: true),
+              _field(rest, 'Descanso em segundos', number: true),
+              TextField(
+                controller: notes,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Observações (opcional)',
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
     if (save == true && context.mounted) {
-      final parsedSets = int.tryParse(sets.text); final parsedRest = int.tryParse(rest.text); final parsedLoad = double.tryParse(load.text.replaceAll(',', '.'));
-      if (parsedSets != null && parsedSets > 0 && parsedSets <= 100 && parsedRest != null && parsedRest >= 0 && parsedRest <= 3600 && repetitions.text.trim().isNotEmpty) {
-        ref.read(plansProvider.notifier).updateExercise(planId, plannedExercise.copyWith(sets: parsedSets, repetitions: repetitions.text.trim(), targetLoadKg: parsedLoad, restSeconds: parsedRest, notes: notes.text));
+      final parsedSets = int.tryParse(sets.text);
+      final parsedRest = int.tryParse(rest.text);
+      final parsedLoad = double.tryParse(load.text.replaceAll(',', '.'));
+      if (parsedSets != null &&
+          parsedSets > 0 &&
+          parsedSets <= 100 &&
+          parsedRest != null &&
+          parsedRest >= 0 &&
+          parsedRest <= 3600 &&
+          repetitions.text.trim().isNotEmpty) {
+        ref
+            .read(plansProvider.notifier)
+            .updateExercise(
+              planId,
+              plannedExercise.copyWith(
+                sets: parsedSets,
+                repetitions: repetitions.text.trim(),
+                targetLoadKg: parsedLoad,
+                restSeconds: parsedRest,
+                notes: notes.text,
+              ),
+            );
       }
     }
-    for (final controller in [sets, repetitions, load, rest, notes]) { controller.dispose(); }
+    for (final controller in [sets, repetitions, load, rest, notes]) {
+      controller.dispose();
+    }
   }
 
-  Widget _field(TextEditingController controller, String label, {bool number = false}) => TextField(controller: controller, keyboardType: number ? const TextInputType.numberWithOptions(decimal: true) : null, decoration: InputDecoration(labelText: label));
+  Widget _field(
+    TextEditingController controller,
+    String label, {
+    bool number = false,
+  }) => TextField(
+    controller: controller,
+    keyboardType: number
+        ? const TextInputType.numberWithOptions(decimal: true)
+        : null,
+    decoration: InputDecoration(labelText: label),
+  );
 }
 
 class ExerciseLibraryPage extends ConsumerWidget {
@@ -372,7 +498,9 @@ class ExerciseLibraryPage extends ConsumerWidget {
                     '${exercise.primaryMuscle} · ${exercise.equipment}${exercise.isCustom ? ' · Personalizado' : ''}',
                   ),
                   trailing: Icon(
-                    planId == null ? Icons.info_outline : Icons.add_circle_outline,
+                    planId == null
+                        ? Icons.info_outline
+                        : Icons.add_circle_outline,
                   ),
                   onTap: planId == null
                       ? null
@@ -381,7 +509,11 @@ class ExerciseLibraryPage extends ConsumerWidget {
                               .read(plansProvider.notifier)
                               .addExercise(planId!, exercise.id);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('${exercise.name} adicionado à ficha.')),
+                            SnackBar(
+                              content: Text(
+                                '${exercise.name} adicionado à ficha.',
+                              ),
+                            ),
                           );
                           context.go('/training/$planId');
                         },

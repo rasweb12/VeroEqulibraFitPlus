@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using VeroEqulibraFit.Domain.Training;
 using VeroEqulibraFit.Domain.Nutrition;
 
 namespace VeroEqulibraFit.Infrastructure.Data;
 
-public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbContext> options) : DbContext(options)
+public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbContext> options) : IdentityDbContext<AppUser, AppRole, Guid>(options)
 {
     public DbSet<TrainingPlan> TrainingPlans => Set<TrainingPlan>();
     public DbSet<TrainingPlanExercise> TrainingPlanExercises => Set<TrainingPlanExercise>();
@@ -12,9 +13,30 @@ public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbC
     public DbSet<SyncOperation> SyncOperations => Set<SyncOperation>();
     public DbSet<MealEntry> MealEntries => Set<MealEntry>();
     public DbSet<NutritionPlan> NutritionPlans => Set<NutritionPlan>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<AppUser>(entity =>
+        {
+            entity.ToTable("users");
+            entity.Property(user => user.DisplayName).HasMaxLength(120);
+        });
+        modelBuilder.Entity<AppRole>().ToTable("roles");
+        modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityUserRole<Guid>>().ToTable("user_roles");
+        modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityUserClaim<Guid>>().ToTable("user_claims");
+        modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityUserLogin<Guid>>().ToTable("user_logins");
+        modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityUserToken<Guid>>().ToTable("user_tokens");
+        modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityRoleClaim<Guid>>().ToTable("role_claims");
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.ToTable("refresh_tokens");
+            entity.HasKey(token => token.Id);
+            entity.Property(token => token.TokenHash).HasMaxLength(128).IsRequired();
+            entity.HasIndex(token => token.TokenHash).IsUnique();
+            entity.HasIndex(token => new { token.UserId, token.ExpiresAt });
+        });
         modelBuilder.Entity<TrainingPlan>(entity =>
         {
             entity.ToTable("training_plans");

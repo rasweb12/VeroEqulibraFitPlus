@@ -8,7 +8,8 @@ import '../domain/training_plan.dart';
 
 /// Local-first repository. Sync adapters can later enqueue the stable IDs.
 class TrainingRepository {
-  TrainingRepository({SharedPreferences? preferences}) : _preferences = preferences {
+  TrainingRepository({SharedPreferences? preferences})
+    : _preferences = preferences {
     _restore();
   }
   static const _storageKey = 'training_repository_v1';
@@ -21,6 +22,7 @@ class TrainingRepository {
       name: 'Supino inclinado com halteres',
       primaryMuscle: 'Peito',
       equipment: 'Halteres',
+      demoVideoAsset: 'assets/videos/Supino Inclinado com Halteres.mp4',
     ),
     Exercise(
       id: 'squat',
@@ -28,24 +30,28 @@ class TrainingRepository {
       primaryMuscle: 'Pernas',
       equipment: 'Barra',
       aliases: ['Agachamento livre'],
+      demoVideoAsset: 'assets/videos/Agachamento com barra.mp4',
     ),
     Exercise(
       id: 'leg-press',
       name: 'Leg press',
       primaryMuscle: 'Pernas',
       equipment: 'Máquina',
+      demoVideoAsset: 'assets/videos/Leg press na máquina.mp4',
     ),
     Exercise(
       id: 'lat-pulldown',
       name: 'Puxada frontal',
       primaryMuscle: 'Costas',
       equipment: 'Máquina',
+      demoVideoAsset: 'assets/videos/Puxada com cabo.mp4',
     ),
     Exercise(
       id: 'biceps-curl',
       name: 'Rosca direta',
       primaryMuscle: 'Bíceps',
       equipment: 'Barra',
+      demoVideoAsset: 'assets/videos/Rosca Direta.mp4',
     ),
   ];
   List<TrainingPlan> activePlans() =>
@@ -117,26 +123,52 @@ class TrainingRepository {
   }
 
   void addExerciseToPlan(String planId, String exerciseId) {
-    final index = _plans.indexWhere((plan) => plan.id == planId && !plan.isDeleted);
-    if (index < 0 || _plans[index].exercises.any((exercise) => exercise.exerciseId == exerciseId)) return;
+    final index = _plans.indexWhere(
+      (plan) => plan.id == planId && !plan.isDeleted,
+    );
+    if (index < 0 ||
+        _plans[index].exercises.any(
+          (exercise) => exercise.exerciseId == exerciseId,
+        ))
+      return;
     final plan = _plans[index];
-    _plans[index] = plan.copyWith(exercises: [...plan.exercises, PlannedExercise(exerciseId: exerciseId)]);
+    _plans[index] = plan.copyWith(
+      exercises: [
+        ...plan.exercises,
+        PlannedExercise(exerciseId: exerciseId),
+      ],
+    );
     _save();
   }
 
   void removeExerciseFromPlan(String planId, String exerciseId) {
-    final index = _plans.indexWhere((plan) => plan.id == planId && !plan.isDeleted);
+    final index = _plans.indexWhere(
+      (plan) => plan.id == planId && !plan.isDeleted,
+    );
     if (index < 0) return;
     final plan = _plans[index];
-    _plans[index] = plan.copyWith(exercises: plan.exercises.where((exercise) => exercise.exerciseId != exerciseId).toList(growable: false));
+    _plans[index] = plan.copyWith(
+      exercises: plan.exercises
+          .where((exercise) => exercise.exerciseId != exerciseId)
+          .toList(growable: false),
+    );
     _save();
   }
 
   void updatePlannedExercise(String planId, PlannedExercise updated) {
-    final index = _plans.indexWhere((plan) => plan.id == planId && !plan.isDeleted);
+    final index = _plans.indexWhere(
+      (plan) => plan.id == planId && !plan.isDeleted,
+    );
     if (index < 0) return;
     final plan = _plans[index];
-    _plans[index] = plan.copyWith(exercises: plan.exercises.map((exercise) => exercise.exerciseId == updated.exerciseId ? updated : exercise).toList(growable: false));
+    _plans[index] = plan.copyWith(
+      exercises: plan.exercises
+          .map(
+            (exercise) =>
+                exercise.exerciseId == updated.exerciseId ? updated : exercise,
+          )
+          .toList(growable: false),
+    );
     _save();
   }
 
@@ -171,35 +203,47 @@ class TrainingRepository {
       final data = jsonDecode(encoded) as Map<String, dynamic>;
       for (final item in (data['plans'] as List<dynamic>? ?? const [])) {
         final plan = item as Map<String, dynamic>;
-        _plans.add(TrainingPlan(
-          id: plan['id'] as String,
-          name: plan['name'] as String,
-          objective: plan['objective'] as String,
-          exercises: (plan['exercises'] as List<dynamic>? ?? const []).map((raw) {
-            if (raw is String) return PlannedExercise(exerciseId: raw);
-            final exercise = raw as Map<String, dynamic>;
-            return PlannedExercise(
-              exerciseId: exercise['exerciseId'] as String,
-              sets: exercise['sets'] as int? ?? 3,
-              repetitions: exercise['repetitions'] as String? ?? '10',
-              targetLoadKg: (exercise['targetLoadKg'] as num?)?.toDouble(),
-              restSeconds: exercise['restSeconds'] as int? ?? 60,
-              notes: exercise['notes'] as String? ?? '',
-            );
-          }).toList(growable: false),
-          deletedAt: plan['deletedAt'] == null ? null : DateTime.tryParse(plan['deletedAt'] as String),
-        ));
+        _plans.add(
+          TrainingPlan(
+            id: plan['id'] as String,
+            name: plan['name'] as String,
+            objective: plan['objective'] as String,
+            exercises: (plan['exercises'] as List<dynamic>? ?? const [])
+                .map((raw) {
+                  if (raw is String) return PlannedExercise(exerciseId: raw);
+                  final exercise = raw as Map<String, dynamic>;
+                  return PlannedExercise(
+                    exerciseId: exercise['exerciseId'] as String,
+                    sets: exercise['sets'] as int? ?? 3,
+                    repetitions: exercise['repetitions'] as String? ?? '10',
+                    targetLoadKg: (exercise['targetLoadKg'] as num?)
+                        ?.toDouble(),
+                    restSeconds: exercise['restSeconds'] as int? ?? 60,
+                    notes: exercise['notes'] as String? ?? '',
+                  );
+                })
+                .toList(growable: false),
+            deletedAt: plan['deletedAt'] == null
+                ? null
+                : DateTime.tryParse(plan['deletedAt'] as String),
+          ),
+        );
       }
-      for (final item in (data['customExercises'] as List<dynamic>? ?? const [])) {
+      for (final item
+          in (data['customExercises'] as List<dynamic>? ?? const [])) {
         final exercise = item as Map<String, dynamic>;
-        _customExercises.add(Exercise(
-          id: exercise['id'] as String,
-          name: exercise['name'] as String,
-          primaryMuscle: exercise['primaryMuscle'] as String,
-          equipment: exercise['equipment'] as String,
-          aliases: List<String>.from(exercise['aliases'] as List<dynamic>? ?? const []),
-          isCustom: true,
-        ));
+        _customExercises.add(
+          Exercise(
+            id: exercise['id'] as String,
+            name: exercise['name'] as String,
+            primaryMuscle: exercise['primaryMuscle'] as String,
+            equipment: exercise['equipment'] as String,
+            aliases: List<String>.from(
+              exercise['aliases'] as List<dynamic>? ?? const [],
+            ),
+            isCustom: true,
+          ),
+        );
       }
     } on FormatException {
       // A corrupt cache is ignored; no remote or historical data is removed.
@@ -208,27 +252,39 @@ class TrainingRepository {
 
   void _save() {
     final payload = {
-      'plans': _plans.map((plan) => {
-        'id': plan.id,
-        'name': plan.name,
-        'objective': plan.objective,
-        'exercises': plan.exercises.map((exercise) => {
-          'exerciseId': exercise.exerciseId,
-          'sets': exercise.sets,
-          'repetitions': exercise.repetitions,
-          'targetLoadKg': exercise.targetLoadKg,
-          'restSeconds': exercise.restSeconds,
-          'notes': exercise.notes,
-        }).toList(growable: false),
-        'deletedAt': plan.deletedAt?.toIso8601String(),
-      }).toList(growable: false),
-      'customExercises': _customExercises.map((exercise) => {
-        'id': exercise.id,
-        'name': exercise.name,
-        'primaryMuscle': exercise.primaryMuscle,
-        'equipment': exercise.equipment,
-        'aliases': exercise.aliases,
-      }).toList(growable: false),
+      'plans': _plans
+          .map(
+            (plan) => {
+              'id': plan.id,
+              'name': plan.name,
+              'objective': plan.objective,
+              'exercises': plan.exercises
+                  .map(
+                    (exercise) => {
+                      'exerciseId': exercise.exerciseId,
+                      'sets': exercise.sets,
+                      'repetitions': exercise.repetitions,
+                      'targetLoadKg': exercise.targetLoadKg,
+                      'restSeconds': exercise.restSeconds,
+                      'notes': exercise.notes,
+                    },
+                  )
+                  .toList(growable: false),
+              'deletedAt': plan.deletedAt?.toIso8601String(),
+            },
+          )
+          .toList(growable: false),
+      'customExercises': _customExercises
+          .map(
+            (exercise) => {
+              'id': exercise.id,
+              'name': exercise.name,
+              'primaryMuscle': exercise.primaryMuscle,
+              'equipment': exercise.equipment,
+              'aliases': exercise.aliases,
+            },
+          )
+          .toList(growable: false),
     };
     _preferences?.setString(_storageKey, jsonEncode(payload));
   }

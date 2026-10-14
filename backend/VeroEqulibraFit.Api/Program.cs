@@ -17,17 +17,22 @@ builder.Services.AddHttpClient<GeminiAiClient>(client =>
 var connectionString = builder.Configuration.GetConnectionString("Postgres");
 if (!string.IsNullOrWhiteSpace(connectionString))
     builder.Services.AddVeroEqulibraFitInfrastructure(connectionString);
+else
+    throw new InvalidOperationException("ConnectionStrings:Postgres must be configured for authentication and data isolation.");
+builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
-    options.Authority = builder.Configuration["Jwt:Authority"];
-    options.Audience = builder.Configuration["Jwt:Audience"];
-    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+    var tokenService = new JwtTokenService(builder.Configuration);
+    options.RequireHttpsMetadata = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
-        ValidateAudience = true,
+        ValidIssuer = tokenService.Issuer,
+        ValidateAudience = false,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
+        IssuerSigningKey = tokenService.SigningKey,
+        ClockSkew = TimeSpan.FromSeconds(30),
     };
 });
 builder.Services.AddAuthorization();

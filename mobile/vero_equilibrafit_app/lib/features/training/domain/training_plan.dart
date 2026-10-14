@@ -1,3 +1,5 @@
+import 'planned_exercise.dart';
+
 class TrainingPlan {
   const TrainingPlan({
     required this.id,
@@ -18,14 +20,11 @@ class TrainingPlan {
     String? objective,
     List<PlannedExercise>? exercises,
     DateTime? deletedAt,
-  }) =>
-      TrainingPlan(
-        id: id ?? this.id,
-        name: name ?? this.name,
-        objective: objective ?? this.objective,
-        exercises: exercises ?? this.exercises,
-        deletedAt: deletedAt,
-      );
+  }) => TrainingPlan(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    objective: objective ?? this.objective,
+    exercises: exercises ?? this.exercises,
+    deletedAt: deletedAt,
+  );
 }
-import 'planned_exercise.dart';
-
