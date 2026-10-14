@@ -3,12 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/presentation/app_drawer.dart';
 import '../../habits/presentation/habits_page.dart';
+import '../../nutrition/presentation/nutrition_providers.dart';
+import '../../training/presentation/training_providers.dart';
 
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final habits = ref.watch(habitsProvider);
+    final plans = ref.watch(plansProvider);
+    final meals = ref.watch(mealsProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('VeroEqulibraFit+')),
       drawer: const AppDrawer(),
@@ -26,14 +30,20 @@ class DashboardPage extends ConsumerWidget {
             context,
             Icons.fitness_center,
             'Treinos da semana',
-            'Ainda não há sessões concluídas.',
+            plans.isEmpty
+                ? 'Crie sua primeira ficha quando desejar.'
+                : '${plans.length} ficha${plans.length == 1 ? '' : 's'} ativa${plans.length == 1 ? '' : 's'}.',
             '/training',
           ),
           _section(
             context,
             Icons.restaurant_outlined,
             'Alimentação',
-            'Nenhuma refeição registrada.',
+            meals.isEmpty
+                ? 'Nenhuma refeição registrada.'
+                : meals.length == 1
+                    ? '1 refeição registrada.'
+                    : '${meals.length} refeições registradas.',
             '/nutrition',
           ),
           _section(

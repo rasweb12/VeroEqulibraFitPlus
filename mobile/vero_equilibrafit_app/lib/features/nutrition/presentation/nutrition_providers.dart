@@ -1,10 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/persistence/preferences_provider.dart';
 import '../data/nutrition_repository.dart';
 import '../domain/meal_entry.dart';
 
 final nutritionRepositoryProvider = Provider<NutritionRepository>(
-  (ref) => NutritionRepository(),
+  (ref) => NutritionRepository(preferences: ref.read(sharedPreferencesProvider)),
 );
 
 final mealsProvider = StateNotifierProvider<MealsController, List<MealEntry>>(

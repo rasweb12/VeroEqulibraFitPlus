@@ -1,10 +1,18 @@
+import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../domain/exercise.dart';
 import '../domain/training_plan.dart';
 
-/// Local-first repository boundary; the Isar adapter will queue synced work.
+/// Local-first repository. Sync adapters can later enqueue the stable IDs.
 class TrainingRepository {
-  TrainingRepository() : _plans = [];
-  final List<TrainingPlan> _plans;
+  TrainingRepository({SharedPreferences? preferences}) : _preferences = preferences {
+    _restore();
+  }
+  static const _storageKey = 'training_repository_v1';
+  final SharedPreferences? _preferences;
+  final List<TrainingPlan> _plans = [];
   final List<Exercise> _customExercises = [];
   static const catalog = <Exercise>[
     Exercise(
@@ -59,6 +67,7 @@ class TrainingRepository {
     final index = _plans.indexWhere((plan) => plan.id == id);
     if (index < 0 || _plans[index].isDeleted) return;
     _plans[index] = _plans[index].copyWith(deletedAt: DateTime.now().toUtc());
+    _save();
   }
 
   void restore(String id) {
@@ -71,6 +80,7 @@ class TrainingRepository {
       objective: plan.objective,
       exercises: plan.exercises,
     );
+    _save();
   }
 
   TrainingPlan duplicate(String id) {
@@ -82,6 +92,7 @@ class TrainingRepository {
       name: '${source.name} (cópia)',
     );
     _plans.add(copy);
+    _save();
     return copy;
   }
 
@@ -93,6 +104,7 @@ class TrainingRepository {
       exercises: const [],
     );
     _plans.add(plan);
+    _save();
     return plan;
   }
 
@@ -108,6 +120,7 @@ class TrainingRepository {
     if (index < 0 || _plans[index].exercises.contains(exerciseId)) return;
     final plan = _plans[index];
     _plans[index] = plan.copyWith(exercises: [...plan.exercises, exerciseId]);
+    _save();
   }
 
   void removeExerciseFromPlan(String planId, String exerciseId) {
@@ -117,6 +130,7 @@ class TrainingRepository {
     _plans[index] = plan.copyWith(
       exercises: plan.exercises.where((id) => id != exerciseId).toList(growable: false),
     );
+    _save();
   }
 
   Exercise? exerciseById(String id) {
@@ -139,7 +153,59 @@ class TrainingRepository {
       isCustom: true,
     );
     _customExercises.add(exercise);
+    _save();
     return exercise;
+  }
+
+  void _restore() {
+    final encoded = _preferences?.getString(_storageKey);
+    if (encoded == null || encoded.isEmpty) return;
+    try {
+      final data = jsonDecode(encoded) as Map<String, dynamic>;
+      for (final item in (data['plans'] as List<dynamic>? ?? const [])) {
+        final plan = item as Map<String, dynamic>;
+        _plans.add(TrainingPlan(
+          id: plan['id'] as String,
+          name: plan['name'] as String,
+          objective: plan['objective'] as String,
+          exercises: List<String>.from(plan['exercises'] as List<dynamic>? ?? const []),
+          deletedAt: plan['deletedAt'] == null ? null : DateTime.tryParse(plan['deletedAt'] as String),
+        ));
+      }
+      for (final item in (data['customExercises'] as List<dynamic>? ?? const [])) {
+        final exercise = item as Map<String, dynamic>;
+        _customExercises.add(Exercise(
+          id: exercise['id'] as String,
+          name: exercise['name'] as String,
+          primaryMuscle: exercise['primaryMuscle'] as String,
+          equipment: exercise['equipment'] as String,
+          aliases: List<String>.from(exercise['aliases'] as List<dynamic>? ?? const []),
+          isCustom: true,
+        ));
+      }
+    } on FormatException {
+      // A corrupt cache is ignored; no remote or historical data is removed.
+    }
+  }
+
+  void _save() {
+    final payload = {
+      'plans': _plans.map((plan) => {
+        'id': plan.id,
+        'name': plan.name,
+        'objective': plan.objective,
+        'exercises': plan.exercises,
+        'deletedAt': plan.deletedAt?.toIso8601String(),
+      }).toList(growable: false),
+      'customExercises': _customExercises.map((exercise) => {
+        'id': exercise.id,
+        'name': exercise.name,
+        'primaryMuscle': exercise.primaryMuscle,
+        'equipment': exercise.equipment,
+        'aliases': exercise.aliases,
+      }).toList(growable: false),
+    };
+    _preferences?.setString(_storageKey, jsonEncode(payload));
   }
 
   String _normalize(String value) => value

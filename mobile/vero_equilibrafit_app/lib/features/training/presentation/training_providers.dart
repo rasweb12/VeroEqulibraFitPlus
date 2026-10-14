@@ -1,10 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/persistence/preferences_provider.dart';
 import '../data/training_repository.dart';
 import '../domain/exercise.dart';
 import '../domain/training_plan.dart';
 
 final trainingRepositoryProvider = Provider<TrainingRepository>(
-  (ref) => TrainingRepository(),
+  (ref) => TrainingRepository(preferences: ref.read(sharedPreferencesProvider)),
 );
 final plansProvider =
     StateNotifierProvider<PlansController, List<TrainingPlan>>(
