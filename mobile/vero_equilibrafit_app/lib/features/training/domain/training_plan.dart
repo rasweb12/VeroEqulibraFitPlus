@@ -9,14 +9,14 @@ class TrainingPlan {
   final String id;
   final String name;
   final String objective;
-  final List<String> exercises;
+  final List<PlannedExercise> exercises;
   final DateTime? deletedAt;
   bool get isDeleted => deletedAt != null;
   TrainingPlan copyWith({
     String? id,
     String? name,
     String? objective,
-    List<String>? exercises,
+    List<PlannedExercise>? exercises,
     DateTime? deletedAt,
   }) =>
       TrainingPlan(
@@ -27,3 +27,5 @@ class TrainingPlan {
         deletedAt: deletedAt,
       );
 }
+import 'planned_exercise.dart';
+

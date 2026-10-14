@@ -3,6 +3,7 @@ import '../../../core/persistence/preferences_provider.dart';
 import '../data/training_repository.dart';
 import '../domain/exercise.dart';
 import '../domain/training_plan.dart';
+import '../domain/planned_exercise.dart';
 
 final trainingRepositoryProvider = Provider<TrainingRepository>(
   (ref) => TrainingRepository(preferences: ref.read(sharedPreferencesProvider)),
@@ -42,6 +43,11 @@ class PlansController extends StateNotifier<List<TrainingPlan>> {
 
   void removeExercise(String planId, String exerciseId) {
     _repository.removeExerciseFromPlan(planId, exerciseId);
+    state = _repository.activePlans();
+  }
+
+  void updateExercise(String planId, PlannedExercise exercise) {
+    _repository.updatePlannedExercise(planId, exercise);
     state = _repository.activePlans();
   }
 }

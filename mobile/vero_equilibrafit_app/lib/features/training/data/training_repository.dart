@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/exercise.dart';
+import '../domain/planned_exercise.dart';
 import '../domain/training_plan.dart';
 
 /// Local-first repository. Sync adapters can later enqueue the stable IDs.
@@ -117,9 +118,9 @@ class TrainingRepository {
 
   void addExerciseToPlan(String planId, String exerciseId) {
     final index = _plans.indexWhere((plan) => plan.id == planId && !plan.isDeleted);
-    if (index < 0 || _plans[index].exercises.contains(exerciseId)) return;
+    if (index < 0 || _plans[index].exercises.any((exercise) => exercise.exerciseId == exerciseId)) return;
     final plan = _plans[index];
-    _plans[index] = plan.copyWith(exercises: [...plan.exercises, exerciseId]);
+    _plans[index] = plan.copyWith(exercises: [...plan.exercises, PlannedExercise(exerciseId: exerciseId)]);
     _save();
   }
 
@@ -127,9 +128,15 @@ class TrainingRepository {
     final index = _plans.indexWhere((plan) => plan.id == planId && !plan.isDeleted);
     if (index < 0) return;
     final plan = _plans[index];
-    _plans[index] = plan.copyWith(
-      exercises: plan.exercises.where((id) => id != exerciseId).toList(growable: false),
-    );
+    _plans[index] = plan.copyWith(exercises: plan.exercises.where((exercise) => exercise.exerciseId != exerciseId).toList(growable: false));
+    _save();
+  }
+
+  void updatePlannedExercise(String planId, PlannedExercise updated) {
+    final index = _plans.indexWhere((plan) => plan.id == planId && !plan.isDeleted);
+    if (index < 0) return;
+    final plan = _plans[index];
+    _plans[index] = plan.copyWith(exercises: plan.exercises.map((exercise) => exercise.exerciseId == updated.exerciseId ? updated : exercise).toList(growable: false));
     _save();
   }
 
@@ -168,7 +175,18 @@ class TrainingRepository {
           id: plan['id'] as String,
           name: plan['name'] as String,
           objective: plan['objective'] as String,
-          exercises: List<String>.from(plan['exercises'] as List<dynamic>? ?? const []),
+          exercises: (plan['exercises'] as List<dynamic>? ?? const []).map((raw) {
+            if (raw is String) return PlannedExercise(exerciseId: raw);
+            final exercise = raw as Map<String, dynamic>;
+            return PlannedExercise(
+              exerciseId: exercise['exerciseId'] as String,
+              sets: exercise['sets'] as int? ?? 3,
+              repetitions: exercise['repetitions'] as String? ?? '10',
+              targetLoadKg: (exercise['targetLoadKg'] as num?)?.toDouble(),
+              restSeconds: exercise['restSeconds'] as int? ?? 60,
+              notes: exercise['notes'] as String? ?? '',
+            );
+          }).toList(growable: false),
           deletedAt: plan['deletedAt'] == null ? null : DateTime.tryParse(plan['deletedAt'] as String),
         ));
       }
@@ -194,7 +212,14 @@ class TrainingRepository {
         'id': plan.id,
         'name': plan.name,
         'objective': plan.objective,
-        'exercises': plan.exercises,
+        'exercises': plan.exercises.map((exercise) => {
+          'exerciseId': exercise.exerciseId,
+          'sets': exercise.sets,
+          'repetitions': exercise.repetitions,
+          'targetLoadKg': exercise.targetLoadKg,
+          'restSeconds': exercise.restSeconds,
+          'notes': exercise.notes,
+        }).toList(growable: false),
         'deletedAt': plan.deletedAt?.toIso8601String(),
       }).toList(growable: false),
       'customExercises': _customExercises.map((exercise) => {

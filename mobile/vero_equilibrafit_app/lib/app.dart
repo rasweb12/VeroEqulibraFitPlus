@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'features/training/presentation/training_providers.dart';
+import 'features/training/domain/planned_exercise.dart';
 import 'features/dashboard/presentation/dashboard_page.dart';
 import 'features/habits/presentation/habits_page.dart';
 import 'features/nutrition/presentation/nutrition_page.dart';
@@ -274,8 +275,8 @@ class TrainingPlanPage extends ConsumerWidget {
                 child: Text('Adicione exercícios para começar esta ficha.'),
               ),
             ),
-          for (final exerciseId in plan.exercises)
-            _PlanExerciseTile(planId: planId, exerciseId: exerciseId),
+          for (final plannedExercise in plan.exercises)
+            _PlanExerciseTile(planId: planId, plannedExercise: plannedExercise),
           const SizedBox(height: 96),
         ],
       ),
@@ -284,29 +285,53 @@ class TrainingPlanPage extends ConsumerWidget {
 }
 
 class _PlanExerciseTile extends ConsumerWidget {
-  const _PlanExerciseTile({required this.planId, required this.exerciseId});
+  const _PlanExerciseTile({required this.planId, required this.plannedExercise});
   final String planId;
-  final String exerciseId;
+  final PlannedExercise plannedExercise;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final exercise = ref.read(trainingRepositoryProvider).exerciseById(exerciseId);
+    final exercise = ref.read(trainingRepositoryProvider).exerciseById(plannedExercise.exerciseId);
     if (exercise == null) return const SizedBox.shrink();
     return Card(
       child: ListTile(
         leading: const CircleAvatar(child: Icon(Icons.fitness_center)),
         title: Text(exercise.name),
-        subtitle: Text('${exercise.primaryMuscle} · ${exercise.equipment}'),
+        subtitle: Text('${exercise.primaryMuscle} · ${plannedExercise.sets} séries × ${plannedExercise.repetitions} · descanso ${plannedExercise.restSeconds}s${plannedExercise.targetLoadKg == null ? '' : ' · ${plannedExercise.targetLoadKg!.toStringAsFixed(1)} kg'}'),
+        onTap: () => _edit(context, ref),
         trailing: IconButton(
           tooltip: 'Remover da ficha',
-          onPressed: () => ref
-              .read(plansProvider.notifier)
-              .removeExercise(planId, exerciseId),
+          onPressed: () => ref.read(plansProvider.notifier).removeExercise(planId, plannedExercise.exerciseId),
           icon: const Icon(Icons.remove_circle_outline),
         ),
       ),
     );
   }
+
+  Future<void> _edit(BuildContext context, WidgetRef ref) async {
+    final sets = TextEditingController(text: plannedExercise.sets.toString());
+    final repetitions = TextEditingController(text: plannedExercise.repetitions);
+    final load = TextEditingController(text: plannedExercise.targetLoadKg?.toString() ?? '');
+    final rest = TextEditingController(text: plannedExercise.restSeconds.toString());
+    final notes = TextEditingController(text: plannedExercise.notes);
+    final save = await showDialog<bool>(context: context, builder: (dialogContext) => AlertDialog(
+      title: const Text('Configurar exercício'),
+      content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        _field(sets, 'Séries', number: true), _field(repetitions, 'Repetições'), _field(load, 'Carga alvo em kg (opcional)', number: true), _field(rest, 'Descanso em segundos', number: true),
+        TextField(controller: notes, maxLines: 2, decoration: const InputDecoration(labelText: 'Observações (opcional)')),
+      ])),
+      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancelar')), FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Salvar'))],
+    ));
+    if (save == true && context.mounted) {
+      final parsedSets = int.tryParse(sets.text); final parsedRest = int.tryParse(rest.text); final parsedLoad = double.tryParse(load.text.replaceAll(',', '.'));
+      if (parsedSets != null && parsedSets > 0 && parsedSets <= 100 && parsedRest != null && parsedRest >= 0 && parsedRest <= 3600 && repetitions.text.trim().isNotEmpty) {
+        ref.read(plansProvider.notifier).updateExercise(planId, plannedExercise.copyWith(sets: parsedSets, repetitions: repetitions.text.trim(), targetLoadKg: parsedLoad, restSeconds: parsedRest, notes: notes.text));
+      }
+    }
+    for (final controller in [sets, repetitions, load, rest, notes]) { controller.dispose(); }
+  }
+
+  Widget _field(TextEditingController controller, String label, {bool number = false}) => TextField(controller: controller, keyboardType: number ? const TextInputType.numberWithOptions(decimal: true) : null, decoration: InputDecoration(labelText: label));
 }
 
 class ExerciseLibraryPage extends ConsumerWidget {

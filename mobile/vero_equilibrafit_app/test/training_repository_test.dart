@@ -7,7 +7,7 @@ void main() {
     final plan = repository.createPlan(name: 'Treino A', objective: 'Força');
 
     repository.addExerciseToPlan(plan.id, 'squat');
-    expect(repository.planById(plan.id)?.exercises, ['squat']);
+    expect(repository.planById(plan.id)?.exercises.single.exerciseId, 'squat');
 
     repository.removeExerciseFromPlan(plan.id, 'squat');
     expect(repository.planById(plan.id)?.exercises, isEmpty);
@@ -20,6 +20,6 @@ void main() {
     repository.addExerciseToPlan(plan.id, 'squat');
     repository.addExerciseToPlan(plan.id, 'squat');
 
-    expect(repository.planById(plan.id)?.exercises, ['squat']);
+    expect(repository.planById(plan.id)?.exercises.single.exerciseId, 'squat');
   });
 }
