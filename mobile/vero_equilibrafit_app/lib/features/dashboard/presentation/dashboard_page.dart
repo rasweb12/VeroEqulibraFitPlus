@@ -5,6 +5,7 @@ import '../../../shared/presentation/app_drawer.dart';
 import '../../habits/presentation/habits_page.dart';
 import '../../nutrition/presentation/nutrition_providers.dart';
 import '../../training/presentation/training_providers.dart';
+import '../../measurements/presentation/measurements_providers.dart';
 
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
@@ -13,6 +14,7 @@ class DashboardPage extends ConsumerWidget {
     final habits = ref.watch(habitsProvider);
     final plans = ref.watch(plansProvider);
     final meals = ref.watch(mealsProvider);
+    final measurements = ref.watch(measurementsProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('VeroEqulibraFit+')),
       drawer: const AppDrawer(),
@@ -50,7 +52,10 @@ class DashboardPage extends ConsumerWidget {
             context,
             Icons.monitor_weight_outlined,
             'Evolução corporal',
-            'Sem medidas ou fotos registradas.',
+            measurements.isEmpty
+                ? 'Sem medidas registradas.'
+                : '${measurements.length} registro${measurements.length == 1 ? '' : 's'} de evolução.',
+            '/measurements',
           ),
           _section(
             context,

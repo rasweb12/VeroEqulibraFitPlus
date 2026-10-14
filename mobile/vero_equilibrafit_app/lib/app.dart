@@ -6,6 +6,7 @@ import 'features/dashboard/presentation/dashboard_page.dart';
 import 'features/habits/presentation/habits_page.dart';
 import 'features/nutrition/presentation/nutrition_page.dart';
 import 'features/coach/presentation/coach_page.dart';
+import 'features/measurements/presentation/measurements_page.dart';
 
 class VeroEqulibraFitApp extends ConsumerWidget {
   const VeroEqulibraFitApp({super.key});
@@ -58,6 +59,7 @@ class VeroEqulibraFitApp extends ConsumerWidget {
           builder: (context, state) => const NutritionPage(),
         ),
         GoRoute(path: '/coach', builder: (context, state) => const CoachPage()),
+        GoRoute(path: '/measurements', builder: (context, state) => const MeasurementsPage()),
       ],
     ),
   );
