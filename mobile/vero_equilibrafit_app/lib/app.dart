@@ -332,10 +332,10 @@ class _PlanExerciseTile extends ConsumerWidget {
     WidgetRef ref,
     Exercise exercise,
   ) async {
-    await showModalBottomSheet<void>(
+    final configure = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => SafeArea(
+      builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: SingleChildScrollView(
@@ -345,7 +345,7 @@ class _PlanExerciseTile extends ConsumerWidget {
               children: [
                 Text(
                   exercise.name,
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(sheetContext).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 12),
                 if (exercise.demoVideoAsset != null)
@@ -357,8 +357,7 @@ class _PlanExerciseTile extends ConsumerWidget {
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: () {
-                    Navigator.pop(context);
-                    _edit(context, ref);
+                    Navigator.pop(sheetContext, true);
                   },
                   icon: const Icon(Icons.tune),
                   label: const Text('Configurar exercício'),
@@ -369,6 +368,9 @@ class _PlanExerciseTile extends ConsumerWidget {
         ),
       ),
     );
+    if (configure == true && context.mounted) {
+      await _edit(context, ref);
+    }
   }
 
   Future<void> _edit(BuildContext context, WidgetRef ref) async {
