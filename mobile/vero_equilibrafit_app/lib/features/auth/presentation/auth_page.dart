@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'auth_providers.dart';
 
@@ -103,6 +104,11 @@ class _AuthPageState extends ConsumerState<AuthPage> {
           onPressed: _submit,
           child: Text(_register ? 'Criar conta' : 'Entrar'),
         ),
+        if (!_register)
+          TextButton(
+            onPressed: () => context.go('/forgot-password'),
+            child: const Text('Esqueci minha senha'),
+          ),
         TextButton(
           onPressed: () => setState(() => _register = !_register),
           child: Text(_register ? 'Já tenho uma conta' : 'Criar uma conta'),

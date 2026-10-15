@@ -112,6 +112,22 @@ class AuthRepository {
     return _authenticate('/api/v1/auth/refresh', {'refreshToken': refresh});
   }
 
+  Future<void> requestPasswordReset(String email) async {
+    await _postAccepted('/api/v1/auth/forgot-password', {
+      'email': email.trim(),
+    });
+  }
+
+  Future<void> resetPassword({
+    required String userId,
+    required String token,
+    required String password,
+  }) => _postAccepted('/api/v1/auth/reset-password', {
+    'userId': userId,
+    'token': token,
+    'newPassword': password,
+  });
+
   Future<void> logout() async {
     final session = await restore();
     if (session != null && _baseUrl.isNotEmpty) {
@@ -151,6 +167,20 @@ class AuthRepository {
     );
     await _store(session);
     return session;
+  }
+
+  Future<void> _postAccepted(String path, Map<String, Object?> body) async {
+    if (_baseUrl.isEmpty)
+      throw const AuthException(
+        'Defina API_BASE_URL para conectar sua conta ao ambiente isolado.',
+      );
+    final response = await _client.post(
+      _uri(path),
+      headers: _headers(),
+      body: jsonEncode(body),
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300)
+      throw AuthException(_message(response));
   }
 
   Uri _uri(String path) => Uri.parse('$_baseUrl$path');
