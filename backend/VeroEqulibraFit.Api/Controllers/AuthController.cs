@@ -14,7 +14,8 @@ namespace VeroEqulibraFit.Api.Controllers;
 public sealed class AuthController(
     UserManager<AppUser> userManager,
     VeroEqulibraFitDbContext database,
-    JwtTokenService tokenService) : ControllerBase
+    JwtTokenService tokenService,
+    IAccountEmailSender emailSender) : ControllerBase
 {
     private static readonly TimeSpan RefreshLifetime = TimeSpan.FromDays(30);
 
@@ -41,6 +42,41 @@ public sealed class AuthController(
         if (user is null || !await userManager.CheckPasswordAsync(user, request.Password))
             return Unauthorized(new ProblemDetails { Title = "Credenciais inválidas." });
         return Ok(await IssueTokens(user, cancellationToken));
+    }
+
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<AcceptedResult> ForgotPassword(ForgotPasswordRequest request, CancellationToken cancellationToken)
+    {
+        var email = request.Email?.Trim().ToLowerInvariant();
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            var user = await userManager.FindByEmailAsync(email);
+            if (user is not null)
+            {
+                var token = await userManager.GeneratePasswordResetTokenAsync(user);
+                var baseUrl = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+                var link = $"{baseUrl}/reset-password?userId={Uri.EscapeDataString(user.Id.ToString())}&token={Uri.EscapeDataString(token)}";
+                try { await emailSender.SendPasswordResetAsync(user.Email!, link, cancellationToken); }
+                catch (InvalidOperationException) { /* Avoid account enumeration; deployment health exposes missing configuration. */ }
+            }
+        }
+        return Accepted();
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+    {
+        if (!Guid.TryParse(request.UserId, out var userId) || string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.NewPassword))
+            return BadRequest(new ProblemDetails { Title = "Solicitação inválida." });
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null) return BadRequest(new ProblemDetails { Title = "Solicitação inválida ou expirada." });
+        var result = await userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
+        if (!result.Succeeded) return BadRequest(new ProblemDetails { Title = "Solicitação inválida ou expirada." });
+        var tokens = database.RefreshTokens.Where(token => token.UserId == user.Id && token.RevokedAt == null);
+        await tokens.ExecuteUpdateAsync(setters => setters.SetProperty(token => token.RevokedAt, DateTimeOffset.UtcNow));
+        return NoContent();
     }
 
     [HttpPost("refresh")]

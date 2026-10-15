@@ -20,6 +20,7 @@ if (!string.IsNullOrWhiteSpace(connectionString))
 else
     throw new InvalidOperationException("ConnectionStrings:Postgres must be configured for authentication and data isolation.");
 builder.Services.AddSingleton<JwtTokenService>();
+builder.Services.AddSingleton<IAccountEmailSender, SmtpAccountEmailSender>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     var tokenService = new JwtTokenService(builder.Configuration);
