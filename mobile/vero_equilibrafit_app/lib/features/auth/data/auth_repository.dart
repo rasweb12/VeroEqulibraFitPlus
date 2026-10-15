@@ -52,13 +52,42 @@ class AuthRepository {
         userId.isEmpty) {
       return null;
     }
-    return AuthSession(
+    final session = AuthSession(
       accessToken: access,
       refreshToken: refresh,
       email: email,
       userId: userId,
       displayName: await _storage.read(key: _displayNameKey),
     );
+    if (_isExpired(session.accessToken)) {
+      try {
+        return await refresh();
+      } on AuthException {
+        await _storage.deleteAll();
+        return null;
+      }
+    }
+    // A stored token never grants access by itself: validate it against the API.
+    if (_baseUrl.isEmpty) return null;
+    try {
+      final response = await _client.get(
+        _uri('/api/v1/auth/session'),
+        headers: _headers(session.accessToken),
+      );
+      if (response.statusCode == 200) return session;
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        final refreshed = await refresh();
+        final retry = await _client.get(
+          _uri('/api/v1/auth/session'),
+          headers: _headers(refreshed.accessToken),
+        );
+        if (retry.statusCode == 200) return refreshed;
+      }
+    } catch (_) {
+      // No encrypted, owner-scoped offline store exists yet; deny offline access.
+    }
+    await _storage.deleteAll();
+    return null;
   }
 
   Future<AuthSession> login(String email, String password) => _authenticate(
@@ -145,6 +174,26 @@ class AuthRepository {
     await _storage.write(key: _emailKey, value: session.email);
     await _storage.write(key: _userIdKey, value: session.userId);
     await _storage.write(key: _displayNameKey, value: session.displayName);
+  }
+
+  bool _isExpired(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return true;
+      final payload =
+          jsonDecode(
+                utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+              )
+              as Map<String, dynamic>;
+      final exp = payload['exp'] as num?;
+      return exp == null ||
+          DateTime.fromMillisecondsSinceEpoch(
+            exp.toInt() * 1000,
+            isUtc: true,
+          ).isBefore(DateTime.now().toUtc().add(const Duration(seconds: 30)));
+    } catch (_) {
+      return true;
+    }
   }
 }
 

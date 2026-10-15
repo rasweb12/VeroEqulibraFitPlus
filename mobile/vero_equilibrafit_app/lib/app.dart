@@ -11,64 +11,86 @@ import 'features/nutrition/presentation/nutrition_page.dart';
 import 'features/coach/presentation/coach_page.dart';
 import 'features/measurements/presentation/measurements_page.dart';
 import 'features/auth/presentation/auth_page.dart';
+import 'features/auth/presentation/auth_splash_page.dart';
+import 'features/auth/presentation/auth_providers.dart';
 
 class VeroEqulibraFitApp extends ConsumerWidget {
   const VeroEqulibraFitApp({super.key});
   @override
-  Widget build(BuildContext context, WidgetRef ref) => MaterialApp.router(
-    title: 'VeroEqulibraFit+',
-    theme: ThemeData(
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xff185b49),
-        brightness: Brightness.light,
-      ),
-      useMaterial3: true,
-    ),
-    darkTheme: ThemeData(
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xff67d7b0),
-        brightness: Brightness.dark,
-      ),
-      useMaterial3: true,
-    ),
-    routerConfig: GoRouter(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authSessionProvider);
+    final router = GoRouter(
+      initialLocation: '/splash',
+      redirect: (context, state) {
+        final atSplash = state.matchedLocation == '/splash';
+        final atAuth = state.matchedLocation == '/auth';
+        if (auth.isLoading) return atSplash ? null : '/splash';
+        final session = auth.valueOrNull;
+        if (session == null)
+          return atAuth
+              ? null
+              : '/auth?returnTo=${Uri.encodeComponent(state.uri.toString())}';
+        if (atSplash || atAuth)
+          return state.uri.queryParameters['returnTo'] ?? '/';
+        return null;
+      },
       routes: [
-        GoRoute(path: '/', builder: (context, state) => const DashboardPage()),
         GoRoute(
-          path: '/training',
-          builder: (context, state) => const PlansPage(),
-        ),
-        GoRoute(
-          path: '/training/:planId',
-          builder: (context, state) =>
-              TrainingPlanPage(planId: state.pathParameters['planId']!),
-        ),
-        GoRoute(
-          path: '/exercises',
-          builder: (context, state) => const ExerciseLibraryPage(),
-        ),
-        GoRoute(
-          path: '/training/:planId/exercises',
-          builder: (context, state) =>
-              ExerciseLibraryPage(planId: state.pathParameters['planId']),
-        ),
-        GoRoute(
-          path: '/habits',
-          builder: (context, state) => const HabitsPage(),
-        ),
-        GoRoute(
-          path: '/nutrition',
-          builder: (context, state) => const NutritionPage(),
-        ),
-        GoRoute(path: '/coach', builder: (context, state) => const CoachPage()),
-        GoRoute(
-          path: '/measurements',
-          builder: (context, state) => const MeasurementsPage(),
+          path: '/splash',
+          builder: (context, state) => const AuthSplashPage(),
         ),
         GoRoute(path: '/auth', builder: (context, state) => const AuthPage()),
+        ..._privateRoutes,
       ],
+    );
+    return MaterialApp.router(
+      title: 'VeroEqulibraFit+',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xff185b49),
+          brightness: Brightness.light,
+        ),
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xff67d7b0),
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+      ),
+      routerConfig: router,
+    );
+  }
+
+  static final _privateRoutes = <RouteBase>[
+    GoRoute(path: '/', builder: (context, state) => const DashboardPage()),
+    GoRoute(path: '/training', builder: (context, state) => const PlansPage()),
+    GoRoute(
+      path: '/training/:planId',
+      builder: (context, state) =>
+          TrainingPlanPage(planId: state.pathParameters['planId']!),
     ),
-  );
+    GoRoute(
+      path: '/exercises',
+      builder: (context, state) => const ExerciseLibraryPage(),
+    ),
+    GoRoute(
+      path: '/training/:planId/exercises',
+      builder: (context, state) =>
+          ExerciseLibraryPage(planId: state.pathParameters['planId']),
+    ),
+    GoRoute(path: '/habits', builder: (context, state) => const HabitsPage()),
+    GoRoute(
+      path: '/nutrition',
+      builder: (context, state) => const NutritionPage(),
+    ),
+    GoRoute(path: '/coach', builder: (context, state) => const CoachPage()),
+    GoRoute(
+      path: '/measurements',
+      builder: (context, state) => const MeasurementsPage(),
+    ),
+  ];
 }
 
 class PlansPage extends ConsumerWidget {
@@ -583,13 +605,20 @@ class ExerciseLibraryPage extends ConsumerWidget {
                   ),
                 if (exercise.instructions.isNotEmpty) ...[
                   const SizedBox(height: 18),
-                  Text('Como executar', style: Theme.of(sheetContext).textTheme.titleMedium),
+                  Text(
+                    'Como executar',
+                    style: Theme.of(sheetContext).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 6),
-                  for (final instruction in exercise.instructions) Text('• $instruction'),
+                  for (final instruction in exercise.instructions)
+                    Text('• $instruction'),
                 ],
                 if (exercise.safetyTips.isNotEmpty) ...[
                   const SizedBox(height: 14),
-                  Text('Cuidados', style: Theme.of(sheetContext).textTheme.titleMedium),
+                  Text(
+                    'Cuidados',
+                    style: Theme.of(sheetContext).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 6),
                   for (final tip in exercise.safetyTips) Text('• $tip'),
                 ],
