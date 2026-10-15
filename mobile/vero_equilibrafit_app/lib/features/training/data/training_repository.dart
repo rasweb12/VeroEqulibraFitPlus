@@ -2,17 +2,20 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/persistence/owner_scope.dart';
+
 import '../domain/exercise.dart';
 import '../domain/planned_exercise.dart';
 import '../domain/training_plan.dart';
 
 /// Local-first repository. Sync adapters can later enqueue the stable IDs.
 class TrainingRepository {
-  TrainingRepository({SharedPreferences? preferences})
-    : _preferences = preferences {
+  TrainingRepository({required String ownerId, SharedPreferences? preferences})
+    : _preferences = preferences,
+      _storageKey = ownerScopedKey(ownerId, 'training_repository_v2') {
     _restore();
   }
-  static const _storageKey = 'training_repository_v1';
+  final String _storageKey;
   final SharedPreferences? _preferences;
   final List<TrainingPlan> _plans = [];
   final List<Exercise> _customExercises = [];

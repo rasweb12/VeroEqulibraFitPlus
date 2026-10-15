@@ -2,13 +2,17 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/persistence/owner_scope.dart';
+
 import '../domain/meal_entry.dart';
 
 class NutritionRepository {
-  NutritionRepository({SharedPreferences? preferences}) : _preferences = preferences {
+  NutritionRepository({required String ownerId, SharedPreferences? preferences})
+    : _preferences = preferences,
+      _storageKey = ownerScopedKey(ownerId, 'nutrition_repository_v2') {
     _restore();
   }
-  static const _storageKey = 'nutrition_repository_v1';
+  final String _storageKey;
   final SharedPreferences? _preferences;
   final List<MealEntry> _entries = [];
 

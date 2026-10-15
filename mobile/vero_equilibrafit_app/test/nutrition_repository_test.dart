@@ -3,7 +3,7 @@ import 'package:vero_equilibrafit_app/features/nutrition/data/nutrition_reposito
 
 void main() {
   test('registra e exclui uma refeição', () {
-    final repository = NutritionRepository();
+    final repository = NutritionRepository(ownerId: 'test-user');
     repository.add(name: 'Arroz e feijão', mealType: 'Almoço', notes: '');
 
     final entry = repository.entries().single;

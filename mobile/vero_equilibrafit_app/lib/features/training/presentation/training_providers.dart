@@ -1,15 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/persistence/preferences_provider.dart';
+import '../../auth/presentation/current_owner_provider.dart';
 import '../data/training_repository.dart';
 import '../domain/exercise.dart';
 import '../domain/training_plan.dart';
 import '../domain/planned_exercise.dart';
 
-final trainingRepositoryProvider = Provider<TrainingRepository>(
-  (ref) => TrainingRepository(preferences: ref.read(sharedPreferencesProvider)),
+final trainingRepositoryProvider = Provider.autoDispose<TrainingRepository>(
+  (ref) => TrainingRepository(
+    ownerId: ref.watch(currentOwnerIdProvider),
+    preferences: ref.read(sharedPreferencesProvider),
+  ),
 );
 final plansProvider =
-    StateNotifierProvider<PlansController, List<TrainingPlan>>(
+    StateNotifierProvider.autoDispose<PlansController, List<TrainingPlan>>(
       (ref) => PlansController(ref.read(trainingRepositoryProvider)),
     );
 
@@ -62,7 +66,7 @@ class PlansController extends StateNotifier<List<TrainingPlan>> {
 
 final exerciseSearchProvider = StateProvider<String>((ref) => '');
 final catalogRevisionProvider = StateProvider<int>((ref) => 0);
-final exercisesProvider = Provider<List<Exercise>>((ref) {
+final exercisesProvider = Provider.autoDispose<List<Exercise>>((ref) {
   ref.watch(catalogRevisionProvider);
   return ref
       .read(trainingRepositoryProvider)

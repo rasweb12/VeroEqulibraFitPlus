@@ -17,3 +17,9 @@ Data: 2026-10-15. Status geral: **REPROVADO**.
 - Severidade: P0
 - Evidência: SharedPreferences globais em treinos, refeições, hábitos e medidas.
 - Estado: REPROVADO — correção de isolamento cifrado por conta ainda pendente. A política atual do AuthGate nega acesso offline até ela existir.
+
+## Reavaliação P0-003 — 2026-10-15
+- Correção: treino, refeições, medidas e hábitos agora usam chaves namespaceadas pelo `userId` autenticado. Chaves legadas sem proprietário não são lidas nem migradas automaticamente.
+- Contenção em memória: os providers privados dependem da sessão e usam `autoDispose`, descartando estado quando a conta muda ou sai da área privada.
+- Testes: `test/owner_isolation_test.dart` confirmou que treino e refeição da conta A não aparecem para a conta B; `flutter test` aprovou 8 testes.
+- Estado: **PARCIAL**. O armazenamento ainda é SharedPreferences sem cifra, e faltam outbox/sincronização Neon e ensaio em dispositivo real compartilhado.

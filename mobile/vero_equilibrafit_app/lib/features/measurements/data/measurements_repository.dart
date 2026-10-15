@@ -2,13 +2,17 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/persistence/owner_scope.dart';
+
 import '../domain/body_measurement.dart';
 
 class MeasurementsRepository {
-  MeasurementsRepository({SharedPreferences? preferences}) : _preferences = preferences {
+  MeasurementsRepository({required String ownerId, SharedPreferences? preferences})
+    : _preferences = preferences,
+      _storageKey = ownerScopedKey(ownerId, 'body_measurements_v2') {
     _restore();
   }
-  static const _storageKey = 'body_measurements_v1';
+  final String _storageKey;
   final SharedPreferences? _preferences;
   final List<BodyMeasurement> _items = [];
 

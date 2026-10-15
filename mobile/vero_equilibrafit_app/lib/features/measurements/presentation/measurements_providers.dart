@@ -1,14 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/persistence/preferences_provider.dart';
+import '../../auth/presentation/current_owner_provider.dart';
 import '../data/measurements_repository.dart';
 import '../domain/body_measurement.dart';
 
-final measurementsRepositoryProvider = Provider<MeasurementsRepository>(
-  (ref) => MeasurementsRepository(preferences: ref.read(sharedPreferencesProvider)),
+final measurementsRepositoryProvider = Provider.autoDispose<MeasurementsRepository>(
+  (ref) => MeasurementsRepository(
+    ownerId: ref.watch(currentOwnerIdProvider),
+    preferences: ref.read(sharedPreferencesProvider),
+  ),
 );
 
-final measurementsProvider = StateNotifierProvider<MeasurementsController, List<BodyMeasurement>>(
+final measurementsProvider = StateNotifierProvider.autoDispose<MeasurementsController, List<BodyMeasurement>>(
   (ref) => MeasurementsController(ref.read(measurementsRepositoryProvider)),
 );
 

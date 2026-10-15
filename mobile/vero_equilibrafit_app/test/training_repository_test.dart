@@ -3,7 +3,7 @@ import 'package:vero_equilibrafit_app/features/training/data/training_repository
 
 void main() {
   test('adiciona e remove exercício sem apagar a ficha', () {
-    final repository = TrainingRepository();
+    final repository = TrainingRepository(ownerId: 'test-user');
     final plan = repository.createPlan(name: 'Treino A', objective: 'Força');
 
     repository.addExerciseToPlan(plan.id, 'squat');
@@ -14,7 +14,7 @@ void main() {
   });
 
   test('não duplica exercício adicionado duas vezes', () {
-    final repository = TrainingRepository();
+    final repository = TrainingRepository(ownerId: 'test-user');
     final plan = repository.createPlan(name: 'Treino A', objective: 'Força');
 
     repository.addExerciseToPlan(plan.id, 'squat');

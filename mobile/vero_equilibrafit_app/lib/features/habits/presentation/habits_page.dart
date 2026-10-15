@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/persistence/owner_scope.dart';
 import '../../../core/persistence/preferences_provider.dart';
+import '../../auth/presentation/current_owner_provider.dart';
 import '../../../shared/presentation/app_drawer.dart';
 
 @immutable
@@ -16,12 +18,20 @@ class HabitsState {
 }
 
 class HabitsNotifier extends StateNotifier<HabitsState> {
-  HabitsNotifier(this._preferences)
-    : super(HabitsState(
-        waterMl: _preferences?.getInt('habits_water_ml_v1') ?? 0,
-        mobilityDone: _preferences?.getBool('habits_mobility_v1') ?? false,
+  HabitsNotifier(this._preferences, {required String ownerId})
+    : _waterKey = ownerScopedKey(ownerId, 'habits_water_ml_v2'),
+      _mobilityKey = ownerScopedKey(ownerId, 'habits_mobility_v2'),
+      super(HabitsState(
+        waterMl: _preferences
+                ?.getInt(ownerScopedKey(ownerId, 'habits_water_ml_v2')) ??
+            0,
+        mobilityDone: _preferences
+                ?.getBool(ownerScopedKey(ownerId, 'habits_mobility_v2')) ??
+            false,
       ));
   final SharedPreferences? _preferences;
+  final String _waterKey;
+  final String _mobilityKey;
 
   void addWater() {
     state = state.copyWith(waterMl: state.waterMl + 250);
@@ -34,13 +44,16 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
   }
 
   void _save() {
-    _preferences?.setInt('habits_water_ml_v1', state.waterMl);
-    _preferences?.setBool('habits_mobility_v1', state.mobilityDone);
+    _preferences?.setInt(_waterKey, state.waterMl);
+    _preferences?.setBool(_mobilityKey, state.mobilityDone);
   }
 }
 
-final habitsProvider = StateNotifierProvider<HabitsNotifier, HabitsState>(
-  (ref) => HabitsNotifier(ref.read(sharedPreferencesProvider)),
+final habitsProvider = StateNotifierProvider.autoDispose<HabitsNotifier, HabitsState>(
+  (ref) => HabitsNotifier(
+    ref.read(sharedPreferencesProvider),
+    ownerId: ref.watch(currentOwnerIdProvider),
+  ),
 );
 
 class HabitsPage extends ConsumerWidget {

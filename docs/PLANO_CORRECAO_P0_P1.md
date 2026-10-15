@@ -5,3 +5,5 @@
 3. P2: painel Blazor, notificações, assinaturas, regressão e homologação.
 
 Credenciais Neon, e-mail transacional e Gemini isoladas são bloqueios externos; não serão simuladas como homologação.
+
+Atualização 2026-10-15: o namespace por usuário foi implementado e testado localmente. A cifra, outbox e homologação em dispositivo compartilhado permanecem itens P0 pendentes.

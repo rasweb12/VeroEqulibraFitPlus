@@ -39,22 +39,22 @@ class AuthRepository {
 
   Future<AuthSession?> restore() async {
     final access = await _storage.read(key: _accessKey);
-    final refresh = await _storage.read(key: _refreshKey);
+    final refreshToken = await _storage.read(key: _refreshKey);
     final email = await _storage.read(key: _emailKey);
     final userId = await _storage.read(key: _userIdKey);
     if (access == null ||
-        refresh == null ||
+        refreshToken == null ||
         email == null ||
         userId == null ||
         access.isEmpty ||
-        refresh.isEmpty ||
+        refreshToken.isEmpty ||
         email.isEmpty ||
         userId.isEmpty) {
       return null;
     }
     final session = AuthSession(
       accessToken: access,
-      refreshToken: refresh,
+      refreshToken: refreshToken,
       email: email,
       userId: userId,
       displayName: await _storage.read(key: _displayNameKey),
