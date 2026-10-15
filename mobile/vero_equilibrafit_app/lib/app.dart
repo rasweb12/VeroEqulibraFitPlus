@@ -505,7 +505,7 @@ class ExerciseLibraryPage extends ConsumerWidget {
                         : Icons.add_circle_outline,
                   ),
                   onTap: planId == null
-                      ? null
+                      ? () => _showExerciseDetails(context, exercise)
                       : () {
                           ref
                               .read(plansProvider.notifier)
@@ -524,6 +524,42 @@ class ExerciseLibraryPage extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _showExerciseDetails(
+    BuildContext context,
+    Exercise exercise,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  exercise.name,
+                  style: Theme.of(sheetContext).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text('${exercise.primaryMuscle} · ${exercise.equipment}'),
+                const SizedBox(height: 16),
+                if (exercise.demoVideoAsset != null)
+                  ExerciseDemoPlayer(assetPath: exercise.demoVideoAsset!)
+                else
+                  const Text(
+                    'Ainda não há uma demonstração autorizada associada a este exercício.',
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -18,8 +18,15 @@ class AppDrawer extends StatelessWidget {
       _item(context, Icons.fitness_center, 'Treinos', '/training'),
       _item(context, Icons.restaurant_outlined, 'Alimentação', '/nutrition'),
       _item(context, Icons.water_drop_outlined, 'Hábitos', '/habits'),
-      _item(context, Icons.monitor_weight_outlined, 'Evolução', '/measurements'),
+      _item(
+        context,
+        Icons.monitor_weight_outlined,
+        'Evolução',
+        '/measurements',
+      ),
       _item(context, Icons.auto_awesome_outlined, 'Coach', '/coach'),
+      const Divider(),
+      _item(context, Icons.account_circle_outlined, 'Conta e perfil', '/auth'),
     ],
   );
 
