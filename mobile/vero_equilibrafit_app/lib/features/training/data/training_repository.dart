@@ -23,6 +23,12 @@ class TrainingRepository {
       primaryMuscle: 'Peito',
       equipment: 'Halteres',
       demoVideoAsset: 'assets/videos/Supino Inclinado com Halteres.mp4',
+      instructions: [
+        'Ajuste o banco inclinado.',
+        'Desça os halteres com controle.',
+        'Empurre mantendo os pés apoiados.',
+      ],
+      safetyTips: ['Use uma carga que permita movimento estável.'],
     ),
     Exercise(
       id: 'squat',
@@ -31,6 +37,12 @@ class TrainingRepository {
       equipment: 'Barra',
       aliases: ['Agachamento livre'],
       demoVideoAsset: 'assets/videos/Agachamento com barra.mp4',
+      instructions: [
+        'Posicione a barra com conforto.',
+        'Desça mantendo o tronco organizado.',
+        'Suba distribuindo a força pelos pés.',
+      ],
+      safetyTips: ['Use travas e apoio quando necessário.'],
     ),
     Exercise(
       id: 'leg-press',
@@ -38,6 +50,11 @@ class TrainingRepository {
       primaryMuscle: 'Pernas',
       equipment: 'Máquina',
       demoVideoAsset: 'assets/videos/Leg press na máquina.mp4',
+      instructions: [
+        'Ajuste o banco.',
+        'Desça de forma controlada.',
+        'Empurre sem travar os joelhos.',
+      ],
     ),
     Exercise(
       id: 'lat-pulldown',
@@ -45,6 +62,11 @@ class TrainingRepository {
       primaryMuscle: 'Costas',
       equipment: 'Máquina',
       demoVideoAsset: 'assets/videos/Puxada com cabo.mp4',
+      instructions: [
+        'Mantenha o peito confortável.',
+        'Puxe em direção à parte alta do peito.',
+        'Retorne com controle.',
+      ],
     ),
     Exercise(
       id: 'biceps-curl',
@@ -52,6 +74,11 @@ class TrainingRepository {
       primaryMuscle: 'Bíceps',
       equipment: 'Barra',
       demoVideoAsset: 'assets/videos/Rosca Direta.mp4',
+      instructions: [
+        'Mantenha os cotovelos próximos ao corpo.',
+        'Eleve sem balanço.',
+        'Desça devagar.',
+      ],
     ),
   ];
   List<TrainingPlan> activePlans() =>
@@ -103,12 +130,17 @@ class TrainingRepository {
     return copy;
   }
 
-  TrainingPlan createPlan({required String name, required String objective}) {
+  TrainingPlan createPlan({
+    required String name,
+    required String objective,
+    List<int> weekdays = const [],
+  }) {
     final plan = TrainingPlan(
       id: 'plan-${DateTime.now().microsecondsSinceEpoch}',
       name: name.trim(),
       objective: objective.trim(),
       exercises: const [],
+      weekdays: weekdays,
     );
     _plans.add(plan);
     _save();
@@ -223,6 +255,9 @@ class TrainingRepository {
                   );
                 })
                 .toList(growable: false),
+            weekdays: List<int>.from(
+              plan['weekdays'] as List<dynamic>? ?? const [],
+            ),
             deletedAt: plan['deletedAt'] == null
                 ? null
                 : DateTime.tryParse(plan['deletedAt'] as String),
@@ -258,6 +293,7 @@ class TrainingRepository {
               'id': plan.id,
               'name': plan.name,
               'objective': plan.objective,
+              'weekdays': plan.weekdays,
               'exercises': plan.exercises
                   .map(
                     (exercise) => {

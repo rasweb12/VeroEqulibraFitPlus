@@ -15,7 +15,13 @@ class PlannedExercise {
   final int restSeconds;
   final String notes;
 
-  PlannedExercise copyWith({int? sets, String? repetitions, double? targetLoadKg, int? restSeconds, String? notes}) => PlannedExercise(
+  PlannedExercise copyWith({
+    int? sets,
+    String? repetitions,
+    double? targetLoadKg,
+    int? restSeconds,
+    String? notes,
+  }) => PlannedExercise(
     exerciseId: exerciseId,
     sets: sets ?? this.sets,
     repetitions: repetitions ?? this.repetitions,

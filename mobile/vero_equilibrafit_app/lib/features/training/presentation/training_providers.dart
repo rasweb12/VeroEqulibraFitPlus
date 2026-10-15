@@ -31,8 +31,16 @@ class PlansController extends StateNotifier<List<TrainingPlan>> {
     state = _repository.activePlans();
   }
 
-  void create({required String name, required String objective}) {
-    _repository.createPlan(name: name, objective: objective);
+  void create({
+    required String name,
+    required String objective,
+    List<int> weekdays = const [],
+  }) {
+    _repository.createPlan(
+      name: name,
+      objective: objective,
+      weekdays: weekdays,
+    );
     state = _repository.activePlans();
   }
 

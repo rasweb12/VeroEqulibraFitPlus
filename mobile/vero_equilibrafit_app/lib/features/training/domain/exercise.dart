@@ -7,6 +7,8 @@ class Exercise {
     this.aliases = const [],
     this.isCustom = false,
     this.demoVideoAsset,
+    this.instructions = const [],
+    this.safetyTips = const [],
   });
   final String id;
   final String name;
@@ -17,4 +19,6 @@ class Exercise {
 
   /// Local media is shown only when its exercise mapping was manually verified.
   final String? demoVideoAsset;
+  final List<String> instructions;
+  final List<String> safetyTips;
 }

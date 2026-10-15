@@ -130,7 +130,7 @@ class PlansPage extends ConsumerWidget {
                       child: ListTile(
                         title: Text(plan.name),
                         subtitle: Text(
-                          '${plan.objective} · ${plan.exercises.length} exercícios',
+                          '${plan.objective} · ${plan.exercises.length} exercícios${plan.weekdays.isEmpty ? '' : ' · ${plan.weekdays.map(_weekdayLabel).join(', ')}'}',
                         ),
                         onTap: () => context.go('/training/${plan.id}'),
                         trailing: PopupMenuButton<String>(
@@ -205,33 +205,54 @@ class PlansPage extends ConsumerWidget {
   Future<void> _createPlan(BuildContext context, WidgetRef ref) async {
     final name = TextEditingController();
     final objective = TextEditingController();
+    final weekdays = <int>{};
     final create = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Nova ficha de treino'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: name,
-              decoration: const InputDecoration(labelText: 'Nome'),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Nova ficha de treino'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: name,
+                decoration: const InputDecoration(labelText: 'Nome'),
+              ),
+              TextField(
+                controller: objective,
+                decoration: const InputDecoration(labelText: 'Objetivo'),
+              ),
+              const SizedBox(height: 12),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Dias da semana (opcional)'),
+              ),
+              Wrap(
+                spacing: 6,
+                children: List.generate(
+                  7,
+                  (day) => FilterChip(
+                    label: Text(_weekdayLabel(day)),
+                    selected: weekdays.contains(day),
+                    onSelected: (selected) => setState(
+                      () => selected ? weekdays.add(day) : weekdays.remove(day),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancelar'),
             ),
-            TextField(
-              controller: objective,
-              decoration: const InputDecoration(labelText: 'Objetivo'),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Criar'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Criar'),
-          ),
-        ],
       ),
     );
     if (create == true && name.text.trim().isNotEmpty && context.mounted) {
@@ -242,11 +263,15 @@ class PlansPage extends ConsumerWidget {
             objective: objective.text.trim().isEmpty
                 ? 'Objetivo a definir'
                 : objective.text,
+            weekdays: weekdays.toList()..sort(),
           );
     }
     name.dispose();
     objective.dispose();
   }
+
+  static String _weekdayLabel(int day) =>
+      const ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'][day];
 }
 
 class TrainingPlanPage extends ConsumerWidget {
@@ -556,6 +581,18 @@ class ExerciseLibraryPage extends ConsumerWidget {
                   const Text(
                     'Ainda não há uma demonstração autorizada associada a este exercício.',
                   ),
+                if (exercise.instructions.isNotEmpty) ...[
+                  const SizedBox(height: 18),
+                  Text('Como executar', style: Theme.of(sheetContext).textTheme.titleMedium),
+                  const SizedBox(height: 6),
+                  for (final instruction in exercise.instructions) Text('• $instruction'),
+                ],
+                if (exercise.safetyTips.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  Text('Cuidados', style: Theme.of(sheetContext).textTheme.titleMedium),
+                  const SizedBox(height: 6),
+                  for (final tip in exercise.safetyTips) Text('• $tip'),
+                ],
               ],
             ),
           ),
