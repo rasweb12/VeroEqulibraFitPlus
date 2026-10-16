@@ -15,6 +15,8 @@ class DashboardPage extends ConsumerWidget {
     final plans = ref.watch(plansProvider);
     final meals = ref.watch(mealsProvider);
     final measurements = ref.watch(measurementsProvider);
+    final calories = meals.fold<double>(0, (sum, meal) => sum + (meal.estimatedCalories ?? 0));
+    final latestWeight = measurements.isEmpty ? null : measurements.first.weightKg;
     return Scaffold(
       appBar: AppBar(title: const Text('VeroEqulibraFit+')),
       drawer: const AppDrawer(),
@@ -44,8 +46,8 @@ class DashboardPage extends ConsumerWidget {
             meals.isEmpty
                 ? 'Nenhuma refeição registrada.'
                 : meals.length == 1
-                    ? '1 refeição registrada.'
-                    : '${meals.length} refeições registradas.',
+                    ? '1 refeição registrada${calories == 0 ? '.' : ' · ≈ ${calories.round()} kcal.'}'
+                    : '${meals.length} refeições registradas${calories == 0 ? '.' : ' · ≈ ${calories.round()} kcal.'}',
             '/nutrition',
           ),
           _section(
@@ -54,7 +56,7 @@ class DashboardPage extends ConsumerWidget {
             'Evolução corporal',
             measurements.isEmpty
                 ? 'Sem medidas registradas.'
-                : '${measurements.length} registro${measurements.length == 1 ? '' : 's'} de evolução.',
+                : '${measurements.length} registro${measurements.length == 1 ? '' : 's'} de evolução${latestWeight == null ? '.' : ' · ${latestWeight.toStringAsFixed(1)} kg.'}',
             '/measurements',
           ),
           _section(
