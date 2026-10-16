@@ -55,9 +55,23 @@ def create_app() -> FastAPI:
         logging.getLogger("requests").info("request.completed path=%s status=%s duration_ms=%s", request.url.path, response.status_code, round((perf_counter() - started) * 1000, 2))
         return response
 
+    def health_payload() -> dict[str, str]:
+        return {"status": "healthy", "service": "vero-equilibrafit-ai", "revision": revision, "provider": "gemini", "model": settings.gemini_model}
+
     @app.get("/health", tags=["system"])
     async def health() -> dict[str, str]:
-        return {"status": "healthy", "service": "vero-equilibrafit-ai", "revision": revision, "provider": "gemini", "model": settings.gemini_model}
+        """Compatibility endpoint for existing Render configuration."""
+        return health_payload()
+
+    @app.get("/health/live", tags=["system"])
+    async def liveness() -> dict[str, str]:
+        """Reports only that the FastAPI process is running."""
+        return health_payload()
+
+    @app.get("/health/ready", tags=["system"])
+    async def readiness() -> dict[str, str]:
+        """Reports startup configuration readiness, not a live Gemini request."""
+        return health_payload()
 
     app.include_router(api_router)
     return app
