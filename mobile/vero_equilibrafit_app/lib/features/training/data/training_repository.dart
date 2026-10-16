@@ -83,6 +83,11 @@ class TrainingRepository {
         'Desça devagar.',
       ],
     ),
+    Exercise(id: 'deadlift', name: 'Levantamento terra', primaryMuscle: 'Posterior de coxa', equipment: 'Barra', aliases: ['Terra'], instructions: ['Aproxime a barra do corpo.', 'Mantenha a coluna estável.', 'Suba com controle.']),
+    Exercise(id: 'shoulder-press', name: 'Desenvolvimento com halteres', primaryMuscle: 'Ombros', equipment: 'Halteres', aliases: ['Shoulder press']),
+    Exercise(id: 'triceps-pushdown', name: 'Tríceps na polia', primaryMuscle: 'Tríceps', equipment: 'Cabo', aliases: ['Triceps pulley']),
+    Exercise(id: 'seated-row', name: 'Remada baixa', primaryMuscle: 'Costas', equipment: 'Cabo', aliases: ['Remada sentada']),
+    Exercise(id: 'calf-raise', name: 'Elevação de panturrilha', primaryMuscle: 'Panturrilhas', equipment: 'Máquina', aliases: ['Panturrilha em pé']),
   ];
   List<TrainingPlan> activePlans() =>
       _plans.where((plan) => !plan.isDeleted).toList(growable: false);

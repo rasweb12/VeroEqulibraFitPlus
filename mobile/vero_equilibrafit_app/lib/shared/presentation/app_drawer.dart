@@ -26,7 +26,7 @@ class AppDrawer extends StatelessWidget {
       ),
       _item(context, Icons.auto_awesome_outlined, 'Coach', '/coach'),
       const Divider(),
-      _item(context, Icons.account_circle_outlined, 'Conta e perfil', '/auth'),
+      _item(context, Icons.account_circle_outlined, 'Conta e perfil', '/profile'),
     ],
   );
 
