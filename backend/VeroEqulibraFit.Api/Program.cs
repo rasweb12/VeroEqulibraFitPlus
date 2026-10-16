@@ -7,12 +7,14 @@ using VeroEqulibraFit.Api.Services;
 using System.Threading.RateLimiting;
 using System.Net;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.DataProtection;
+using VeroEqulibraFit.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 JwtTokenService.ValidateConfiguration(builder.Configuration);
 builder.Services.AddSingleton<ExerciseSearchService>();
 builder.Services.AddControllers();
-builder.Services.AddHealthChecks();
 builder.Services.AddHttpClient<GeminiAiClient>(client =>
 {
     var baseUrl = builder.Configuration["AI:BaseUrl"];
@@ -29,6 +31,11 @@ if (!string.IsNullOrWhiteSpace(connectionString))
     builder.Services.AddVeroEqulibraFitInfrastructure(connectionString);
 else
     throw new InvalidOperationException("ConnectionStrings:Postgres must be configured for authentication and data isolation.");
+builder.Services.AddDataProtection()
+    .PersistKeysToDbContext<VeroEqulibraFitDbContext>()
+    .SetApplicationName("VeroEqulibraFitPlus");
+builder.Services.AddHealthChecks()
+    .AddCheck<PostgresHealthCheck>("postgres", tags: ["ready"]);
 builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddSingleton<IAccountEmailSender, SmtpAccountEmailSender>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
@@ -77,8 +84,10 @@ app.UseForwardedHeaders(forwardedHeaders);
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapHealthChecks("/health/live");
-app.MapHealthChecks("/health/ready");
+// Liveness proves only that the process is running. Readiness also checks the
+// isolated PostgreSQL dependency; neither endpoint proves user flows work.
+app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
+app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
 app.MapControllers();
 app.Run();
 

@@ -1,12 +1,14 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using VeroEqulibraFit.Domain.Training;
 using VeroEqulibraFit.Domain.Nutrition;
 
 namespace VeroEqulibraFit.Infrastructure.Data;
 
-public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbContext> options) : IdentityDbContext<AppUser, AppRole, Guid>(options)
+public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbContext> options) : IdentityDbContext<AppUser, AppRole, Guid>(options), IDataProtectionKeyContext
 {
+    public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
     public DbSet<TrainingPlan> TrainingPlans => Set<TrainingPlan>();
     public DbSet<TrainingPlanExercise> TrainingPlanExercises => Set<TrainingPlanExercise>();
     public DbSet<TrainingSession> TrainingSessions => Set<TrainingSession>();
@@ -18,6 +20,7 @@ public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbC
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<DataProtectionKey>().ToTable("data_protection_keys");
         modelBuilder.Entity<AppUser>(entity =>
         {
             entity.ToTable("users");

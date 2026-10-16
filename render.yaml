@@ -13,8 +13,6 @@ services:
         value: Production
       - key: PORT
         value: "8080"
-      - key: ConnectionStrings__Postgres
-        sync: false
       - key: Database__ConnectionString
         sync: false
       - key: Jwt__Issuer
@@ -24,6 +22,18 @@ services:
       - key: PublicApp__BaseUrl
         sync: false
       - key: ReverseProxy__KnownProxy
+        sync: false
+      - key: Email__SmtpHost
+        sync: false
+      - key: Email__SmtpPort
+        value: "587"
+      - key: Email__UseSsl
+        value: "true"
+      - key: Email__From
+        sync: false
+      - key: Email__Username
+        sync: false
+      - key: Email__Password
         sync: false
       - key: AI__BaseUrl
         fromService:

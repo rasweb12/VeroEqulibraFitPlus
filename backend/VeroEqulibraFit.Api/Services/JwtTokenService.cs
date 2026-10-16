@@ -51,8 +51,10 @@ public sealed class JwtTokenService(IConfiguration configuration)
     private static byte[] ReadKey(IConfiguration configuration)
     {
         var key = configuration["Jwt:SigningKey"];
-        if (string.IsNullOrWhiteSpace(key) || Encoding.UTF8.GetByteCount(key) < 32)
-            throw new InvalidOperationException("Jwt:SigningKey must have at least 32 bytes and must be supplied through the environment.");
+        // HS512 requires a 512-bit symmetric key. Fail at startup instead of
+        // accepting a key that will break only when the first token is issued.
+        if (string.IsNullOrWhiteSpace(key) || Encoding.UTF8.GetByteCount(key) < 64)
+            throw new InvalidOperationException("Jwt:SigningKey must have at least 64 bytes for HS512 and must be supplied through the environment.");
         return Encoding.UTF8.GetBytes(key);
     }
 }

@@ -18,7 +18,7 @@ Os refresh tokens são persistidos somente como SHA-256. O Flutter usa o armazen
 ```text
 ConnectionStrings__Postgres=<conexão Neon isolada>
 Jwt__Issuer=vero-equilibrafit-api
-Jwt__SigningKey=<segredo único de no mínimo 32 bytes>
+Jwt__SigningKey=<segredo único de no mínimo 64 bytes>
 ```
 
 Há uma migration local versionada, `AddIsolatedIdentityAuth`. Ela **não foi aplicada** a Neon, Render ou a qualquer ambiente externo.
@@ -29,6 +29,8 @@ Confirmação de e-mail e recuperação de senha exigem a configuração de um p
 
 ## Render — JWT e health check
 
-Variáveis obrigatórias da API em produção: `ConnectionStrings__Postgres` (ou `Database__ConnectionString`), `Jwt__Issuer`, `Jwt__SigningKey` (mínimo 32 bytes), `AI__BaseUrl` e `AI__InternalApiKey`. O processo falha antes de abrir rotas se emissor ou chave JWT estiverem ausentes/inválidos.
+Variáveis obrigatórias da API em produção: `Database__ConnectionString` (ou `ConnectionStrings__Postgres` por compatibilidade), `Jwt__Issuer`, `Jwt__SigningKey` (mínimo 64 bytes para HS512), `AI__BaseUrl` e `AI__InternalApiKey`. O processo falha antes de abrir rotas se emissor ou chave JWT estiverem ausentes/inválidos.
 
-`/health/live` é apenas liveness técnico para o Render; não comprova banco, e-mail, Gemini, login ou homologação funcional. A API não confia em `X-Forwarded-*` sem um `ReverseProxy__KnownProxy` IP explícito. O TLS termina no Render; links públicos devem usar `PublicApp__BaseUrl`.
+`/health/live` é apenas liveness técnico para o Render. `/health/ready` verifica somente se o PostgreSQL aceita conexão. Nenhum deles comprova migrations, e-mail, Gemini, login ou homologação funcional. A API não confia em `X-Forwarded-*` sem um `ReverseProxy__KnownProxy` IP explícito. O TLS termina no Render; links públicos devem usar `PublicApp__BaseUrl`.
+
+As chaves do ASP.NET Data Protection são persistidas na tabela `data_protection_keys` do PostgreSQL isolado. A migration `AddDataProtectionKeys` foi apenas gerada localmente e não foi aplicada remotamente. O usuário do banco deve ter acesso exclusivo ao banco/namespace do produto; a chave JWT e os segredos SMTP não são registrados em logs.

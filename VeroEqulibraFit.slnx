@@ -9,4 +9,7 @@
     <Project Path="backend/VeroEqulibraFit.Domain/VeroEqulibraFit.Domain.csproj" />
     <Project Path="backend/VeroEqulibraFit.Infrastructure/VeroEqulibraFit.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VeroEqulibraFit.Api.Tests/VeroEqulibraFit.Api.Tests.csproj" />
+  </Folder>
 </Solution>
