@@ -89,8 +89,7 @@ public sealed class AuthController(
             if (user is not null)
             {
                 var token = await userManager.GeneratePasswordResetTokenAsync(user);
-                var baseUrl = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
-                var link = $"{baseUrl}/reset-password?userId={Uri.EscapeDataString(user.Id.ToString())}&token={Uri.EscapeDataString(token)}";
+                var link = BuildPublicLink("reset-password", user.Id, token);
                 try { await emailSender.SendPasswordResetAsync(user.Email!, link, cancellationToken); }
                 catch (InvalidOperationException) { /* Avoid account enumeration; deployment health exposes missing configuration. */ }
             }

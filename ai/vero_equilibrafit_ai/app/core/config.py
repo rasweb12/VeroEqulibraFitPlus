@@ -44,8 +44,11 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_security(self) -> Settings:
-        if self.environment.casefold() == "production" and not self.internal_api_key:
-            raise ValueError("VERO_EQUILIBRAFIT_INTERNAL_API_KEY is required in Production.")
+        if self.environment.casefold() == "production":
+            if not self.internal_api_key:
+                raise ValueError("VERO_EQUILIBRAFIT_INTERNAL_API_KEY is required in Production.")
+            if not self.gemini_api_key:
+                raise ValueError("VERO_EQUILIBRAFIT_GEMINI_API_KEY is required in Production.")
         return self
 
     @property
