@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using VeroEqulibraFit.Contracts.Ai;
+using VeroEqulibraFit.Contracts.Nutrition;
 
 namespace VeroEqulibraFit.Api.Services;
 
@@ -19,6 +20,30 @@ public sealed class GeminiAiClient(HttpClient httpClient, IConfiguration configu
     {
         var response = await SendAsync("/api/v1/exercises/suggest", new { query = request.Query, known_catalog_names = Array.Empty<string>() }, cancellationToken);
         return new ExerciseAiSuggestionResponse(response.Status ?? "needs_clarification", null, response.Name, response.Aliases ?? [], response.PrimaryMuscle, response.SecondaryMuscles ?? [], response.Equipment, response.Difficulty, response.Instructions ?? [], response.CommonErrors ?? [], response.SafetyTips ?? [], response.Alternatives ?? [], response.RequiresUserConfirmation);
+    }
+
+    public async Task<AnalyzeMealPhotoResponse> AnalyzeMealPhotoAsync(AnalyzeMealPhotoRequest request, CancellationToken cancellationToken)
+    {
+        var response = await SendAsync("/api/v1/meals/recognize", new
+        {
+            image_base64 = request.ImageBase64,
+            meal_context = request.MealContext,
+        }, cancellationToken);
+        return new AnalyzeMealPhotoResponse(
+            response.Confidence ?? 0,
+            (response.Items ?? []).Select(item => new RecognizedMealItemResponse(
+                item.Name ?? "Alimento não identificado",
+                item.Portion ?? 0,
+                item.Unit ?? "porção",
+                item.Calories ?? 0,
+                item.ProteinGrams ?? 0,
+                item.CarbohydrateGrams ?? 0,
+                item.FatGrams ?? 0,
+                item.Confidence ?? 0)).ToList(),
+            true,
+            response.Model ?? "gemini",
+            response.FallbackUsed,
+            response.Message ?? "Revise os alimentos e porções antes de salvar.");
     }
 
     private async Task<GatewayResponse> SendAsync(string path, object payload, CancellationToken cancellationToken)
@@ -51,5 +76,19 @@ public sealed class GeminiAiClient(HttpClient httpClient, IConfiguration configu
         [property: JsonPropertyName("common_errors")] IReadOnlyList<string>? CommonErrors = null,
         [property: JsonPropertyName("safety_tips")] IReadOnlyList<string>? SafetyTips = null,
         [property: JsonPropertyName("alternatives")] IReadOnlyList<string>? Alternatives = null,
-        [property: JsonPropertyName("requires_user_confirmation")] bool RequiresUserConfirmation = true);
+        [property: JsonPropertyName("requires_user_confirmation")] bool RequiresUserConfirmation = true,
+        [property: JsonPropertyName("confidence")] decimal? Confidence = null,
+        [property: JsonPropertyName("items")] IReadOnlyList<MealGatewayItem>? Items = null,
+        [property: JsonPropertyName("requires_user_review")] bool RequiresUserReview = true,
+        [property: JsonPropertyName("message")] string? Message = null);
+
+    private sealed record MealGatewayItem(
+        [property: JsonPropertyName("name")] string? Name = null,
+        [property: JsonPropertyName("portion")] decimal? Portion = null,
+        [property: JsonPropertyName("unit")] string? Unit = null,
+        [property: JsonPropertyName("calories")] decimal? Calories = null,
+        [property: JsonPropertyName("protein_g")] decimal? ProteinGrams = null,
+        [property: JsonPropertyName("carbs_g")] decimal? CarbohydrateGrams = null,
+        [property: JsonPropertyName("fat_g")] decimal? FatGrams = null,
+        [property: JsonPropertyName("confidence")] decimal? Confidence = null);
 }

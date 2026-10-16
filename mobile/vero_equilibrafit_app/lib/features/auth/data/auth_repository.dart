@@ -30,7 +30,7 @@ class AuthRepository {
   static const _emailKey = 'auth_email';
   static const _userIdKey = 'auth_user_id';
   static const _displayNameKey = 'auth_display_name';
-  static const _baseUrl = String.fromEnvironment(
+  static const apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: '',
   );
@@ -68,7 +68,7 @@ class AuthRepository {
       }
     }
     // A stored token never grants access by itself: validate it against the API.
-    if (_baseUrl.isEmpty) return null;
+    if (apiBaseUrl.isEmpty) return null;
     try {
       final response = await _client.get(
         _uri('/api/v1/auth/session'),
@@ -139,7 +139,7 @@ class AuthRepository {
 
   Future<void> logout() async {
     final session = await restore();
-    if (session != null && _baseUrl.isNotEmpty) {
+    if (session != null && apiBaseUrl.isNotEmpty) {
       await _client.post(
         _uri('/api/v1/auth/logout'),
         headers: _headers(session.accessToken),
@@ -153,7 +153,7 @@ class AuthRepository {
     String path,
     Map<String, Object?> body,
   ) async {
-    if (_baseUrl.isEmpty) {
+    if (apiBaseUrl.isEmpty) {
       throw const AuthException(
         'Defina API_BASE_URL para conectar sua conta ao ambiente isolado.',
       );
@@ -179,7 +179,7 @@ class AuthRepository {
   }
 
   Future<void> _postAccepted(String path, Map<String, Object?> body) async {
-    if (_baseUrl.isEmpty)
+    if (apiBaseUrl.isEmpty)
       throw const AuthException(
         'Defina API_BASE_URL para conectar sua conta ao ambiente isolado.',
       );
@@ -192,7 +192,7 @@ class AuthRepository {
       throw AuthException(_message(response));
   }
 
-  Uri _uri(String path) => Uri.parse('$_baseUrl$path');
+  Uri _uri(String path) => Uri.parse('$apiBaseUrl$path');
   Map<String, String> _headers([String? accessToken]) => {
     'Content-Type': 'application/json',
     if (accessToken != null) 'Authorization': 'Bearer $accessToken',

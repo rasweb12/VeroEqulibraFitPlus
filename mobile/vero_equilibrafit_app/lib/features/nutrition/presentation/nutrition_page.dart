@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../shared/presentation/app_drawer.dart';
 import 'nutrition_providers.dart';
@@ -11,7 +14,16 @@ class NutritionPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final meals = ref.watch(mealsProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Alimentação')),
+      appBar: AppBar(
+        title: const Text('Alimentação'),
+        actions: [
+          IconButton(
+            tooltip: 'Analisar foto da refeição',
+            onPressed: () => _pickAndAnalyzePhoto(context, ref),
+            icon: const Icon(Icons.camera_alt_outlined),
+          ),
+        ],
+      ),
       drawer: const AppDrawer(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _addMeal(context, ref),
@@ -96,5 +108,85 @@ class NutritionPage extends ConsumerWidget {
     }
     name.dispose();
     notes.dispose();
+  }
+
+  Future<void> _pickAndAnalyzePhoto(BuildContext context, WidgetRef ref) async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Wrap(children: [
+          ListTile(
+            leading: const Icon(Icons.camera_alt_outlined),
+            title: const Text('Fotografar refeição'),
+            onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library_outlined),
+            title: const Text('Escolher da galeria'),
+            onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
+          ),
+        ]),
+      ),
+    );
+    if (source == null || !context.mounted) return;
+    final file = await ImagePicker().pickImage(source: source, imageQuality: 85, maxWidth: 1600, maxHeight: 1600);
+    if (file == null || !context.mounted) return;
+    final bytes = await file.readAsBytes();
+    final mime = file.mimeType ?? _mimeFromPath(file.path);
+    if (!const {'image/jpeg', 'image/png', 'image/webp'}.contains(mime)) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Use uma imagem JPEG, PNG ou WebP.')));
+      return;
+    }
+    if (bytes.length > 5 * 1024 * 1024) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A foto deve ter até 5 MB.')));
+      return;
+    }
+    if (!context.mounted) return;
+    await _reviewPhoto(context, ref, bytes, mime);
+  }
+
+  Future<void> _reviewPhoto(BuildContext context, WidgetRef ref, Uint8List bytes, String mime) async {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Analisando foto com Gemini…')));
+    List<String> suggestions;
+    String message;
+    try {
+      final result = await ref.read(mealPhotoAnalysisRepositoryProvider).analyze(bytes: bytes, mimeType: mime);
+      suggestions = result.items
+          .map((item) => '${item.name} — ${item.portion} ${item.unit}')
+          .toList(growable: false);
+      message = result.message;
+    } on Object {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Não foi possível analisar esta foto. Registre manualmente.')));
+      }
+      return;
+    }
+    if (!context.mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+            title: const Text('Revisar estimativa'),
+            content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Image.memory(bytes, height: 150, fit: BoxFit.cover),
+              const SizedBox(height: 12),
+              Text('$message\n\nValores estimados, não medidos.'),
+              ...suggestions.map((item) => ListTile(title: Text(item))),
+            ])),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancelar')),
+              FilledButton(onPressed: () {
+                ref.read(mealsProvider.notifier).add(name: suggestions.isEmpty ? 'Refeição revisada' : suggestions.join(', '), mealType: 'Refeição', notes: 'Estimativa por foto revisada pelo usuário.');
+                Navigator.pop(dialogContext);
+              }, child: const Text('Confirmar e salvar')),
+            ],
+          ),
+    );
+  }
+
+  String _mimeFromPath(String path) {
+    final lower = path.toLowerCase();
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    return 'image/jpeg';
   }
 }
