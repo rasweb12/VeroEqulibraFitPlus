@@ -5,8 +5,11 @@ using Microsoft.IdentityModel.Tokens;
 using VeroEqulibraFit.Infrastructure;
 using VeroEqulibraFit.Api.Services;
 using System.Threading.RateLimiting;
+using System.Net;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
+JwtTokenService.ValidateConfiguration(builder.Configuration);
 builder.Services.AddSingleton<ExerciseSearchService>();
 builder.Services.AddControllers();
 builder.Services.AddHealthChecks();
@@ -56,11 +59,26 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 var app = builder.Build();
-app.UseHttpsRedirection();
+var forwardedHeaders = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    ForwardLimit = 1,
+};
+var configuredProxy = builder.Configuration["ReverseProxy:KnownProxy"];
+if (string.Equals(builder.Environment.EnvironmentName, "Production", StringComparison.OrdinalIgnoreCase))
+{
+    // Render terminates TLS at the edge. Ignore forwarded headers unless an
+    // explicit, trusted proxy address is configured; accepting arbitrary
+    // X-Forwarded-* headers would allow scheme/client-IP spoofing.
+    if (IPAddress.TryParse(configuredProxy, out var proxy))
+        forwardedHeaders.KnownProxies.Add(proxy);
+}
+app.UseForwardedHeaders(forwardedHeaders);
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/live");
+app.MapHealthChecks("/health/ready");
 app.MapControllers();
 app.Run();
 

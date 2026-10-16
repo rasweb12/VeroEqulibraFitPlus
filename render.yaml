@@ -6,7 +6,7 @@ services:
     region: oregon
     dockerfilePath: ./backend/VeroEqulibraFit.Api/Dockerfile
     dockerContext: .
-    healthCheckPath: /health
+    healthCheckPath: /health/live
     autoDeployTrigger: off
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
@@ -22,6 +22,8 @@ services:
       - key: Jwt__SigningKey
         sync: false
       - key: PublicApp__BaseUrl
+        sync: false
+      - key: ReverseProxy__KnownProxy
         sync: false
       - key: AI__BaseUrl
         fromService:

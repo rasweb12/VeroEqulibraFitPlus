@@ -10,7 +10,7 @@ namespace VeroEqulibraFit.Api.Services;
 public sealed class JwtTokenService(IConfiguration configuration)
 {
     private const int AccessLifetimeMinutes = 15;
-    private readonly string _issuer = configuration["Jwt:Issuer"] ?? "vero-equilibrafit-api";
+    private readonly string _issuer = ReadIssuer(configuration);
     private readonly byte[] _key = ReadKey(configuration);
 
     public (string Token, DateTimeOffset ExpiresAt) CreateAccessToken(AppUser user, IEnumerable<string> roles)
@@ -33,6 +33,20 @@ public sealed class JwtTokenService(IConfiguration configuration)
     public static string HashRefreshToken(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
     public string Issuer => _issuer;
     public SymmetricSecurityKey SigningKey => new(_key);
+
+    public static void ValidateConfiguration(IConfiguration configuration)
+    {
+        _ = ReadIssuer(configuration);
+        _ = ReadKey(configuration);
+    }
+
+    private static string ReadIssuer(IConfiguration configuration)
+    {
+        var issuer = configuration["Jwt:Issuer"];
+        if (string.IsNullOrWhiteSpace(issuer))
+            throw new InvalidOperationException("Jwt:Issuer must be supplied through the environment.");
+        return issuer;
+    }
 
     private static byte[] ReadKey(IConfiguration configuration)
     {

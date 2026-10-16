@@ -26,3 +26,9 @@ Há uma migration local versionada, `AddIsolatedIdentityAuth`. Ela **não foi ap
 ## Itens que dependem de ambiente externo
 
 Confirmação de e-mail e recuperação de senha exigem a configuração de um provedor transacional isolado e domínio remetente. Não há credenciais no novo repositório; portanto esses envios não foram simulados nem foram encaminhados por serviços dos projetos de origem. Antes de produção, habilitar confirmação obrigatória, fluxo de recuperação, rate limiting distribuído, auditoria de login e testes REST contra uma instância Neon de homologação.
+
+## Render — JWT e health check
+
+Variáveis obrigatórias da API em produção: `ConnectionStrings__Postgres` (ou `Database__ConnectionString`), `Jwt__Issuer`, `Jwt__SigningKey` (mínimo 32 bytes), `AI__BaseUrl` e `AI__InternalApiKey`. O processo falha antes de abrir rotas se emissor ou chave JWT estiverem ausentes/inválidos.
+
+`/health/live` é apenas liveness técnico para o Render; não comprova banco, e-mail, Gemini, login ou homologação funcional. A API não confia em `X-Forwarded-*` sem um `ReverseProxy__KnownProxy` IP explícito. O TLS termina no Render; links públicos devem usar `PublicApp__BaseUrl`.
