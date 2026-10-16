@@ -24,3 +24,17 @@ Validação local: `flutter test --reporter expanded` aprovado (8 testes).
 Foi adicionada a rota pública `/confirm-email`. O aplicativo lê `userId` e token do link e confirma a conta pela API antes de enviar a pessoa ao login. Como o endereço público, deep link do Android/iOS e SMTP ainda não foram configurados nem testados, a confirmação ponta a ponta segue **BLOQUEADA** e não homologada.
 
 `flutter analyze` foi executado sem erros de compilação; persistem 12 avisos de estilo preexistentes.
+
+## Correção de inicialização JWT e Render — 2026-10-16
+
+**Status: PARCIAL.** A API valida `Jwt__Issuer` e `Jwt__SigningKey` antes de construir o host. Como a assinatura é HS512, a chave precisa ter no mínimo 64 bytes UTF-8; chaves menores agora encerram a inicialização com mensagem explícita, antes de atender requisições. Não há chave padrão e não há geração de chave durante startup.
+
+A configuração inclui rotação de refresh token já existente, chaves de ASP.NET Data Protection persistidas em `data_protection_keys` e uma migration local `AddDataProtectionKeys`, ainda não aplicada a ambiente remoto. O endpoint `/health/live` só confirma processo ativo; `/health/ready` verifica conectividade PostgreSQL. Nenhum desses endpoints é evidência de login, e-mail ou homologação funcional.
+
+Evidências locais em 2026-10-16:
+
+- `dotnet build VeroEqulibraFit.slnx --no-restore -v minimal`: aprovado, 0 erros e 0 avisos.
+- `dotnet test tests/VeroEqulibraFit.Api.Tests/VeroEqulibraFit.Api.Tests.csproj --no-restore -v minimal`: aprovado, 7 testes, 0 falhas.
+- Os testes cobrem emissor ausente, chave ausente, chave curta, JWT válido, assinatura inválida, expiração e `401` em `/api/v1/auth/session` sem credencial.
+
+Permanecem **BLOQUEADOS** por ambiente isolado ainda não homologado: conexão real ao Neon, migrations autorizadas, SMTP para confirmação/recuperação, URL/deep links públicos e o fluxo Flutter em dispositivo contra a API implantada. Portanto, a Sprint de autenticação permanece reprovada até essas evidências ponta a ponta existirem.
