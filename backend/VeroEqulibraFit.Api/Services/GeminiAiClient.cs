@@ -46,6 +46,15 @@ public sealed class GeminiAiClient(HttpClient httpClient, IConfiguration configu
             response.Message ?? "Revise os alimentos e porções antes de salvar.");
     }
 
+    public async Task<string> GenerateNutritionPlanAsync(GenerateNutritionPlanRequest request, CancellationToken cancellationToken)
+    {
+        using var message = new HttpRequestMessage(HttpMethod.Post, "/api/v1/plans/generate") { Content = JsonContent.Create(new { objective = request.Objective, routine = request.Routine, preferences = request.Preferences ?? [], restrictions = request.Restrictions ?? [], min_calories = request.MinCalories, max_calories = request.MaxCalories, protein_target_g = request.ProteinTargetGrams }) };
+        message.Headers.Add("X-Internal-Api-Key", _internalKey ?? string.Empty);
+        using var response = await httpClient.SendAsync(message, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync(cancellationToken);
+    }
+
     private async Task<GatewayResponse> SendAsync(string path, object payload, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = JsonContent.Create(payload) };
