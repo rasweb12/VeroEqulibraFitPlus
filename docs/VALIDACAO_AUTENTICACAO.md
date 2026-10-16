@@ -19,3 +19,8 @@ Validações desta alteração: `dotnet build VeroEqulibraFit.slnx --no-restore 
 A rota pública `/reset-password` foi adicionada. Ela lê `userId` e token do link, exige confirmação da nova senha e chama a API antes de voltar ao login. Não foi possível comprovar recebimento/abertura do link porque SMTP/coletor, URL pública e banco isolado não foram configurados.
 
 Validação local: `flutter test --reporter expanded` aprovado (8 testes).
+
+## Link de confirmação no Flutter — 2026-10-15
+Foi adicionada a rota pública `/confirm-email`. O aplicativo lê `userId` e token do link e confirma a conta pela API antes de enviar a pessoa ao login. Como o endereço público, deep link do Android/iOS e SMTP ainda não foram configurados nem testados, a confirmação ponta a ponta segue **BLOQUEADA** e não homologada.
+
+`flutter analyze` foi executado sem erros de compilação; persistem 12 avisos de estilo preexistentes.

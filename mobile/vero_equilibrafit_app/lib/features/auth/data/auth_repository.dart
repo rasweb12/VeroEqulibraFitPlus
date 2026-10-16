@@ -107,6 +107,12 @@ class AuthRepository {
   Future<void> resendEmailConfirmation(String email) =>
       _postAccepted('/api/v1/auth/resend-confirmation', {'email': email.trim()});
 
+  Future<void> confirmEmail({required String userId, required String token}) =>
+      _postAccepted('/api/v1/auth/confirm-email', {
+        'userId': userId,
+        'token': token,
+      });
+
   Future<AuthSession> refresh() async {
     final refresh = await _storage.read(key: _refreshKey);
     if (refresh == null) {
