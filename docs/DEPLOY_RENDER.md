@@ -38,7 +38,7 @@ O Render termina TLS. A API só processa cabeçalhos `X-Forwarded-*` quando `Rev
 
 ## FastAPI privada
 
-Use `./ai/vero_equilibrafit_ai/Dockerfile`, contexto `./ai/vero_equilibrafit_ai`, porta `8001` e mantenha o serviço privado.
+Use `./ai/vero_equilibrafit_ai/Dockerfile`, contexto `./ai/vero_equilibrafit_ai`, porta `8001`, health check `/health/live` e mantenha o serviço privado. O endpoint `/health` permanece por compatibilidade; `/health/live` confirma apenas o processo e `/health/ready` confirma a configuração carregada, sem fazer uma chamada paga ao Gemini.
 
 | Variável | Valor ou origem |
 | --- | --- |

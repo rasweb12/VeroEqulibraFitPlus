@@ -52,7 +52,7 @@ services:
     region: oregon
     dockerfilePath: ./ai/vero_equilibrafit_ai/Dockerfile
     dockerContext: ./ai/vero_equilibrafit_ai
-    healthCheckPath: /health
+    healthCheckPath: /health/live
     autoDeployTrigger: off
     envVars:
       - key: PORT
