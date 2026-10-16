@@ -13,7 +13,11 @@ builder.Services.AddHealthChecks();
 builder.Services.AddHttpClient<GeminiAiClient>(client =>
 {
     var baseUrl = builder.Configuration["AI:BaseUrl"];
-    if (!string.IsNullOrWhiteSpace(baseUrl)) client.BaseAddress = new Uri(baseUrl);
+    if (!string.IsNullOrWhiteSpace(baseUrl))
+    {
+        if (!baseUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !baseUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) baseUrl = $"http://{baseUrl}";
+        client.BaseAddress = new Uri(baseUrl);
+    }
     client.Timeout = TimeSpan.FromSeconds(35);
 });
 var connectionString = builder.Configuration.GetConnectionString("Postgres")
