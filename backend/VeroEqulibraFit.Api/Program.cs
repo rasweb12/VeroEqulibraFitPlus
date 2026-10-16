@@ -16,7 +16,8 @@ builder.Services.AddHttpClient<GeminiAiClient>(client =>
     if (!string.IsNullOrWhiteSpace(baseUrl)) client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromSeconds(35);
 });
-var connectionString = builder.Configuration.GetConnectionString("Postgres");
+var connectionString = builder.Configuration.GetConnectionString("Postgres")
+    ?? builder.Configuration["Database:ConnectionString"];
 if (!string.IsNullOrWhiteSpace(connectionString))
     builder.Services.AddVeroEqulibraFitInfrastructure(connectionString);
 else

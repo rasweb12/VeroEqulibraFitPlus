@@ -13,6 +13,14 @@ services:
         value: Production
       - key: ConnectionStrings__Postgres
         sync: false
+      - key: Database__ConnectionString
+        sync: false
+      - key: Jwt__Issuer
+        value: vero-equilibrafit-api
+      - key: Jwt__SigningKey
+        sync: false
+      - key: PublicApp__BaseUrl
+        sync: false
       - key: AI__BaseUrl
         fromService:
           type: pserv
