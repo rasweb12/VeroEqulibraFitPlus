@@ -22,6 +22,10 @@ class NutritionRepository {
     required String name,
     required String mealType,
     required String notes,
+    double? estimatedCalories,
+    double? proteinGrams,
+    double? carbohydrateGrams,
+    double? fatGrams,
   }) {
     _entries.add(MealEntry(
       id: 'meal-${DateTime.now().microsecondsSinceEpoch}',
@@ -29,6 +33,10 @@ class NutritionRepository {
       mealType: mealType,
       notes: notes.trim(),
       recordedAt: DateTime.now(),
+      estimatedCalories: estimatedCalories,
+      proteinGrams: proteinGrams,
+      carbohydrateGrams: carbohydrateGrams,
+      fatGrams: fatGrams,
     ));
     _save();
   }
@@ -53,6 +61,10 @@ class NutritionRepository {
           mealType: entry['mealType'] as String,
           notes: entry['notes'] as String? ?? '',
           recordedAt: recordedAt,
+          estimatedCalories: (entry['estimatedCalories'] as num?)?.toDouble(),
+          proteinGrams: (entry['proteinGrams'] as num?)?.toDouble(),
+          carbohydrateGrams: (entry['carbohydrateGrams'] as num?)?.toDouble(),
+          fatGrams: (entry['fatGrams'] as num?)?.toDouble(),
         ));
       }
     } on FormatException {
@@ -68,6 +80,10 @@ class NutritionRepository {
       'mealType': entry.mealType,
       'notes': entry.notes,
       'recordedAt': entry.recordedAt.toIso8601String(),
+      'estimatedCalories': entry.estimatedCalories,
+      'proteinGrams': entry.proteinGrams,
+      'carbohydrateGrams': entry.carbohydrateGrams,
+      'fatGrams': entry.fatGrams,
     }).toList(growable: false)),
   );
 }

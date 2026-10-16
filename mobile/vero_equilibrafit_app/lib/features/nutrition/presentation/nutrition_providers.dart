@@ -28,8 +28,8 @@ class MealsController extends StateNotifier<List<MealEntry>> {
   MealsController(this._repository) : super(_repository.entries());
   final NutritionRepository _repository;
 
-  void add({required String name, required String mealType, required String notes}) {
-    _repository.add(name: name, mealType: mealType, notes: notes);
+  void add({required String name, required String mealType, required String notes, double? estimatedCalories, double? proteinGrams, double? carbohydrateGrams, double? fatGrams}) {
+    _repository.add(name: name, mealType: mealType, notes: notes, estimatedCalories: estimatedCalories, proteinGrams: proteinGrams, carbohydrateGrams: carbohydrateGrams, fatGrams: fatGrams);
     state = _repository.entries();
   }
 

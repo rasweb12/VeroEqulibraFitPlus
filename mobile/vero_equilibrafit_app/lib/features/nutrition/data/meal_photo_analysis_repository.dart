@@ -11,10 +11,14 @@ class MealPhotoAnalysis {
 }
 
 class MealPhotoItem {
-  const MealPhotoItem({required this.name, required this.portion, required this.unit});
+  const MealPhotoItem({required this.name, required this.portion, required this.unit, required this.calories, required this.proteinGrams, required this.carbohydrateGrams, required this.fatGrams});
   final String name;
   final num portion;
   final String unit;
+  final num calories;
+  final num proteinGrams;
+  final num carbohydrateGrams;
+  final num fatGrams;
 }
 
 class MealPhotoAnalysisRepository {
@@ -53,6 +57,10 @@ class MealPhotoAnalysisRepository {
               name: item['name'] as String? ?? 'Alimento',
               portion: item['portion'] as num? ?? 0,
               unit: item['unit'] as String? ?? 'porção',
+              calories: item['calories'] as num? ?? 0,
+              proteinGrams: item['proteinGrams'] as num? ?? 0,
+              carbohydrateGrams: item['carbohydrateGrams'] as num? ?? 0,
+              fatGrams: item['fatGrams'] as num? ?? 0,
             ))
         .toList(growable: false);
     return MealPhotoAnalysis(

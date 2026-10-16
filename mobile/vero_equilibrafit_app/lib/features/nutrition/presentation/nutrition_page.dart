@@ -58,8 +58,8 @@ class NutritionPage extends ConsumerWidget {
                   child: ListTile(
                     leading: const Icon(Icons.restaurant_outlined),
                     title: Text(meal.name),
-                    subtitle: Text('${meal.mealType} · ${TimeOfDay.fromDateTime(meal.recordedAt).format(context)}${meal.notes.isEmpty ? '' : '\n${meal.notes}'}'),
-                    isThreeLine: meal.notes.isNotEmpty,
+                    subtitle: Text('${meal.mealType} · ${TimeOfDay.fromDateTime(meal.recordedAt).format(context)}${meal.estimatedCalories == null ? '' : '\n≈ ${meal.estimatedCalories!.round()} kcal · P ${meal.proteinGrams?.round() ?? 0} g · C ${meal.carbohydrateGrams?.round() ?? 0} g · G ${meal.fatGrams?.round() ?? 0} g'}${meal.notes.isEmpty ? '' : '\n${meal.notes}'}'),
+                    isThreeLine: meal.notes.isNotEmpty || meal.estimatedCalories != null,
                     trailing: IconButton(
                       tooltip: 'Excluir registro',
                       icon: const Icon(Icons.delete_outline),
@@ -148,12 +148,17 @@ class NutritionPage extends ConsumerWidget {
   Future<void> _reviewPhoto(BuildContext context, WidgetRef ref, Uint8List bytes, String mime) async {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Analisando foto com Gemini…')));
     List<String> suggestions;
+    double calories = 0, protein = 0, carbs = 0, fat = 0;
     String message;
     try {
       final result = await ref.read(mealPhotoAnalysisRepositoryProvider).analyze(bytes: bytes, mimeType: mime);
       suggestions = result.items
           .map((item) => '${item.name} — ${item.portion} ${item.unit}')
           .toList(growable: false);
+      calories = result.items.fold(0, (sum, item) => sum + item.calories.toDouble());
+      protein = result.items.fold(0, (sum, item) => sum + item.proteinGrams.toDouble());
+      carbs = result.items.fold(0, (sum, item) => sum + item.carbohydrateGrams.toDouble());
+      fat = result.items.fold(0, (sum, item) => sum + item.fatGrams.toDouble());
       message = result.message;
     } on Object {
       if (context.mounted) {
@@ -169,13 +174,13 @@ class NutritionPage extends ConsumerWidget {
             content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
               Image.memory(bytes, height: 150, fit: BoxFit.cover),
               const SizedBox(height: 12),
-              Text('$message\n\nValores estimados, não medidos.'),
+              Text('$message\n\n≈ ${calories.round()} kcal · P ${protein.round()} g · C ${carbs.round()} g · G ${fat.round()} g\nValores estimados, não medidos.'),
               ...suggestions.map((item) => ListTile(title: Text(item))),
             ])),
             actions: [
               TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancelar')),
               FilledButton(onPressed: () {
-                ref.read(mealsProvider.notifier).add(name: suggestions.isEmpty ? 'Refeição revisada' : suggestions.join(', '), mealType: 'Refeição', notes: 'Estimativa por foto revisada pelo usuário.');
+                ref.read(mealsProvider.notifier).add(name: suggestions.isEmpty ? 'Refeição revisada' : suggestions.join(', '), mealType: 'Refeição', notes: 'Estimativa por foto revisada pelo usuário.', estimatedCalories: calories, proteinGrams: protein, carbohydrateGrams: carbs, fatGrams: fat);
                 Navigator.pop(dialogContext);
               }, child: const Text('Confirmar e salvar')),
             ],

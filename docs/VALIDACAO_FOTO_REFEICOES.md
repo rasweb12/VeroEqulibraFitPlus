@@ -7,3 +7,5 @@ REPROVADO. O FastAPI possui reconhecimento, mas o Flutter ainda não envia image
 - Flutter: câmera/galeria, prévia, revisão explícita e confirmação antes do registro. Nenhuma foto é persistida por este fluxo.
 - Limitações: ainda não há teste ponta a ponta com Gemini, API/Neon e uma imagem autorizada. A tentativa de gerar APK debug não concluiu no ambiente de automação após iniciar o daemon Gradle; não há evidência de novo APK.
 - Estado: **PARCIAL**. O cadastro local atual não persiste os macronutrientes revisados no Neon e não há upload protegido de mídia privada.
+
+Atualização 2026-10-16: depois da confirmação explícita, calorias e macros estimados passam a acompanhar o registro local e aparecem no histórico como aproximações. Ainda não há sincronização Neon nem homologação com Gemini real.
