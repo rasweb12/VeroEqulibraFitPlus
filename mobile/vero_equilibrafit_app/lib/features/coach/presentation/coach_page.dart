@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/presentation/app_drawer.dart';
 import '../data/coach_repository.dart';
+import 'coach_providers.dart';
 
-class CoachPage extends StatefulWidget {
+class CoachPage extends ConsumerStatefulWidget {
   const CoachPage({super.key});
 
   @override
-  State<CoachPage> createState() => _CoachPageState();
+  ConsumerState<CoachPage> createState() => _CoachPageState();
 }
 
-class _CoachPageState extends State<CoachPage> {
+class _CoachPageState extends ConsumerState<CoachPage> {
   final _message = TextEditingController();
-  final _repository = CoachRepository();
   CoachReply? _reply;
   String? _error;
   var _sending = false;
@@ -112,7 +113,7 @@ class _CoachPageState extends State<CoachPage> {
       _error = null;
     });
     try {
-      final reply = await _repository.sendMessage(text);
+      final reply = await ref.read(coachRepositoryProvider).sendMessage(text);
       if (!mounted) return;
       setState(() {
         _reply = reply;

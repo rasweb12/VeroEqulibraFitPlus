@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../auth/data/auth_repository.dart';
+
 class CoachReply {
   const CoachReply({
     required this.content,
@@ -20,7 +22,7 @@ class CoachRepository {
     String? accessToken,
   }) => CoachRepository._(
     client ?? http.Client(),
-    baseUrl ?? const String.fromEnvironment('VERO_API_BASE_URL'),
+    baseUrl ?? AuthRepository.apiBaseUrl,
     accessToken,
   );
 
