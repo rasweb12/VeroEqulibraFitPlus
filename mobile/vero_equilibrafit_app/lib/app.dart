@@ -32,14 +32,25 @@ class VeroEqulibraFitApp extends ConsumerWidget {
         final atForgotPassword = state.matchedLocation == '/forgot-password';
         final atResetPassword = state.matchedLocation == '/reset-password';
         final atConfirmEmail = state.matchedLocation == '/confirm-email';
-        if (auth.isLoading) return atSplash ? null : '/splash';
+        if (auth.isLoading) {
+          return atSplash ? null : '/splash';
+        }
         final session = auth.valueOrNull;
-        if (session == null)
-          return (atAuth || atForgotPassword || atResetPassword || atConfirmEmail)
+        if (session == null) {
+          return (atAuth ||
+                  atForgotPassword ||
+                  atResetPassword ||
+                  atConfirmEmail)
               ? null
               : '/auth?returnTo=${Uri.encodeComponent(state.uri.toString())}';
-        if (atSplash || atAuth || atForgotPassword || atResetPassword || atConfirmEmail)
+        }
+        if (atSplash ||
+            atAuth ||
+            atForgotPassword ||
+            atResetPassword ||
+            atConfirmEmail) {
           return state.uri.queryParameters['returnTo'] ?? '/';
+        }
         return null;
       },
       routes: [
@@ -111,7 +122,10 @@ class VeroEqulibraFitApp extends ConsumerWidget {
       path: '/nutrition',
       builder: (context, state) => const NutritionPage(),
     ),
-    GoRoute(path: '/nutrition/plans', builder: (context, state) => const NutritionPlansPage()),
+    GoRoute(
+      path: '/nutrition/plans',
+      builder: (context, state) => const NutritionPlansPage(),
+    ),
     GoRoute(path: '/coach', builder: (context, state) => const CoachPage()),
     GoRoute(path: '/profile', builder: (context, state) => const ProfilePage()),
     GoRoute(

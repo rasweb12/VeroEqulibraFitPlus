@@ -10,26 +10,52 @@ import '../domain/meal_entry.dart';
 final nutritionRepositoryProvider = Provider.autoDispose<NutritionRepository>(
   (ref) => NutritionRepository(
     ownerId: ref.watch(currentOwnerIdProvider),
-    preferences: ref.read(sharedPreferencesProvider),
+    store: ref.read(secureOwnerStoreProvider),
   ),
 );
 
-final mealsProvider = StateNotifierProvider.autoDispose<MealsController, List<MealEntry>>(
-  (ref) => MealsController(ref.read(nutritionRepositoryProvider)),
-);
+final mealsProvider =
+    StateNotifierProvider.autoDispose<MealsController, List<MealEntry>>(
+      (ref) => MealsController(ref.read(nutritionRepositoryProvider)),
+    );
 
-final mealPhotoAnalysisRepositoryProvider = Provider.autoDispose<MealPhotoAnalysisRepository>((ref) {
-  final session = ref.watch(authSessionProvider).valueOrNull;
-  if (session == null) throw StateError('Uma sessão validada é necessária.');
-  return MealPhotoAnalysisRepository(session);
-});
+final mealPhotoAnalysisRepositoryProvider =
+    Provider.autoDispose<MealPhotoAnalysisRepository>((ref) {
+      final session = ref.watch(authSessionProvider).valueOrNull;
+      if (session == null) {
+        throw StateError('Uma sessão validada é necessária.');
+      }
+      return MealPhotoAnalysisRepository(session);
+    });
 
 class MealsController extends StateNotifier<List<MealEntry>> {
-  MealsController(this._repository) : super(_repository.entries());
+  MealsController(this._repository) : super(const []) {
+    _restore();
+  }
   final NutritionRepository _repository;
+  Future<void> _restore() async {
+    await _repository.load();
+    if (mounted) state = _repository.entries();
+  }
 
-  void add({required String name, required String mealType, required String notes, double? estimatedCalories, double? proteinGrams, double? carbohydrateGrams, double? fatGrams}) {
-    _repository.add(name: name, mealType: mealType, notes: notes, estimatedCalories: estimatedCalories, proteinGrams: proteinGrams, carbohydrateGrams: carbohydrateGrams, fatGrams: fatGrams);
+  void add({
+    required String name,
+    required String mealType,
+    required String notes,
+    double? estimatedCalories,
+    double? proteinGrams,
+    double? carbohydrateGrams,
+    double? fatGrams,
+  }) {
+    _repository.add(
+      name: name,
+      mealType: mealType,
+      notes: notes,
+      estimatedCalories: estimatedCalories,
+      proteinGrams: proteinGrams,
+      carbohydrateGrams: carbohydrateGrams,
+      fatGrams: fatGrams,
+    );
     state = _repository.entries();
   }
 

@@ -21,7 +21,11 @@ class AuthController extends StateNotifier<AsyncValue<AuthSession?>> {
 
   Future<void> login(String email, String password) =>
       _perform(() => _repository.login(email, password));
-  Future<void> register(String email, String password, String? displayName) async {
+  Future<void> register(
+    String email,
+    String password,
+    String? displayName,
+  ) async {
     state = const AsyncValue.loading();
     try {
       await _repository.register(email, password, displayName);
@@ -31,9 +35,21 @@ class AuthController extends StateNotifier<AsyncValue<AuthSession?>> {
       rethrow;
     }
   }
+
   Future<void> logout() async {
     await _repository.logout();
     state = const AsyncValue.data(null);
+  }
+
+  Future<void> deleteAccount() async {
+    state = const AsyncValue.loading();
+    try {
+      await _repository.deleteAccount();
+      state = const AsyncValue.data(null);
+    } on Object catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+      rethrow;
+    }
   }
 
   Future<void> _perform(Future<AuthSession> Function() action) async {

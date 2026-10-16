@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-/// Overridden in main after the local store is available. Keeping the boundary
-/// injectable makes repositories testable without device storage.
-final sharedPreferencesProvider = Provider<SharedPreferences?>((ref) => null);
+import 'secure_owner_store.dart';
+
+/// Private health and training data must not use SharedPreferences.
+final secureOwnerStoreProvider = Provider<SecureOwnerStore>(
+  (ref) => PlatformSecureOwnerStore(),
+);

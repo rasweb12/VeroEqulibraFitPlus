@@ -1,8 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../../core/persistence/owner_scope.dart';
+import '../../../core/persistence/secure_owner_store.dart';
 
 import '../domain/exercise.dart';
 import '../domain/planned_exercise.dart';
@@ -10,13 +10,11 @@ import '../domain/training_plan.dart';
 
 /// Local-first repository. Sync adapters can later enqueue the stable IDs.
 class TrainingRepository {
-  TrainingRepository({required String ownerId, SharedPreferences? preferences})
-    : _preferences = preferences,
-      _storageKey = ownerScopedKey(ownerId, 'training_repository_v2') {
-    _restore();
-  }
+  TrainingRepository({required String ownerId, required SecureOwnerStore store})
+    : _store = store,
+      _storageKey = ownerScopedKey(ownerId, 'training_repository_v2_secure');
   final String _storageKey;
-  final SharedPreferences? _preferences;
+  final SecureOwnerStore _store;
   final List<TrainingPlan> _plans = [];
   final List<Exercise> _customExercises = [];
   static const catalog = <Exercise>[
@@ -83,11 +81,46 @@ class TrainingRepository {
         'Desça devagar.',
       ],
     ),
-    Exercise(id: 'deadlift', name: 'Levantamento terra', primaryMuscle: 'Posterior de coxa', equipment: 'Barra', aliases: ['Terra'], instructions: ['Aproxime a barra do corpo.', 'Mantenha a coluna estável.', 'Suba com controle.']),
-    Exercise(id: 'shoulder-press', name: 'Desenvolvimento com halteres', primaryMuscle: 'Ombros', equipment: 'Halteres', aliases: ['Shoulder press']),
-    Exercise(id: 'triceps-pushdown', name: 'Tríceps na polia', primaryMuscle: 'Tríceps', equipment: 'Cabo', aliases: ['Triceps pulley']),
-    Exercise(id: 'seated-row', name: 'Remada baixa', primaryMuscle: 'Costas', equipment: 'Cabo', aliases: ['Remada sentada']),
-    Exercise(id: 'calf-raise', name: 'Elevação de panturrilha', primaryMuscle: 'Panturrilhas', equipment: 'Máquina', aliases: ['Panturrilha em pé']),
+    Exercise(
+      id: 'deadlift',
+      name: 'Levantamento terra',
+      primaryMuscle: 'Posterior de coxa',
+      equipment: 'Barra',
+      aliases: ['Terra'],
+      instructions: [
+        'Aproxime a barra do corpo.',
+        'Mantenha a coluna estável.',
+        'Suba com controle.',
+      ],
+    ),
+    Exercise(
+      id: 'shoulder-press',
+      name: 'Desenvolvimento com halteres',
+      primaryMuscle: 'Ombros',
+      equipment: 'Halteres',
+      aliases: ['Shoulder press'],
+    ),
+    Exercise(
+      id: 'triceps-pushdown',
+      name: 'Tríceps na polia',
+      primaryMuscle: 'Tríceps',
+      equipment: 'Cabo',
+      aliases: ['Triceps pulley'],
+    ),
+    Exercise(
+      id: 'seated-row',
+      name: 'Remada baixa',
+      primaryMuscle: 'Costas',
+      equipment: 'Cabo',
+      aliases: ['Remada sentada'],
+    ),
+    Exercise(
+      id: 'calf-raise',
+      name: 'Elevação de panturrilha',
+      primaryMuscle: 'Panturrilhas',
+      equipment: 'Máquina',
+      aliases: ['Panturrilha em pé'],
+    ),
   ];
   List<TrainingPlan> activePlans() =>
       _plans.where((plan) => !plan.isDeleted).toList(growable: false);
@@ -109,7 +142,7 @@ class TrainingRepository {
     final index = _plans.indexWhere((plan) => plan.id == id);
     if (index < 0 || _plans[index].isDeleted) return;
     _plans[index] = _plans[index].copyWith(deletedAt: DateTime.now().toUtc());
-    _save();
+    unawaited(_save());
   }
 
   void restore(String id) {
@@ -122,7 +155,7 @@ class TrainingRepository {
       objective: plan.objective,
       exercises: plan.exercises,
     );
-    _save();
+    unawaited(_save());
   }
 
   TrainingPlan duplicate(String id) {
@@ -134,7 +167,7 @@ class TrainingRepository {
       name: '${source.name} (cópia)',
     );
     _plans.add(copy);
-    _save();
+    unawaited(_save());
     return copy;
   }
 
@@ -151,7 +184,7 @@ class TrainingRepository {
       weekdays: weekdays,
     );
     _plans.add(plan);
-    _save();
+    unawaited(_save());
     return plan;
   }
 
@@ -169,8 +202,9 @@ class TrainingRepository {
     if (index < 0 ||
         _plans[index].exercises.any(
           (exercise) => exercise.exerciseId == exerciseId,
-        ))
+        )) {
       return;
+    }
     final plan = _plans[index];
     _plans[index] = plan.copyWith(
       exercises: [
@@ -178,7 +212,7 @@ class TrainingRepository {
         PlannedExercise(exerciseId: exerciseId),
       ],
     );
-    _save();
+    unawaited(_save());
   }
 
   void removeExerciseFromPlan(String planId, String exerciseId) {
@@ -192,7 +226,7 @@ class TrainingRepository {
           .where((exercise) => exercise.exerciseId != exerciseId)
           .toList(growable: false),
     );
-    _save();
+    unawaited(_save());
   }
 
   void updatePlannedExercise(String planId, PlannedExercise updated) {
@@ -209,7 +243,7 @@ class TrainingRepository {
           )
           .toList(growable: false),
     );
-    _save();
+    unawaited(_save());
   }
 
   Exercise? exerciseById(String id) {
@@ -232,12 +266,12 @@ class TrainingRepository {
       isCustom: true,
     );
     _customExercises.add(exercise);
-    _save();
+    unawaited(_save());
     return exercise;
   }
 
-  void _restore() {
-    final encoded = _preferences?.getString(_storageKey);
+  Future<void> load() async {
+    final encoded = await _store.read(_storageKey);
     if (encoded == null || encoded.isEmpty) return;
     try {
       final data = jsonDecode(encoded) as Map<String, dynamic>;
@@ -293,7 +327,7 @@ class TrainingRepository {
     }
   }
 
-  void _save() {
+  Future<void> _save() async {
     final payload = {
       'plans': _plans
           .map(
@@ -330,7 +364,7 @@ class TrainingRepository {
           )
           .toList(growable: false),
     };
-    _preferences?.setString(_storageKey, jsonEncode(payload));
+    await _store.write(_storageKey, jsonEncode(payload));
   }
 
   String _normalize(String value) => value

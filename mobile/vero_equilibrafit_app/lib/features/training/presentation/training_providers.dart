@@ -9,7 +9,7 @@ import '../domain/planned_exercise.dart';
 final trainingRepositoryProvider = Provider.autoDispose<TrainingRepository>(
   (ref) => TrainingRepository(
     ownerId: ref.watch(currentOwnerIdProvider),
-    preferences: ref.read(sharedPreferencesProvider),
+    store: ref.read(secureOwnerStoreProvider),
   ),
 );
 final plansProvider =
@@ -18,8 +18,15 @@ final plansProvider =
     );
 
 class PlansController extends StateNotifier<List<TrainingPlan>> {
-  PlansController(this._repository) : super(_repository.activePlans());
+  PlansController(this._repository) : super(const []) {
+    _restore();
+  }
   final TrainingRepository _repository;
+  Future<void> _restore() async {
+    await _repository.load();
+    if (mounted) state = _repository.activePlans();
+  }
+
   void delete(String id) {
     _repository.softDelete(id);
     state = _repository.activePlans();

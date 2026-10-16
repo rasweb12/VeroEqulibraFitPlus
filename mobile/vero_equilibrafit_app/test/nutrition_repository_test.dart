@@ -1,9 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vero_equilibrafit_app/core/persistence/secure_owner_store.dart';
 import 'package:vero_equilibrafit_app/features/nutrition/data/nutrition_repository.dart';
 
 void main() {
   test('registra e exclui uma refeição', () {
-    final repository = NutritionRepository(ownerId: 'test-user');
+    final repository = NutritionRepository(
+      ownerId: 'test-user',
+      store: MemorySecureOwnerStore(),
+    );
     repository.add(name: 'Arroz e feijão', mealType: 'Almoço', notes: '');
 
     final entry = repository.entries().single;

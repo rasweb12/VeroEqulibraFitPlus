@@ -89,7 +89,7 @@ class NutritionPage extends ConsumerWidget {
               children: [
                 TextField(controller: name, autofocus: true, decoration: const InputDecoration(labelText: 'O que você comeu?')),
                 DropdownButtonFormField<String>(
-                  value: mealType,
+                  initialValue: mealType,
                   decoration: const InputDecoration(labelText: 'Momento'),
                   items: const ['Café da manhã', 'Almoço', 'Lanche', 'Jantar', 'Refeição'].map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(growable: false),
                   onChanged: (value) => setState(() => mealType = value!),

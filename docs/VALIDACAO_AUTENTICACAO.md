@@ -38,3 +38,9 @@ Evidências locais em 2026-10-16:
 - Os testes cobrem emissor ausente, chave ausente, chave curta, JWT válido, assinatura inválida, expiração e `401` em `/api/v1/auth/session` sem credencial.
 
 Permanecem **BLOQUEADOS** por ambiente isolado ainda não homologado: conexão real ao Neon, migrations autorizadas, SMTP para confirmação/recuperação, URL/deep links públicos e o fluxo Flutter em dispositivo contra a API implantada. Portanto, a Sprint de autenticação permanece reprovada até essas evidências ponta a ponta existirem.
+
+## Armazenamento local por conta — 2026-10-16
+
+Treinos, refeições, medidas e hábitos deixaram de gravar dados privados em `SharedPreferences`. O adaptador `SecureOwnerStore` usa o armazenamento seguro do sistema operacional e cada recurso recebe uma chave derivada do `userId` validado. Dados legados sem proprietário continuam deliberadamente inacessíveis; não há atribuição automática à próxima pessoa que entrar no aparelho.
+
+O logout remove apenas os cinco registros de sessão. Isso impede que o logout de uma conta elimine os registros cifrados de outra conta em aparelho compartilhado. A exclusão de conta chama `DELETE /api/v1/auth/account` e, após sucesso, remove somente as chaves privadas do proprietário atual. A validação em dispositivo físico e contra a API pública permanece pendente, portanto este requisito continua **PARCIAL**, não homologado.

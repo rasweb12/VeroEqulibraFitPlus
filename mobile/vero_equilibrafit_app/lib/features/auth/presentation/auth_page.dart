@@ -56,6 +56,15 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                       icon: const Icon(Icons.logout),
                       label: const Text('Sair'),
                     ),
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      onPressed: () => _confirmDeleteAccount(context),
+                      icon: const Icon(Icons.delete_forever_outlined),
+                      label: const Text('Excluir minha conta'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
                   ],
                 ),
         ),
@@ -70,12 +79,19 @@ class _AuthPageState extends ConsumerState<AuthPage> {
         if (_confirmationRequested) ...[
           const Icon(Icons.mark_email_read_outlined, size: 44),
           const SizedBox(height: 12),
-          Text('Confirme seu e-mail', style: Theme.of(context).textTheme.headlineSmall),
+          Text(
+            'Confirme seu e-mail',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
           const SizedBox(height: 8),
-          const Text('Enviamos um link de confirmação. Após confirmar, volte para entrar.'),
+          const Text(
+            'Enviamos um link de confirmação. Após confirmar, volte para entrar.',
+          ),
           TextButton(
             onPressed: _resendingConfirmation ? null : _resendConfirmation,
-            child: Text(_resendingConfirmation ? 'Reenviando...' : 'Reenviar confirmação'),
+            child: Text(
+              _resendingConfirmation ? 'Reenviando...' : 'Reenviar confirmação',
+            ),
           ),
           TextButton(
             onPressed: () => setState(() {
@@ -85,55 +101,55 @@ class _AuthPageState extends ConsumerState<AuthPage> {
             child: const Text('Voltar para entrar'),
           ),
         ] else ...[
-        Text(
-          _register ? 'Criar conta' : 'Entrar',
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 16),
-        if (error != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              error.replaceFirst('AuthException: ', ''),
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+          Text(
+            _register ? 'Criar conta' : 'Entrar',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 16),
+          if (error != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                error.replaceFirst('AuthException: ', ''),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
             ),
-          ),
-        if (_register)
+          if (_register)
+            TextField(
+              controller: _name,
+              textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(labelText: 'Nome (opcional)'),
+            ),
           TextField(
-            controller: _name,
+            controller: _email,
+            keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(labelText: 'Nome (opcional)'),
+            decoration: const InputDecoration(labelText: 'E-mail'),
           ),
-        TextField(
-          controller: _email,
-          keyboardType: TextInputType.emailAddress,
-          textInputAction: TextInputAction.next,
-          decoration: const InputDecoration(labelText: 'E-mail'),
-        ),
-        TextField(
-          controller: _password,
-          obscureText: true,
-          onSubmitted: (_) => _submit(),
-          decoration: const InputDecoration(labelText: 'Senha'),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Use ao menos 10 caracteres, com maiúscula, minúscula e número.',
-        ),
-        const SizedBox(height: 16),
-        FilledButton(
-          onPressed: _submit,
-          child: Text(_register ? 'Criar conta' : 'Entrar'),
-        ),
-        if (!_register)
+          TextField(
+            controller: _password,
+            obscureText: true,
+            onSubmitted: (_) => _submit(),
+            decoration: const InputDecoration(labelText: 'Senha'),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Use ao menos 10 caracteres, com maiúscula, minúscula e número.',
+          ),
+          const SizedBox(height: 16),
+          FilledButton(
+            onPressed: _submit,
+            child: Text(_register ? 'Criar conta' : 'Entrar'),
+          ),
+          if (!_register)
+            TextButton(
+              onPressed: () => context.go('/forgot-password'),
+              child: const Text('Esqueci minha senha'),
+            ),
           TextButton(
-            onPressed: () => context.go('/forgot-password'),
-            child: const Text('Esqueci minha senha'),
+            onPressed: () => setState(() => _register = !_register),
+            child: Text(_register ? 'Já tenho uma conta' : 'Criar uma conta'),
           ),
-        TextButton(
-          onPressed: () => setState(() => _register = !_register),
-          child: Text(_register ? 'Já tenho uma conta' : 'Criar uma conta'),
-        ),
         ],
       ],
     ),
@@ -162,11 +178,44 @@ class _AuthPageState extends ConsumerState<AuthPage> {
   Future<void> _resendConfirmation() async {
     setState(() => _resendingConfirmation = true);
     try {
-      await ref.read(authRepositoryProvider).resendEmailConfirmation(_email.text);
+      await ref
+          .read(authRepositoryProvider)
+          .resendEmailConfirmation(_email.text);
     } on AuthException {
       // Reuse the same non-enumerating UI message for any send result.
     } finally {
       if (mounted) setState(() => _resendingConfirmation = false);
+    }
+  }
+
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Excluir conta?'),
+        content: const Text(
+          'Essa ação exclui sua conta e remove os dados locais desta conta deste aparelho. Ela não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Excluir conta'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await ref.read(authSessionProvider.notifier).deleteAccount();
+    } on AuthException {
+      // The provider retains a safe error state for the form.
     }
   }
 }

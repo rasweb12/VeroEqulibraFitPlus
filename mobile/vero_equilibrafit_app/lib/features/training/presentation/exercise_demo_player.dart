@@ -37,13 +37,15 @@ class _ExerciseDemoPlayerState extends State<ExerciseDemoPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    if (_error != null)
+    if (_error != null) {
       return const Text('Não foi possível reproduzir esta demonstração.');
-    if (!_controller.value.isInitialized)
+    }
+    if (!_controller.value.isInitialized) {
       return const SizedBox(
         height: 180,
         child: Center(child: CircularProgressIndicator()),
       );
+    }
     return Column(
       children: [
         AspectRatio(

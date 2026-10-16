@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../core/persistence/owner_scope.dart';
+
 class AuthSession {
   const AuthSession({
     required this.accessToken,
@@ -63,7 +65,7 @@ class AuthRepository {
       try {
         return await refresh();
       } on AuthException {
-        await _storage.deleteAll();
+        await _clearSession();
         return null;
       }
     }
@@ -86,7 +88,7 @@ class AuthRepository {
     } catch (_) {
       // No encrypted, owner-scoped offline store exists yet; deny offline access.
     }
-    await _storage.deleteAll();
+    await _clearSession();
     return null;
   }
 
@@ -94,18 +96,17 @@ class AuthRepository {
     '/api/v1/auth/login',
     {'email': email, 'password': password},
   );
-  Future<void> register(
-    String email,
-    String password,
-    String? displayName,
-  ) => _postAccepted('/api/v1/auth/register', {
+  Future<void> register(String email, String password, String? displayName) =>
+      _postAccepted('/api/v1/auth/register', {
         'email': email,
         'password': password,
         'displayName': displayName,
       });
 
-  Future<void> resendEmailConfirmation(String email) =>
-      _postAccepted('/api/v1/auth/resend-confirmation', {'email': email.trim()});
+  Future<void> resendEmailConfirmation(String email) => _postAccepted(
+    '/api/v1/auth/resend-confirmation',
+    {'email': email.trim()},
+  );
 
   Future<void> confirmEmail({required String userId, required String token}) =>
       _postAccepted('/api/v1/auth/confirm-email', {
@@ -146,7 +147,30 @@ class AuthRepository {
         body: jsonEncode({'refreshToken': session.refreshToken}),
       );
     }
-    await _storage.deleteAll();
+    await _clearSession();
+  }
+
+  /// Deletes the authenticated account and only its owner-scoped local data.
+  /// The server remains authoritative for revocation and personal-data rules.
+  Future<void> deleteAccount() async {
+    final session = await restore();
+    if (session == null) {
+      await _clearSession();
+      return;
+    }
+    final response = await _client.delete(
+      _uri('/api/v1/auth/account'),
+      headers: _headers(session.accessToken),
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw AuthException(_message(response));
+    }
+    await Future.wait([
+      ...ownerPrivateKeys(
+        session.userId,
+      ).map((key) => _storage.delete(key: key)),
+      _clearSession(),
+    ]);
   }
 
   Future<AuthSession> _authenticate(
@@ -179,17 +203,19 @@ class AuthRepository {
   }
 
   Future<void> _postAccepted(String path, Map<String, Object?> body) async {
-    if (apiBaseUrl.isEmpty)
+    if (apiBaseUrl.isEmpty) {
       throw const AuthException(
         'Defina API_BASE_URL para conectar sua conta ao ambiente isolado.',
       );
+    }
     final response = await _client.post(
       _uri(path),
       headers: _headers(),
       body: jsonEncode(body),
     );
-    if (response.statusCode < 200 || response.statusCode >= 300)
+    if (response.statusCode < 200 || response.statusCode >= 300) {
       throw AuthException(_message(response));
+    }
   }
 
   Uri _uri(String path) => Uri.parse('$apiBaseUrl$path');
@@ -213,6 +239,20 @@ class AuthRepository {
     await _storage.write(key: _emailKey, value: session.email);
     await _storage.write(key: _userIdKey, value: session.userId);
     await _storage.write(key: _displayNameKey, value: session.displayName);
+  }
+
+  /// Clears only credentials for the active session. Owner-scoped private
+  /// records remain encrypted so another device account cannot lose data when
+  /// a user logs out here. Account deletion has a separate owner-data erase
+  /// workflow once that API/UI is enabled.
+  Future<void> _clearSession() async {
+    await Future.wait([
+      _storage.delete(key: _accessKey),
+      _storage.delete(key: _refreshKey),
+      _storage.delete(key: _emailKey),
+      _storage.delete(key: _userIdKey),
+      _storage.delete(key: _displayNameKey),
+    ]);
   }
 
   bool _isExpired(String token) {

@@ -1,9 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vero_equilibrafit_app/core/persistence/secure_owner_store.dart';
 import 'package:vero_equilibrafit_app/features/training/data/training_repository.dart';
 
 void main() {
   test('adiciona e remove exercício sem apagar a ficha', () {
-    final repository = TrainingRepository(ownerId: 'test-user');
+    final repository = TrainingRepository(
+      ownerId: 'test-user',
+      store: MemorySecureOwnerStore(),
+    );
     final plan = repository.createPlan(name: 'Treino A', objective: 'Força');
 
     repository.addExerciseToPlan(plan.id, 'squat');
@@ -14,7 +18,10 @@ void main() {
   });
 
   test('não duplica exercício adicionado duas vezes', () {
-    final repository = TrainingRepository(ownerId: 'test-user');
+    final repository = TrainingRepository(
+      ownerId: 'test-user',
+      store: MemorySecureOwnerStore(),
+    );
     final plan = repository.createPlan(name: 'Treino A', objective: 'Força');
 
     repository.addExerciseToPlan(plan.id, 'squat');

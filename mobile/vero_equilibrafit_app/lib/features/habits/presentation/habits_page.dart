@@ -1,8 +1,11 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/persistence/owner_scope.dart';
 import '../../../core/persistence/preferences_provider.dart';
+import '../../../core/persistence/secure_owner_store.dart';
 import '../../auth/presentation/current_owner_provider.dart';
 import '../../../shared/presentation/app_drawer.dart';
 
@@ -18,43 +21,53 @@ class HabitsState {
 }
 
 class HabitsNotifier extends StateNotifier<HabitsState> {
-  HabitsNotifier(this._preferences, {required String ownerId})
-    : _waterKey = ownerScopedKey(ownerId, 'habits_water_ml_v2'),
-      _mobilityKey = ownerScopedKey(ownerId, 'habits_mobility_v2'),
-      super(HabitsState(
-        waterMl: _preferences
-                ?.getInt(ownerScopedKey(ownerId, 'habits_water_ml_v2')) ??
-            0,
-        mobilityDone: _preferences
-                ?.getBool(ownerScopedKey(ownerId, 'habits_mobility_v2')) ??
-            false,
-      ));
-  final SharedPreferences? _preferences;
-  final String _waterKey;
-  final String _mobilityKey;
+  HabitsNotifier(this._store, {required String ownerId})
+    : _storageKey = ownerScopedKey(ownerId, 'habits_v3_secure'),
+      super(const HabitsState()) {
+    _restore();
+  }
+  final SecureOwnerStore _store;
+  final String _storageKey;
+
+  Future<void> _restore() async {
+    final encoded = await _store.read(_storageKey);
+    if (encoded == null || encoded.isEmpty) return;
+    try {
+      final saved = jsonDecode(encoded) as Map<String, dynamic>;
+      if (mounted) {
+        state = HabitsState(
+          waterMl: saved['waterMl'] as int? ?? 0,
+          mobilityDone: saved['mobilityDone'] as bool? ?? false,
+        );
+      }
+    } on FormatException {
+      // Ignore only corrupt local cache; never infer an owner for old data.
+    }
+  }
 
   void addWater() {
     state = state.copyWith(waterMl: state.waterMl + 250);
-    _save();
+    unawaited(_save());
   }
 
   void setMobility(bool done) {
     state = state.copyWith(mobilityDone: done);
-    _save();
+    unawaited(_save());
   }
 
-  void _save() {
-    _preferences?.setInt(_waterKey, state.waterMl);
-    _preferences?.setBool(_mobilityKey, state.mobilityDone);
-  }
+  Future<void> _save() => _store.write(
+    _storageKey,
+    jsonEncode({'waterMl': state.waterMl, 'mobilityDone': state.mobilityDone}),
+  );
 }
 
-final habitsProvider = StateNotifierProvider.autoDispose<HabitsNotifier, HabitsState>(
-  (ref) => HabitsNotifier(
-    ref.read(sharedPreferencesProvider),
-    ownerId: ref.watch(currentOwnerIdProvider),
-  ),
-);
+final habitsProvider =
+    StateNotifierProvider.autoDispose<HabitsNotifier, HabitsState>(
+      (ref) => HabitsNotifier(
+        ref.read(secureOwnerStoreProvider),
+        ownerId: ref.watch(currentOwnerIdProvider),
+      ),
+    );
 
 class HabitsPage extends ConsumerWidget {
   const HabitsPage({super.key});
