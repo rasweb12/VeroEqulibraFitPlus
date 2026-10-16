@@ -75,7 +75,7 @@ Só depois de definir o endereço público que abrirá links de conta, cadastre 
 | `Email__Username` | usuário SMTP, se necessário |
 | `Email__Password` | segredo SMTP, se necessário |
 
-`PublicApp__BaseUrl` ainda não deve receber uma URL fictícia. O Flutter possui as rotas de confirmação e redefinição, mas o deep link Android/iOS e uma página pública de redirecionamento ainda precisam ser homologados. Sem isso, o e-mail pode ser enviado, mas o link não abrirá a tela correta.
+Enquanto não houver domínio próprio, use `https://veroequlibrafitplus.onrender.com` em `PublicApp__BaseUrl`. A API redireciona `/confirm-email` e `/reset-password` para o deep link `veroequilibrafit://account/...` registrado no aplicativo. Consulte [RESEND_SMTP.md](RESEND_SMTP.md) para as variáveis do Resend e o roteiro de validação.
 
 ## 5. Banco Neon e migrations
 

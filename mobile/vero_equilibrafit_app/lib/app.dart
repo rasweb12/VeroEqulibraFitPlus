@@ -27,6 +27,12 @@ class VeroEqulibraFitApp extends ConsumerWidget {
     final router = GoRouter(
       initialLocation: '/splash',
       redirect: (context, state) {
+        if (state.uri.scheme == 'veroequilibrafit' &&
+            state.uri.host == 'account' &&
+            (state.uri.path == '/confirm-email' ||
+                state.uri.path == '/reset-password')) {
+          return '${state.uri.path}?${state.uri.query}';
+        }
         final atSplash = state.matchedLocation == '/splash';
         final atAuth = state.matchedLocation == '/auth';
         final atForgotPassword = state.matchedLocation == '/forgot-password';
