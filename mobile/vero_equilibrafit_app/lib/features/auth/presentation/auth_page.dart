@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../data/auth_repository.dart';
 import 'auth_providers.dart';
 
 class AuthPage extends ConsumerStatefulWidget {
@@ -15,6 +16,8 @@ class _AuthPageState extends ConsumerState<AuthPage> {
   final _password = TextEditingController();
   final _name = TextEditingController();
   bool _register = false;
+  bool _confirmationRequested = false;
+  bool _resendingConfirmation = false;
   @override
   void dispose() {
     _email.dispose();
@@ -64,6 +67,24 @@ class _AuthPageState extends ConsumerState<AuthPage> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (_confirmationRequested) ...[
+          const Icon(Icons.mark_email_read_outlined, size: 44),
+          const SizedBox(height: 12),
+          Text('Confirme seu e-mail', style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 8),
+          const Text('Enviamos um link de confirmação. Após confirmar, volte para entrar.'),
+          TextButton(
+            onPressed: _resendingConfirmation ? null : _resendConfirmation,
+            child: Text(_resendingConfirmation ? 'Reenviando...' : 'Reenviar confirmação'),
+          ),
+          TextButton(
+            onPressed: () => setState(() {
+              _confirmationRequested = false;
+              _register = false;
+            }),
+            child: const Text('Voltar para entrar'),
+          ),
+        ] else ...[
         Text(
           _register ? 'Criar conta' : 'Entrar',
           style: Theme.of(context).textTheme.headlineSmall,
@@ -113,20 +134,39 @@ class _AuthPageState extends ConsumerState<AuthPage> {
           onPressed: () => setState(() => _register = !_register),
           child: Text(_register ? 'Já tenho uma conta' : 'Criar uma conta'),
         ),
+        ],
       ],
     ),
   );
-  void _submit() {
+  Future<void> _submit() async {
     final email = _email.text.trim();
     final password = _password.text;
     if (email.isEmpty || password.isEmpty) return;
     final controller = ref.read(authSessionProvider.notifier);
-    _register
-        ? controller.register(
-            email,
-            password,
-            _name.text.trim().isEmpty ? null : _name.text.trim(),
-          )
-        : controller.login(email, password);
+    if (_register) {
+      try {
+        await controller.register(
+          email,
+          password,
+          _name.text.trim().isEmpty ? null : _name.text.trim(),
+        );
+        if (mounted) setState(() => _confirmationRequested = true);
+      } on AuthException {
+        // The provider state already displays the safe server message.
+      }
+      return;
+    }
+    await controller.login(email, password);
+  }
+
+  Future<void> _resendConfirmation() async {
+    setState(() => _resendingConfirmation = true);
+    try {
+      await ref.read(authRepositoryProvider).resendEmailConfirmation(_email.text);
+    } on AuthException {
+      // Reuse the same non-enumerating UI message for any send result.
+    } finally {
+      if (mounted) setState(() => _resendingConfirmation = false);
+    }
   }
 }

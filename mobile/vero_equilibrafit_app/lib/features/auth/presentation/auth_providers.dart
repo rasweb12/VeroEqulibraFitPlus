@@ -21,8 +21,16 @@ class AuthController extends StateNotifier<AsyncValue<AuthSession?>> {
 
   Future<void> login(String email, String password) =>
       _perform(() => _repository.login(email, password));
-  Future<void> register(String email, String password, String? displayName) =>
-      _perform(() => _repository.register(email, password, displayName));
+  Future<void> register(String email, String password, String? displayName) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repository.register(email, password, displayName);
+      state = const AsyncValue.data(null);
+    } on Object catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+      rethrow;
+    }
+  }
   Future<void> logout() async {
     await _repository.logout();
     state = const AsyncValue.data(null);

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using VeroEqulibraFit.Api.Services;
 using VeroEqulibraFit.Contracts.Auth;
@@ -11,6 +12,7 @@ namespace VeroEqulibraFit.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/auth")]
+[EnableRateLimiting("auth-public")]
 public sealed class AuthController(
     UserManager<AppUser> userManager,
     VeroEqulibraFitDbContext database,
@@ -21,7 +23,7 @@ public sealed class AuthController(
 
     [HttpPost("register")]
     [AllowAnonymous]
-    public async Task<ActionResult<AuthResponse>> Register(RegisterRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<RegistrationResponse>> Register(RegisterRequest request, CancellationToken cancellationToken)
     {
         var email = request.Email.Trim().ToLowerInvariant();
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(request.Password))
@@ -30,7 +32,8 @@ public sealed class AuthController(
         var result = await userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
             return BadRequest(new ValidationProblemDetails(result.Errors.GroupBy(error => error.Code).ToDictionary(group => group.Key, group => group.Select(error => error.Description).ToArray())));
-        return Ok(await IssueTokens(user, cancellationToken));
+        await SendConfirmationAsync(user, cancellationToken);
+        return Accepted(new RegistrationResponse("Confira seu e-mail para confirmar a conta antes de entrar."));
     }
 
     [HttpPost("login")]
@@ -41,7 +44,38 @@ public sealed class AuthController(
         var user = await userManager.FindByEmailAsync(email);
         if (user is null || !await userManager.CheckPasswordAsync(user, request.Password))
             return Unauthorized(new ProblemDetails { Title = "Credenciais inválidas." });
+        if (!user.EmailConfirmed)
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = "Confirme seu e-mail antes de entrar." });
         return Ok(await IssueTokens(user, cancellationToken));
+    }
+
+    [HttpPost("confirm-email")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ConfirmEmail(ConfirmEmailRequest request)
+    {
+        if (!Guid.TryParse(request.UserId, out var userId) || string.IsNullOrWhiteSpace(request.Token))
+            return BadRequest(new ProblemDetails { Title = "Link de confirmação inválido ou expirado." });
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+            return BadRequest(new ProblemDetails { Title = "Link de confirmação inválido ou expirado." });
+        var result = await userManager.ConfirmEmailAsync(user, request.Token);
+        return result.Succeeded
+            ? NoContent()
+            : BadRequest(new ProblemDetails { Title = "Link de confirmação inválido ou expirado." });
+    }
+
+    [HttpPost("resend-confirmation")]
+    [AllowAnonymous]
+    public async Task<AcceptedResult> ResendConfirmation(ResendConfirmationRequest request, CancellationToken cancellationToken)
+    {
+        var email = request.Email?.Trim().ToLowerInvariant();
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            var user = await userManager.FindByEmailAsync(email);
+            if (user is not null && !user.EmailConfirmed)
+                await TrySendConfirmationAsync(user, cancellationToken);
+        }
+        return Accepted();
     }
 
     [HttpPost("forgot-password")]
@@ -141,6 +175,28 @@ public sealed class AuthController(
         database.RefreshTokens.Add(new RefreshToken { UserId = user.Id, TokenHash = JwtTokenService.HashRefreshToken(rawRefreshToken), ExpiresAt = DateTimeOffset.UtcNow.Add(RefreshLifetime) });
         await database.SaveChangesAsync(cancellationToken);
         return new AuthResponse(access.Token, rawRefreshToken, access.ExpiresAt, user.Id.ToString(), user.Email!, user.DisplayName);
+    }
+
+    private async Task SendConfirmationAsync(AppUser user, CancellationToken cancellationToken)
+    {
+        var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
+        var link = BuildPublicLink("confirm-email", user.Id, token);
+        await emailSender.SendEmailConfirmationAsync(user.Email!, link, cancellationToken);
+    }
+
+    private async Task TrySendConfirmationAsync(AppUser user, CancellationToken cancellationToken)
+    {
+        try { await SendConfirmationAsync(user, cancellationToken); }
+        catch (InvalidOperationException) { /* Response remains generic to avoid account enumeration. */ }
+    }
+
+    private string BuildPublicLink(string route, Guid userId, string token)
+    {
+        var configuredBaseUrl = HttpContext.RequestServices.GetRequiredService<IConfiguration>()["PublicApp:BaseUrl"];
+        var baseUrl = string.IsNullOrWhiteSpace(configuredBaseUrl)
+            ? HttpContext.Request.Scheme + "://" + HttpContext.Request.Host
+            : configuredBaseUrl.TrimEnd('/');
+        return $"{baseUrl}/{route}?userId={Uri.EscapeDataString(userId.ToString())}&token={Uri.EscapeDataString(token)}";
     }
 
     private Guid CurrentUserId() => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);

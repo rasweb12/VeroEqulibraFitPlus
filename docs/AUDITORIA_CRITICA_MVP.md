@@ -23,3 +23,10 @@ Data: 2026-10-15. Status geral: **REPROVADO**.
 - Contenção em memória: os providers privados dependem da sessão e usam `autoDispose`, descartando estado quando a conta muda ou sai da área privada.
 - Testes: `test/owner_isolation_test.dart` confirmou que treino e refeição da conta A não aparecem para a conta B; `flutter test` aprovou 8 testes.
 - Estado: **PARCIAL**. O armazenamento ainda é SharedPreferences sem cifra, e faltam outbox/sincronização Neon e ensaio em dispositivo real compartilhado.
+
+## Reavaliação P0-002/P0-004 — 2026-10-15
+- Registro cria uma conta com e-mail ainda não confirmado e envia link de confirmação único usando o provedor de token do ASP.NET Identity.
+- Login rejeita conta ainda não confirmada. Foram adicionados os endpoints `confirm-email` e `resend-confirmation`; o reenvio sempre responde `202` para não enumerar endereços.
+- As rotas de autenticação recebem limite fixo de 10 solicitações por minuto por instância de API. A senha redefinida revoga refresh tokens ativos.
+- Evidência local: `dotnet build VeroEqulibraFit.slnx --no-restore -v minimal` aprovado (0 erros, 0 avisos). Não há projeto de testes .NET descoberto na solução, portanto não houve teste HTTP/SMTP/Neon.
+- Estado: **PARCIAL**. O aplicativo Flutter ainda precisa concluir a tela de confirmação/reenvio e a abertura de link; a prova completa exige coletor SMTP e PostgreSQL isolados.

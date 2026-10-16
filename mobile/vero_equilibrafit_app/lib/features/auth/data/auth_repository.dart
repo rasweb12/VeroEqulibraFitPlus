@@ -94,15 +94,18 @@ class AuthRepository {
     '/api/v1/auth/login',
     {'email': email, 'password': password},
   );
-  Future<AuthSession> register(
+  Future<void> register(
     String email,
     String password,
     String? displayName,
-  ) => _authenticate('/api/v1/auth/register', {
-    'email': email,
-    'password': password,
-    'displayName': displayName,
-  });
+  ) => _postAccepted('/api/v1/auth/register', {
+        'email': email,
+        'password': password,
+        'displayName': displayName,
+      });
+
+  Future<void> resendEmailConfirmation(String email) =>
+      _postAccepted('/api/v1/auth/resend-confirmation', {'email': email.trim()});
 
   Future<AuthSession> refresh() async {
     final refresh = await _storage.read(key: _refreshKey);
