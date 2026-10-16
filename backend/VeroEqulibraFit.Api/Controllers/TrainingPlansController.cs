@@ -17,7 +17,7 @@ public sealed class TrainingPlansController(VeroEqulibraFitDbContext database) :
         var ownerId = GetOwnerId();
         if (ownerId is null) return Unauthorized();
         var plans = await database.TrainingPlans.AsNoTracking().Include(plan => plan.Exercises)
-            .Where(plan => plan.OwnerId == ownerId).OrderByDescending(plan => plan.CreatedAt)
+            .Where(plan => plan.OwnerId == ownerId && plan.DeletedAt == null).OrderByDescending(plan => plan.CreatedAt)
             .ToListAsync(cancellationToken);
         return Ok(plans.Select(ToResponse).ToList());
     }
@@ -50,7 +50,7 @@ public sealed class TrainingPlansController(VeroEqulibraFitDbContext database) :
         var ownerId = GetOwnerId();
         if (ownerId is null) return Unauthorized();
         var source = await database.TrainingPlans.Include(plan => plan.Exercises)
-            .SingleOrDefaultAsync(plan => plan.Id == id && plan.OwnerId == ownerId, cancellationToken);
+            .SingleOrDefaultAsync(plan => plan.Id == id && plan.OwnerId == ownerId && plan.DeletedAt == null, cancellationToken);
         if (source is null) return NotFound();
         var copy = new TrainingPlan { OwnerId = ownerId.Value, Name = $"{source.Name} (cópia)", Objective = source.Objective };
         copy.Exercises = source.Exercises.OrderBy(exercise => exercise.Position).Select((exercise, position) => new TrainingPlanExercise
@@ -68,7 +68,7 @@ public sealed class TrainingPlansController(VeroEqulibraFitDbContext database) :
     {
         var ownerId = GetOwnerId();
         if (ownerId is null) return Unauthorized();
-        var plan = await database.TrainingPlans.SingleOrDefaultAsync(plan => plan.Id == id && plan.OwnerId == ownerId, cancellationToken);
+        var plan = await database.TrainingPlans.SingleOrDefaultAsync(plan => plan.Id == id && plan.OwnerId == ownerId && plan.DeletedAt == null, cancellationToken);
         if (plan is null) return NotFound();
         plan.DeletedAt = DateTimeOffset.UtcNow;
         await database.SaveChangesAsync(cancellationToken);

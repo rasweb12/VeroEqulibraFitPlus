@@ -29,7 +29,7 @@ public sealed class NutritionPlansController(VeroEqulibraFitDbContext database, 
     }
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<NutritionPlanResponse>>> List(CancellationToken cancellationToken)
-    { var owner = Owner(); if (owner is null) return Unauthorized(); var plans = await database.NutritionPlans.Where(p => p.OwnerId == owner).OrderByDescending(p => p.CreatedAt).ToListAsync(cancellationToken); return Ok(plans.Select(ToResponse).ToList()); }
+    { var owner = Owner(); if (owner is null) return Unauthorized(); var plans = await database.NutritionPlans.Where(p => p.OwnerId == owner && p.DeletedAt == null).OrderByDescending(p => p.CreatedAt).ToListAsync(cancellationToken); return Ok(plans.Select(ToResponse).ToList()); }
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<NutritionPlanResponse>> Update(Guid id, UpdateNutritionPlanRequest request, CancellationToken cancellationToken)
     {

@@ -34,7 +34,7 @@ public sealed class MealsController(VeroEqulibraFitDbContext database, GeminiAiC
     {
         var ownerId = GetOwnerId();
         if (ownerId is null) return Unauthorized();
-        var meals = await database.MealEntries.AsNoTracking().Where(meal => meal.OwnerId == ownerId)
+        var meals = await database.MealEntries.AsNoTracking().Where(meal => meal.OwnerId == ownerId && meal.DeletedAt == null)
             .OrderByDescending(meal => meal.ConsumedAt).ToListAsync(cancellationToken);
         return Ok(meals.Select(ToResponse).ToList());
     }
