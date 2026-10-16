@@ -14,6 +14,7 @@ import 'features/auth/presentation/auth_page.dart';
 import 'features/auth/presentation/auth_splash_page.dart';
 import 'features/auth/presentation/auth_providers.dart';
 import 'features/auth/presentation/forgot_password_page.dart';
+import 'features/auth/presentation/reset_password_page.dart';
 
 class VeroEqulibraFitApp extends ConsumerWidget {
   const VeroEqulibraFitApp({super.key});
@@ -26,13 +27,14 @@ class VeroEqulibraFitApp extends ConsumerWidget {
         final atSplash = state.matchedLocation == '/splash';
         final atAuth = state.matchedLocation == '/auth';
         final atForgotPassword = state.matchedLocation == '/forgot-password';
+        final atResetPassword = state.matchedLocation == '/reset-password';
         if (auth.isLoading) return atSplash ? null : '/splash';
         final session = auth.valueOrNull;
         if (session == null)
-          return (atAuth || atForgotPassword)
+          return (atAuth || atForgotPassword || atResetPassword)
               ? null
               : '/auth?returnTo=${Uri.encodeComponent(state.uri.toString())}';
-        if (atSplash || atAuth || atForgotPassword)
+        if (atSplash || atAuth || atForgotPassword || atResetPassword)
           return state.uri.queryParameters['returnTo'] ?? '/';
         return null;
       },
@@ -45,6 +47,13 @@ class VeroEqulibraFitApp extends ConsumerWidget {
         GoRoute(
           path: '/forgot-password',
           builder: (context, state) => const ForgotPasswordPage(),
+        ),
+        GoRoute(
+          path: '/reset-password',
+          builder: (context, state) => ResetPasswordPage(
+            userId: state.uri.queryParameters['userId'],
+            token: state.uri.queryParameters['token'],
+          ),
         ),
         ..._privateRoutes,
       ],

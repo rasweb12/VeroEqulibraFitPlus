@@ -14,3 +14,8 @@ O backend agora cria contas pendentes de confirmação, bloqueia login enquanto 
 O app trata registro como pendente de confirmação, mostra instrução de confirmação e permite reenvio sem expor se o e-mail existe. Ainda falta tratar a abertura do link de confirmação no Flutter e executar o fluxo ponta a ponta com SMTP/coletor e API/Neon isolados; portanto o item permanece **PARCIAL**.
 
 Validações desta alteração: `dotnet build VeroEqulibraFit.slnx --no-restore -v minimal` aprovado com 0 erros/0 avisos. `flutter analyze` não apresentou erros, mas conserva 12 avisos de estilo preexistentes.
+
+## Redefinição de senha na interface — 2026-10-15
+A rota pública `/reset-password` foi adicionada. Ela lê `userId` e token do link, exige confirmação da nova senha e chama a API antes de voltar ao login. Não foi possível comprovar recebimento/abertura do link porque SMTP/coletor, URL pública e banco isolado não foram configurados.
+
+Validação local: `flutter test --reporter expanded` aprovado (8 testes).
