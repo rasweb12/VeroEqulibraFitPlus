@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../shared/presentation/app_drawer.dart';
 import 'nutrition_providers.dart';
@@ -22,6 +23,7 @@ class NutritionPage extends ConsumerWidget {
             onPressed: () => _pickAndAnalyzePhoto(context, ref),
             icon: const Icon(Icons.camera_alt_outlined),
           ),
+          IconButton(tooltip: 'Plano alimentar', onPressed: () => context.go('/nutrition/plans'), icon: const Icon(Icons.menu_book_outlined)),
         ],
       ),
       drawer: const AppDrawer(),

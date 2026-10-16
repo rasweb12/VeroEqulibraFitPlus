@@ -16,6 +16,7 @@ import 'features/auth/presentation/auth_providers.dart';
 import 'features/auth/presentation/forgot_password_page.dart';
 import 'features/auth/presentation/reset_password_page.dart';
 import 'features/auth/presentation/confirm_email_page.dart';
+import 'features/nutrition/presentation/nutrition_plans_page.dart';
 
 class VeroEqulibraFitApp extends ConsumerWidget {
   const VeroEqulibraFitApp({super.key});
@@ -109,6 +110,7 @@ class VeroEqulibraFitApp extends ConsumerWidget {
       path: '/nutrition',
       builder: (context, state) => const NutritionPage(),
     ),
+    GoRoute(path: '/nutrition/plans', builder: (context, state) => const NutritionPlansPage()),
     GoRoute(path: '/coach', builder: (context, state) => const CoachPage()),
     GoRoute(
       path: '/measurements',
