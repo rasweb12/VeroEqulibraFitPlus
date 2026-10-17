@@ -45,3 +45,9 @@ O incremento é apenas a base de identidade para a futura outbox. Os repositóri
 Foi criado `POST /api/v1/sync/push`. Ele aceita lotes de até 50 operações e suporta, por enquanto, `training-plan.create` e `meal.create`. Cada operação é vinculada ao proprietário obtido exclusivamente do JWT, tem limite de payload, hash SHA-256 e recibo único por proprietário e `operationId`. A gravação da entidade e do recibo ocorre na mesma transação do PostgreSQL; reenvio idêntico retorna `duplicate` e a reutilização da chave com conteúdo diferente retorna conflito.
 
 Este endpoint não é liberado pelo aplicativo ainda: falta o adaptador Flutter que consome a outbox, renova a sessão e interpreta os resultados. Também faltam `pull`, atualização/exclusão, cursor, versionamento e teste em Neon isolado. Assim, esta implementação não é evidência de sincronização entre dispositivos.
+
+## Adaptador Flutter de push — 17/10/2026
+
+`SyncPushClient` consome somente operações pendentes da outbox do proprietário autenticado. Ele valida IDs UUID, envia o token, usa timeout de 30 segundos e só marca a operação como sincronizada quando a API devolve `accepted` ou `duplicate`. Conflitos e rejeições são preservados como conflito local; problemas de rede, autenticação e respostas inválidas voltam para a fila com backoff.
+
+O adaptador ainda não é disparado pelo aplicativo: não há abertura centralizada e cifrada do Isar nem ligação atômica das mutações de treino/refeição à outbox. Essa limitação é deliberada para não simular sincronização automática. `flutter analyze` do adaptador e `flutter test` concluíram sem falhas; a integração real com API/Neon continua pendente.
