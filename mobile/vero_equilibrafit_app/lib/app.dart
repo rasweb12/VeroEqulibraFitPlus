@@ -140,6 +140,16 @@ class VeroEqulibraFitApp extends ConsumerWidget {
       builder: (context, state) => const NutritionMealFormPage(),
     ),
     GoRoute(
+      path: '/nutrition/photo-review',
+      builder: (context, state) {
+        final input = state.extra;
+        if (input is! PhotoMealReviewInput) {
+          return const NutritionPage();
+        }
+        return NutritionPhotoReviewPage(input: input);
+      },
+    ),
+    GoRoute(
       path: '/nutrition/:mealId/edit',
       builder: (context, state) =>
           NutritionMealFormPage(mealId: state.pathParameters['mealId']),

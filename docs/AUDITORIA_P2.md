@@ -45,4 +45,10 @@ HEAD de início da reavaliação: `5b6c12e1d751d3d33d9dbd94ea16b06fdd68fd7a` (`m
 | P2-AUTH-001 | PARCIAL | AuthGate e sessão existem. Confirmação e recuperação SMTP não têm evidência ponta a ponta. |
 | P2-ADMIN-001 | REPROVADO | Blazor continua shell sem autenticação administrativa e operações reais. |
 
+### Lote 2 — revisão alimentar estruturada
+
+Em 17/10/2026, a análise de foto passou a abrir uma rota protegida de revisão (`/nutrition/photo-review`). A tela permite editar cada alimento, porção, unidade e valores estimados, remover/adicionar itens e escolher a data antes de confirmar. Os totais são recalculados no cliente e o salvamento continua condicionado à revisão explícita; a imagem não é persistida pelo fluxo.
+
+`dart analyze` dos arquivos modificados e `flutter test` concluíram sem falhas (9 testes). Isso corrige a revisão agregada, mas não cria persistência individual de alimentos no Neon: **P2-VISION-001 permanece PARCIAL**. A validação real com imagem autorizada, Gemini, API, Neon e recuperação em outro dispositivo permanece pendente.
+
 O status do MVP continua **REPROVADO — NÃO HOMOLOGADO**.

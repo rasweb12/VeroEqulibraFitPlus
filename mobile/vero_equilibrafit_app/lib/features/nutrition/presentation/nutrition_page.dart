@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/presentation/app_drawer.dart';
+import '../data/meal_photo_analysis_repository.dart';
 import 'nutrition_providers.dart';
 import '../domain/meal_entry.dart';
 
@@ -158,30 +159,11 @@ class NutritionPage extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Analisando foto com Gemini…')),
     );
-    List<String> suggestions;
-    double calories = 0, protein = 0, carbs = 0, fat = 0;
-    String message;
+    MealPhotoAnalysis result;
     try {
-      final result = await ref
+      result = await ref
           .read(mealPhotoAnalysisRepositoryProvider)
           .analyze(bytes: bytes, mimeType: mime);
-      suggestions = result.items
-          .map((item) => '${item.name} — ${item.portion} ${item.unit}')
-          .toList(growable: false);
-      calories = result.items.fold(
-        0,
-        (sum, item) => sum + item.calories.toDouble(),
-      );
-      protein = result.items.fold(
-        0,
-        (sum, item) => sum + item.proteinGrams.toDouble(),
-      );
-      carbs = result.items.fold(
-        0,
-        (sum, item) => sum + item.carbohydrateGrams.toDouble(),
-      );
-      fat = result.items.fold(0, (sum, item) => sum + item.fatGrams.toDouble());
-      message = result.message;
     } on Object {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -195,48 +177,12 @@ class NutritionPage extends ConsumerWidget {
       return;
     }
     if (!context.mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Revisar estimativa'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.memory(bytes, height: 150, fit: BoxFit.cover),
-              const SizedBox(height: 12),
-              Text(
-                '$message\n\n≈ ${calories.round()} kcal · P ${protein.round()} g · C ${carbs.round()} g · G ${fat.round()} g\nValores estimados, não medidos.',
-              ),
-              ...suggestions.map((item) => ListTile(title: Text(item))),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () {
-              ref
-                  .read(mealsProvider.notifier)
-                  .add(
-                    name: suggestions.isEmpty
-                        ? 'Refeição revisada'
-                        : suggestions.join(', '),
-                    mealType: 'Refeição',
-                    notes: 'Estimativa por foto revisada pelo usuário.',
-                    estimatedCalories: calories,
-                    proteinGrams: protein,
-                    carbohydrateGrams: carbs,
-                    fatGrams: fat,
-                  );
-              Navigator.pop(dialogContext);
-            },
-            child: const Text('Confirmar e salvar'),
-          ),
-        ],
+    context.push(
+      '/nutrition/photo-review',
+      extra: PhotoMealReviewInput(
+        imageBytes: bytes,
+        message: result.message,
+        items: result.items,
       ),
     );
   }
@@ -247,6 +193,309 @@ class NutritionPage extends ConsumerWidget {
     if (lower.endsWith('.webp')) return 'image/webp';
     return 'image/jpeg';
   }
+}
+
+/// Dados efêmeros da análise: a imagem não é persistida neste objeto.
+class PhotoMealReviewInput {
+  const PhotoMealReviewInput({
+    required this.imageBytes,
+    required this.message,
+    required this.items,
+  });
+
+  final Uint8List imageBytes;
+  final String message;
+  final List<MealPhotoItem> items;
+}
+
+class NutritionPhotoReviewPage extends ConsumerStatefulWidget {
+  const NutritionPhotoReviewPage({super.key, required this.input});
+
+  final PhotoMealReviewInput input;
+
+  @override
+  ConsumerState<NutritionPhotoReviewPage> createState() =>
+      _NutritionPhotoReviewPageState();
+}
+
+class _NutritionPhotoReviewPageState
+    extends ConsumerState<NutritionPhotoReviewPage> {
+  late List<_PhotoFoodDraft> _items;
+  DateTime _recordedAt = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _items = widget.input.items.map(_PhotoFoodDraft.fromAnalysis).toList();
+  }
+
+  double get _calories => _items.fold(0, (sum, item) => sum + item.calories);
+  double get _protein => _items.fold(0, (sum, item) => sum + item.protein);
+  double get _carbs => _items.fold(0, (sum, item) => sum + item.carbs);
+  double get _fat => _items.fold(0, (sum, item) => sum + item.fat);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Revisar estimativa da foto')),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.memory(
+              widget.input.imageBytes,
+              height: 180,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(widget.input.message),
+          const SizedBox(height: 8),
+          const Text(
+            'As porções e nutrientes são estimativas. Revise cada alimento antes de salvar.',
+          ),
+          const SizedBox(height: 16),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.calendar_today_outlined),
+            title: const Text('Data e horário do registro'),
+            subtitle: Text(
+              MaterialLocalizations.of(context).formatFullDate(_recordedAt),
+            ),
+            trailing: TextButton(
+              onPressed: _selectDate,
+              child: const Text('Alterar'),
+            ),
+          ),
+          Text(
+            '≈ ${_calories.round()} kcal · P ${_protein.round()} g · C ${_carbs.round()} g · G ${_fat.round()} g',
+            style: theme.textTheme.titleMedium,
+          ),
+          const SizedBox(height: 12),
+          for (var index = 0; index < _items.length; index++)
+            _foodEditor(index),
+          OutlinedButton.icon(
+            onPressed: () =>
+                setState(() => _items.add(_PhotoFoodDraft.empty())),
+            icon: const Icon(Icons.add),
+            label: const Text('Adicionar alimento'),
+          ),
+          const SizedBox(height: 20),
+          FilledButton.icon(
+            onPressed: _save,
+            icon: const Icon(Icons.save_outlined),
+            label: const Text('Confirmar e salvar refeição'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _foodEditor(int index) {
+    final item = _items[index];
+    return Card(
+      key: ValueKey(item.key),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Alimento ${index + 1}',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Remover alimento',
+                  onPressed: () => setState(() => _items.removeAt(index)),
+                  icon: const Icon(Icons.delete_outline),
+                ),
+              ],
+            ),
+            TextFormField(
+              initialValue: item.name,
+              decoration: const InputDecoration(labelText: 'Nome do alimento'),
+              onChanged: (value) => item.name = value,
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    initialValue: item.portion.toString(),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(labelText: 'Porção'),
+                    onChanged: (value) =>
+                        setState(() => item.portion = _number(value)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    initialValue: item.unit,
+                    decoration: const InputDecoration(labelText: 'Unidade'),
+                    onChanged: (value) => item.unit = value,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: _macroField(
+                    'kcal',
+                    item.calories,
+                    (value) => item.calories = value,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _macroField(
+                    'Proteína (g)',
+                    item.protein,
+                    (value) => item.protein = value,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: _macroField(
+                    'Carboidratos (g)',
+                    item.carbs,
+                    (value) => item.carbs = value,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _macroField(
+                    'Gorduras (g)',
+                    item.fat,
+                    (value) => item.fat = value,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _macroField(
+    String label,
+    double value,
+    ValueChanged<double> onChanged,
+  ) => TextFormField(
+    initialValue: value.toString(),
+    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+    decoration: InputDecoration(labelText: label),
+    onChanged: (text) => setState(() => onChanged(_number(text))),
+  );
+
+  Future<void> _selectDate() async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _recordedAt,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+    );
+    if (selected == null || !mounted) return;
+    setState(() {
+      _recordedAt = DateTime(
+        selected.year,
+        selected.month,
+        selected.day,
+        _recordedAt.hour,
+        _recordedAt.minute,
+      );
+    });
+  }
+
+  void _save() {
+    final validItems = _items
+        .where((item) => item.name.trim().isNotEmpty)
+        .toList();
+    if (validItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Adicione ao menos um alimento para salvar.'),
+        ),
+      );
+      return;
+    }
+    ref
+        .read(mealsProvider.notifier)
+        .add(
+          name: validItems
+              .map(
+                (item) =>
+                    '${item.name.trim()} (${item.portion} ${item.unit.trim()})',
+              )
+              .join(', '),
+          mealType: 'Refeição',
+          notes: 'Estimativa por foto revisada pelo usuário.',
+          recordedAt: _recordedAt,
+          estimatedCalories: _calories,
+          proteinGrams: _protein,
+          carbohydrateGrams: _carbs,
+          fatGrams: _fat,
+        );
+    context.go('/nutrition');
+  }
+
+  double _number(String value) =>
+      double.tryParse(value.replaceAll(',', '.')) ?? 0;
+}
+
+class _PhotoFoodDraft {
+  _PhotoFoodDraft({
+    required this.key,
+    required this.name,
+    required this.portion,
+    required this.unit,
+    required this.calories,
+    required this.protein,
+    required this.carbs,
+    required this.fat,
+  });
+
+  factory _PhotoFoodDraft.fromAnalysis(MealPhotoItem item) => _PhotoFoodDraft(
+    key: Object(),
+    name: item.name,
+    portion: item.portion.toDouble(),
+    unit: item.unit,
+    calories: item.calories.toDouble(),
+    protein: item.proteinGrams.toDouble(),
+    carbs: item.carbohydrateGrams.toDouble(),
+    fat: item.fatGrams.toDouble(),
+  );
+
+  factory _PhotoFoodDraft.empty() => _PhotoFoodDraft(
+    key: Object(),
+    name: '',
+    portion: 1,
+    unit: 'porção',
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+  );
+
+  final Object key;
+  String name;
+  double portion;
+  String unit;
+  double calories;
+  double protein;
+  double carbs;
+  double fat;
 }
 
 class NutritionMealFormPage extends ConsumerStatefulWidget {
