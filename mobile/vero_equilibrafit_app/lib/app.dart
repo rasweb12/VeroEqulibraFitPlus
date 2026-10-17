@@ -136,6 +136,10 @@ class VeroEqulibraFitApp extends ConsumerWidget {
       builder: (context, state) => const NutritionPage(),
     ),
     GoRoute(
+      path: '/nutrition/new',
+      builder: (context, state) => const NutritionMealFormPage(),
+    ),
+    GoRoute(
       path: '/nutrition/plans',
       builder: (context, state) => const NutritionPlansPage(),
     ),
