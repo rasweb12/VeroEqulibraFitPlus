@@ -51,3 +51,9 @@ Este endpoint não é liberado pelo aplicativo ainda: falta o adaptador Flutter 
 `SyncPushClient` consome somente operações pendentes da outbox do proprietário autenticado. Ele valida IDs UUID, envia o token, usa timeout de 30 segundos e só marca a operação como sincronizada quando a API devolve `accepted` ou `duplicate`. Conflitos e rejeições são preservados como conflito local; problemas de rede, autenticação e respostas inválidas voltam para a fila com backoff.
 
 O adaptador ainda não é disparado pelo aplicativo: não há abertura centralizada e cifrada do Isar nem ligação atômica das mutações de treino/refeição à outbox. Essa limitação é deliberada para não simular sincronização automática. `flutter analyze` do adaptador e `flutter test` concluíram sem falhas; a integração real com API/Neon continua pendente.
+
+### Bloqueador de criptografia identificado
+
+A versão instalada do Isar (`3.1.0+1`) foi inspecionada e sua API de abertura não aceita chave de criptografia. Por isso, a outbox não será aberta nem conectada ao aplicativo nessa versão: seu payload pode conter dados de treino e alimentação, que não podem ir para armazenamento local em texto claro. A tentativa de inicialização foi descartada antes de qualquer uso.
+
+Para concluir o fluxo será necessário adotar uma camada local que forneça criptografia de banco verificável, ou atualizar o mecanismo de persistência mediante migração testada. Até essa decisão e seus testes de migração, o estado de sincronização permanece **REPROVADO** para homologação, embora os contratos e o adaptador possam continuar evoluindo isoladamente.

@@ -55,4 +55,6 @@ Em 17/10/2026, a análise de foto passou a abrir uma rota protegida de revisão 
 
 `P2-SYNC-002` evoluiu para **PARCIAL**: a API possui `POST /api/v1/sync/push`, autenticado, idempotente por proprietário e transacional, para criar fichas e refeições com IDs estáveis. O build de `VeroEqulibraFit.Api` foi concluído sem avisos ou erros. O Flutter ainda não envia a outbox, e não existem pull, cursor, tombstones, versões de edição ou demonstração em dois dispositivos; a sincronização ponta a ponta continua **REPROVADA**.
 
+`P2-STORE-002` foi confirmado como bloqueador: Isar `3.1.0+1` não expõe abertura com chave de criptografia. A outbox não foi aberta no aplicativo e não recebeu dados, evitando persistência local desprotegida de dados de saúde. É necessária uma mudança de camada local com migração e testes antes de ativar a sincronização automática.
+
 O status do MVP continua **REPROVADO — NÃO HOMOLOGADO**.
