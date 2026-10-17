@@ -65,4 +65,9 @@ class MealsController extends StateNotifier<List<MealEntry>> {
     _repository.delete(id);
     state = _repository.entries();
   }
+
+  void update(MealEntry entry) {
+    _repository.update(entry);
+    state = _repository.entries();
+  }
 }

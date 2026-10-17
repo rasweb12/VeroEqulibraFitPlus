@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../shared/presentation/app_drawer.dart';
 import 'nutrition_providers.dart';
+import '../domain/meal_entry.dart';
 
 class NutritionPage extends ConsumerWidget {
   const NutritionPage({super.key});
@@ -72,11 +73,22 @@ class NutritionPage extends ConsumerWidget {
                     ),
                     isThreeLine:
                         meal.notes.isNotEmpty || meal.estimatedCalories != null,
-                    trailing: IconButton(
-                      tooltip: 'Excluir registro',
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () =>
-                          ref.read(mealsProvider.notifier).delete(meal.id),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'Editar registro',
+                          icon: const Icon(Icons.edit_outlined),
+                          onPressed: () =>
+                              context.go('/nutrition/${meal.id}/edit'),
+                        ),
+                        IconButton(
+                          tooltip: 'Excluir registro',
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () =>
+                              ref.read(mealsProvider.notifier).delete(meal.id),
+                        ),
+                      ],
                     ),
                   ),
                 );
@@ -238,7 +250,8 @@ class NutritionPage extends ConsumerWidget {
 }
 
 class NutritionMealFormPage extends ConsumerStatefulWidget {
-  const NutritionMealFormPage({super.key});
+  const NutritionMealFormPage({super.key, this.mealId});
+  final String? mealId;
 
   @override
   ConsumerState<NutritionMealFormPage> createState() =>
@@ -257,6 +270,27 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
   DateTime _recordedAt = DateTime.now();
   String? _estimateMessage;
   bool _estimating = false;
+  MealEntry? _existing;
+
+  @override
+  void initState() {
+    super.initState();
+    final mealId = widget.mealId;
+    if (mealId == null) return;
+    for (final meal in ref.read(mealsProvider)) {
+      if (meal.id != mealId) continue;
+      _existing = meal;
+      _name.text = meal.name;
+      _notes.text = meal.notes;
+      _mealType = meal.mealType;
+      _recordedAt = meal.recordedAt;
+      _calories.text = meal.estimatedCalories?.toString() ?? '';
+      _protein.text = meal.proteinGrams?.toString() ?? '';
+      _carbs.text = meal.carbohydrateGrams?.toString() ?? '';
+      _fat.text = meal.fatGrams?.toString() ?? '';
+      break;
+    }
+  }
 
   @override
   void dispose() {
@@ -282,7 +316,7 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
         icon: const Icon(Icons.arrow_back),
         onPressed: () => context.go('/nutrition'),
       ),
-      title: const Text('Registrar refeição'),
+      title: Text(_existing == null ? 'Registrar refeição' : 'Editar refeição'),
     ),
     body: ListView(
       padding: const EdgeInsets.all(20),
@@ -351,7 +385,9 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
         FilledButton.icon(
           onPressed: _save,
           icon: const Icon(Icons.save_outlined),
-          label: const Text('Salvar refeição'),
+          label: Text(
+            _existing == null ? 'Salvar refeição' : 'Salvar alterações',
+          ),
         ),
       ],
     ),
@@ -427,22 +463,38 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
     }
     final portion = _portion.text.trim();
     final notes = _notes.text.trim();
-    ref
-        .read(mealsProvider.notifier)
-        .add(
-          name: _name.text,
+    final controller = ref.read(mealsProvider.notifier);
+    final existing = _existing;
+    final savedNotes = portion.isEmpty
+        ? notes
+        : notes.isEmpty
+        ? 'Porção: $portion'
+        : '$notes\nPorção: $portion';
+    if (existing == null) {
+      controller.add(
+        name: _name.text,
+        mealType: _mealType,
+        notes: savedNotes,
+        estimatedCalories: _number(_calories.text),
+        proteinGrams: _number(_protein.text),
+        carbohydrateGrams: _number(_carbs.text),
+        fatGrams: _number(_fat.text),
+        recordedAt: _recordedAt,
+      );
+    } else {
+      controller.update(
+        existing.copyWith(
+          name: _name.text.trim(),
           mealType: _mealType,
-          notes: portion.isEmpty
-              ? notes
-              : notes.isEmpty
-              ? 'Porção: $portion'
-              : '$notes\nPorção: $portion',
+          notes: savedNotes,
           estimatedCalories: _number(_calories.text),
           proteinGrams: _number(_protein.text),
           carbohydrateGrams: _number(_carbs.text),
           fatGrams: _number(_fat.text),
           recordedAt: _recordedAt,
-        );
+        ),
+      );
+    }
     context.go('/nutrition');
   }
 

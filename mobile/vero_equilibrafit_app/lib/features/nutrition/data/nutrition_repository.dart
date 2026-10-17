@@ -46,6 +46,13 @@ class NutritionRepository {
     unawaited(_save());
   }
 
+  void update(MealEntry entry) {
+    final index = _entries.indexWhere((item) => item.id == entry.id);
+    if (index < 0) return;
+    _entries[index] = entry;
+    unawaited(_save());
+  }
+
   Future<void> load() async {
     final encoded = await _store.read(_storageKey);
     if (encoded == null || encoded.isEmpty) return;
