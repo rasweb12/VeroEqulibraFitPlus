@@ -12,7 +12,8 @@ public sealed record TrainingPlanExerciseRequest(
 public sealed record CreateTrainingPlanRequest(
     string Name,
     string Objective,
-    IReadOnlyList<TrainingPlanExerciseRequest>? Exercises);
+    IReadOnlyList<TrainingPlanExerciseRequest>? Exercises,
+    Guid? ClientId = null);
 
 public sealed record TrainingPlanResponse(
     Guid Id,

@@ -32,7 +32,17 @@ public sealed class TrainingPlansController(VeroEqulibraFitDbContext database) :
         var exercises = request.Exercises ?? [];
         if (exercises.Count > 100 || exercises.Any(exercise => string.IsNullOrWhiteSpace(exercise.ExerciseId) || exercise.ExerciseId.Length > 120 || exercise.Sets is < 0 or > 100 || exercise.RestSeconds is < 0 or > 3600 || string.IsNullOrWhiteSpace(exercise.Repetitions) || exercise.Repetitions.Length > 32))
             return BadRequest(new { error = "Um ou mais exercícios são inválidos." });
-        var plan = new TrainingPlan { OwnerId = ownerId.Value, Name = request.Name.Trim(), Objective = request.Objective.Trim() };
+        if (request.ClientId is { } clientId)
+        {
+            var existing = await database.TrainingPlans.IgnoreQueryFilters().Include(plan => plan.Exercises)
+                .SingleOrDefaultAsync(plan => plan.Id == clientId, cancellationToken);
+            if (existing is not null)
+            {
+                if (existing.OwnerId != ownerId.Value) return Conflict(new { error = "Identificador já pertence a outra conta." });
+                return Ok(ToResponse(existing));
+            }
+        }
+        var plan = new TrainingPlan { Id = request.ClientId ?? Guid.NewGuid(), OwnerId = ownerId.Value, Name = request.Name.Trim(), Objective = request.Objective.Trim() };
         plan.Exercises = exercises.OrderBy(exercise => exercise.Position).Select((exercise, position) => new TrainingPlanExercise
         {
             ExerciseId = exercise.ExerciseId.Trim(), Position = position, Sets = exercise.Sets,

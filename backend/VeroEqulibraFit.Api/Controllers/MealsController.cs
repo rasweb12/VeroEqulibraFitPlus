@@ -59,8 +59,19 @@ public sealed class MealsController(VeroEqulibraFitDbContext database, GeminiAiC
             return BadRequest(new { error = "Informe uma descrição de até 1000 caracteres." });
         if (new[] { request.EstimatedCalories, request.ProteinGrams, request.CarbohydrateGrams, request.FatGrams }.Any(value => value is < 0))
             return BadRequest(new { error = "Valores nutricionais não podem ser negativos." });
+        if (request.ClientId is { } clientId)
+        {
+            var existing = await database.MealEntries.IgnoreQueryFilters()
+                .SingleOrDefaultAsync(meal => meal.Id == clientId, cancellationToken);
+            if (existing is not null)
+            {
+                if (existing.OwnerId != ownerId.Value) return Conflict(new { error = "Identificador já pertence a outra conta." });
+                return Ok(ToResponse(existing));
+            }
+        }
         var meal = new MealEntry
         {
+            Id = request.ClientId ?? Guid.NewGuid(),
             OwnerId = ownerId.Value,
             Description = request.Description.Trim(),
             ConsumedAt = request.ConsumedAt ?? DateTimeOffset.UtcNow,

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import '../../../core/persistence/owner_scope.dart';
 import '../../../core/persistence/secure_owner_store.dart';
+import '../../../core/persistence/stable_id.dart';
 
 import '../domain/exercise.dart';
 import '../domain/planned_exercise.dart';
@@ -10,11 +11,10 @@ import '../domain/training_plan.dart';
 
 /// Local-first repository. Sync adapters can later enqueue the stable IDs.
 class TrainingRepository {
-  TrainingRepository({required String ownerId, required SecureOwnerStore store})
-    : _store = store,
-      _storageKey = ownerScopedKey(ownerId, 'training_repository_v2_secure');
+  TrainingRepository({required String ownerId, required this.store})
+    : _storageKey = ownerScopedKey(ownerId, 'training_repository_v2_secure');
   final String _storageKey;
-  final SecureOwnerStore _store;
+  final SecureOwnerStore store;
   final List<TrainingPlan> _plans = [];
   final List<Exercise> _customExercises = [];
   static const catalog = <Exercise>[
@@ -163,7 +163,7 @@ class TrainingRepository {
       (plan) => plan.id == id && !plan.isDeleted,
     );
     final copy = source.copyWith(
-      id: '${source.id}-${DateTime.now().microsecondsSinceEpoch}',
+      id: newStableId(),
       name: '${source.name} (cópia)',
     );
     _plans.add(copy);
@@ -177,7 +177,7 @@ class TrainingRepository {
     List<int> weekdays = const [],
   }) {
     final plan = TrainingPlan(
-      id: 'plan-${DateTime.now().microsecondsSinceEpoch}',
+      id: newStableId(),
       name: name.trim(),
       objective: objective.trim(),
       exercises: const [],
@@ -271,7 +271,7 @@ class TrainingRepository {
   }
 
   Future<void> load() async {
-    final encoded = await _store.read(_storageKey);
+    final encoded = await store.read(_storageKey);
     if (encoded == null || encoded.isEmpty) return;
     try {
       final data = jsonDecode(encoded) as Map<String, dynamic>;
@@ -364,7 +364,7 @@ class TrainingRepository {
           )
           .toList(growable: false),
     };
-    await _store.write(_storageKey, jsonEncode(payload));
+    await store.write(_storageKey, jsonEncode(payload));
   }
 
   String _normalize(String value) => value

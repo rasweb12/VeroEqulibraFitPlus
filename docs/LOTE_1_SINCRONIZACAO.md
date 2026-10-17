@@ -33,3 +33,9 @@ Portanto não há sincronização Flutter ↔ Neon implementada e nenhum dado de
 3. Implementar processamento idempotente no PostgreSQL e cursor de pull.
 4. Integrar treino, alimentação, hábitos e medidas progressivamente.
 5. Testar contas A/B e dois emuladores com falha/retry/conflito.
+
+## Incremento de identidade estável — 17/10/2026
+
+Fichas novas, cópias de fichas e refeições novas agora recebem UUID v4 no próprio dispositivo. A API aceita opcionalmente esse `clientId` na criação de fichas e refeições: se o mesmo identificador já existir para o mesmo proprietário, ela devolve o registro existente; se pertencer a outra conta, responde conflito. Isso torna reenvios de criação seguros e impede que uma conta escolha o identificador de outra.
+
+O incremento é apenas a base de identidade para a futura outbox. Os repositórios ainda não fazem chamadas remotas e a API não possui `push/pull`, cursor ou atualização versionada. O estado deste lote continua **PARCIAL — NÃO HOMOLOGADO**.

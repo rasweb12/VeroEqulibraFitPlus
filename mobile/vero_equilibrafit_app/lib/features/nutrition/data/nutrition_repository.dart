@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import '../../../core/persistence/owner_scope.dart';
 import '../../../core/persistence/secure_owner_store.dart';
+import '../../../core/persistence/stable_id.dart';
 
 import '../domain/meal_entry.dart';
 
@@ -27,7 +28,7 @@ class NutritionRepository {
   }) {
     _entries.add(
       MealEntry(
-        id: 'meal-${DateTime.now().microsecondsSinceEpoch}',
+        id: newStableId(),
         name: name.trim(),
         mealType: mealType,
         notes: notes.trim(),

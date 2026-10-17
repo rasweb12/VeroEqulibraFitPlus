@@ -6,7 +6,8 @@ public sealed record CreateMealEntryRequest(
     decimal? EstimatedCalories,
     decimal? ProteinGrams,
     decimal? CarbohydrateGrams,
-    decimal? FatGrams);
+    decimal? FatGrams,
+    Guid? ClientId = null);
 
 public sealed record MealEntryResponse(
     Guid Id,
