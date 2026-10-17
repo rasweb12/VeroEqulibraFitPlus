@@ -32,8 +32,8 @@ public sealed class AuthController(
         var result = await userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
             return BadRequest(new ValidationProblemDetails(result.Errors.GroupBy(error => error.Code).ToDictionary(group => group.Key, group => group.Select(error => error.Description).ToArray())));
-        await SendConfirmationAsync(user, cancellationToken);
-        return Accepted(new RegistrationResponse("Confira seu e-mail para confirmar a conta antes de entrar."));
+        await TrySendConfirmationAsync(user, cancellationToken);
+        return Accepted(new RegistrationResponse("Se o envio estiver disponível, confira seu e-mail para confirmar a conta antes de entrar."));
     }
 
     [HttpPost("login")]
@@ -91,7 +91,7 @@ public sealed class AuthController(
                 var token = await userManager.GeneratePasswordResetTokenAsync(user);
                 var link = BuildPublicLink("reset-password", user.Id, token);
                 try { await emailSender.SendPasswordResetAsync(user.Email!, link, cancellationToken); }
-                catch (InvalidOperationException) { /* Avoid account enumeration; deployment health exposes missing configuration. */ }
+                catch (Exception exception) when (IsExpectedEmailFailure(exception)) { /* Generic response prevents account enumeration. */ }
             }
         }
         return Accepted();
@@ -159,11 +159,21 @@ public sealed class AuthController(
     {
         var user = await userManager.FindByIdAsync(CurrentUserId().ToString());
         if (user is null) return NoContent();
-        var tokens = database.RefreshTokens.Where(token => token.UserId == user.Id);
-        database.RefreshTokens.RemoveRange(tokens);
-        var result = await userManager.DeleteAsync(user);
-        if (!result.Succeeded) return Problem("Não foi possível excluir a conta.");
+        await using var transaction = await database.Database.BeginTransactionAsync(cancellationToken);
+        database.RefreshTokens.RemoveRange(database.RefreshTokens.Where(token => token.UserId == user.Id));
+        database.SyncOperations.RemoveRange(database.SyncOperations.Where(operation => operation.OwnerId == user.Id));
+        database.TrainingSessions.RemoveRange(database.TrainingSessions.Where(session => session.OwnerId == user.Id));
+        database.TrainingPlans.RemoveRange(database.TrainingPlans.IgnoreQueryFilters().Where(plan => plan.OwnerId == user.Id));
+        database.MealEntries.RemoveRange(database.MealEntries.IgnoreQueryFilters().Where(meal => meal.OwnerId == user.Id));
+        database.NutritionPlans.RemoveRange(database.NutritionPlans.IgnoreQueryFilters().Where(plan => plan.OwnerId == user.Id));
         await database.SaveChangesAsync(cancellationToken);
+        var result = await userManager.DeleteAsync(user);
+        if (!result.Succeeded)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return Problem("Não foi possível excluir a conta.");
+        }
+        await transaction.CommitAsync(cancellationToken);
         return NoContent();
     }
 
@@ -186,7 +196,7 @@ public sealed class AuthController(
     private async Task TrySendConfirmationAsync(AppUser user, CancellationToken cancellationToken)
     {
         try { await SendConfirmationAsync(user, cancellationToken); }
-        catch (InvalidOperationException) { /* Response remains generic to avoid account enumeration. */ }
+        catch (Exception exception) when (IsExpectedEmailFailure(exception)) { /* Response remains generic to avoid account enumeration. */ }
     }
 
     private string BuildPublicLink(string route, Guid userId, string token)
@@ -199,4 +209,6 @@ public sealed class AuthController(
     }
 
     private Guid CurrentUserId() => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+    private static bool IsExpectedEmailFailure(Exception exception) => exception is InvalidOperationException or System.Net.Mail.SmtpException;
 }

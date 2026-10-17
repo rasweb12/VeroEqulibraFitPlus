@@ -24,7 +24,10 @@ public sealed class AuthorizationTests
         {
             Gate.Wait();
             Set("Jwt__Issuer", "vero-equilibrafit-api-tests");
+            Set("Jwt__Audience", "vero-equilibrafit-mobile-tests");
             Set("Jwt__SigningKey", "test-signing-key-with-at-least-sixty-four-bytes-for-hs512-validation-0001");
+            Set("AI__BaseUrl", "http://localhost:8001");
+            Set("AI__InternalApiKey", "test-internal-key-with-at-least-thirty-two-characters");
             Set("ConnectionStrings__Postgres", "Host=127.0.0.1;Port=1;Database=isolated_tests;Username=test;Password=test;Timeout=1");
         }
 

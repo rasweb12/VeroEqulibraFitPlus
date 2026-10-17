@@ -17,6 +17,8 @@ services:
         sync: false
       - key: Jwt__Issuer
         value: vero-equilibrafit-api
+      - key: Jwt__Audience
+        value: vero-equilibrafit-mobile
       - key: Jwt__SigningKey
         sync: false
       - key: PublicApp__BaseUrl

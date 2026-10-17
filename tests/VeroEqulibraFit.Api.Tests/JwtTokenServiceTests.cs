@@ -11,6 +11,7 @@ public sealed class JwtTokenServiceTests
 {
     private const string SigningKey = "test-signing-key-with-at-least-sixty-four-bytes-for-hs512-validation-0001";
     private const string Issuer = "vero-equilibrafit-api-tests";
+    private const string Audience = "vero-equilibrafit-mobile-tests";
 
     [Fact]
     public void ValidateConfiguration_RejectsMissingSigningKey()
@@ -30,6 +31,16 @@ public sealed class JwtTokenServiceTests
         var exception = Assert.Throws<InvalidOperationException>(() => JwtTokenService.ValidateConfiguration(configuration));
 
         Assert.Contains("Jwt:Issuer", exception.Message);
+    }
+
+    [Fact]
+    public void ValidateConfiguration_RejectsMissingAudience()
+    {
+        var configuration = Configuration(false, [("Jwt:Issuer", Issuer), ("Jwt:SigningKey", SigningKey)]);
+
+        var exception = Assert.Throws<InvalidOperationException>(() => JwtTokenService.ValidateConfiguration(configuration));
+
+        Assert.Contains("Jwt:Audience", exception.Message);
     }
 
     [Fact]
@@ -62,7 +73,7 @@ public sealed class JwtTokenServiceTests
         var service = new JwtTokenService(Configuration());
         var token = new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
             service.Issuer,
-            service.Issuer,
+            service.Audience,
             expires: DateTime.UtcNow.AddMinutes(5),
             signingCredentials: new SigningCredentials(
                 new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes("different-signing-key-with-at-least-sixty-four-bytes-for-hs512-validation")),
@@ -80,7 +91,7 @@ public sealed class JwtTokenServiceTests
         var service = new JwtTokenService(Configuration());
         var token = new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
             service.Issuer,
-            service.Issuer,
+            service.Audience,
             expires: DateTime.UtcNow.AddMinutes(-1),
             signingCredentials: new SigningCredentials(service.SigningKey, SecurityAlgorithms.HmacSha512)));
 
@@ -96,6 +107,7 @@ public sealed class JwtTokenServiceTests
         if (includeDefaults)
         {
             values["Jwt:Issuer"] = Issuer;
+            values["Jwt:Audience"] = Audience;
             values["Jwt:SigningKey"] = SigningKey;
         }
         if (overrides is not null)
@@ -108,7 +120,8 @@ public sealed class JwtTokenServiceTests
     {
         ValidateIssuer = true,
         ValidIssuer = service.Issuer,
-        ValidateAudience = false,
+        ValidateAudience = true,
+        ValidAudience = service.Audience,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = service.SigningKey,

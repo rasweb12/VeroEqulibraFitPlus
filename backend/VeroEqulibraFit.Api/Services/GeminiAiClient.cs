@@ -10,6 +10,18 @@ public sealed class GeminiAiClient(HttpClient httpClient, IConfiguration configu
 {
     private readonly string? _internalKey = configuration["AI:InternalApiKey"];
 
+    public static void ValidateConfiguration(IConfiguration configuration)
+    {
+        var baseUrl = configuration["AI:BaseUrl"];
+        var key = configuration["AI:InternalApiKey"];
+        if (string.IsNullOrWhiteSpace(baseUrl))
+            throw new InvalidOperationException("AI:BaseUrl must be supplied through the environment.");
+        if (!Uri.TryCreate(baseUrl.Contains("://", StringComparison.Ordinal) ? baseUrl : $"http://{baseUrl}", UriKind.Absolute, out _))
+            throw new InvalidOperationException("AI:BaseUrl must be an absolute HTTP(S) URL.");
+        if (string.IsNullOrWhiteSpace(key) || key.Length < 32)
+            throw new InvalidOperationException("AI:InternalApiKey must be a persistent secret of at least 32 characters.");
+    }
+
     public async Task<CoachMessageResponse> SendCoachMessageAsync(string userId, CoachMessageRequest request, CancellationToken cancellationToken)
     {
         var response = await SendAsync("/api/v1/coach/chat", new CoachGatewayRequest(userId, request.SessionId, request.Message), cancellationToken);

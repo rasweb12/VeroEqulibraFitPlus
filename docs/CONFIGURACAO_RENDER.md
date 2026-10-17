@@ -46,6 +46,7 @@ Cadastre:
 | `PORT` | `8080` |
 | `Database__ConnectionString` | string do Neon isolado |
 | `Jwt__Issuer` | `vero-equilibrafit-api` |
+| `Jwt__Audience` | `vero-equilibrafit-mobile` |
 | `Jwt__SigningKey` | segredo persistente de ao menos 64 bytes UTF-8 |
 | `AI__BaseUrl` | host privado da IA; no blueprint é preenchido por `fromService` |
 | `AI__InternalApiKey` | exatamente o mesmo valor de `VERO_EQUILIBRAFIT_INTERNAL_API_KEY` |
@@ -58,7 +59,7 @@ $bytes = New-Object byte[] 64
 [Convert]::ToBase64String($bytes)
 ```
 
-Não altere essa chave em cada deploy. A API precisa dela para validar tokens existentes. `Database__ConnectionString` é o nome canônico; não cadastre também `ConnectionStrings__Postgres`.
+Não altere essa chave em cada deploy. A API precisa dela para validar tokens existentes. `Jwt__Audience` precisa corresponder ao valor configurado no `render.yaml`; a API recusa iniciar sem ela. `Database__ConnectionString` é o nome canônico; não cadastre também `ConnectionStrings__Postgres`.
 
 Mantenha `ReverseProxy__KnownProxy` vazio enquanto não houver um IP estável e documentado do proxy confiável. A API ignora cabeçalhos encaminhados nesse caso, o que evita falsificação de `X-Forwarded-*`.
 

@@ -8,5 +8,6 @@
 **/__pycache__/
 **/.venv*/
 **/.tmp/
+.tmp_*
 *.egg-info/
 .pytest_cache/

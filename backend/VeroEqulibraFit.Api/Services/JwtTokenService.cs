@@ -11,6 +11,7 @@ public sealed class JwtTokenService(IConfiguration configuration)
 {
     private const int AccessLifetimeMinutes = 15;
     private readonly string _issuer = ReadIssuer(configuration);
+    private readonly string _audience = ReadAudience(configuration);
     private readonly byte[] _key = ReadKey(configuration);
 
     public (string Token, DateTimeOffset ExpiresAt) CreateAccessToken(AppUser user, IEnumerable<string> roles)
@@ -25,18 +26,20 @@ public sealed class JwtTokenService(IConfiguration configuration)
         };
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
         var credentials = new SigningCredentials(new SymmetricSecurityKey(_key), SecurityAlgorithms.HmacSha512);
-        var token = new JwtSecurityToken(_issuer, _issuer, claims, expires: expiresAt.UtcDateTime, signingCredentials: credentials);
+        var token = new JwtSecurityToken(_issuer, _audience, claims, expires: expiresAt.UtcDateTime, signingCredentials: credentials);
         return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt);
     }
 
     public static string NewRefreshToken() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
     public static string HashRefreshToken(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
     public string Issuer => _issuer;
+    public string Audience => _audience;
     public SymmetricSecurityKey SigningKey => new(_key);
 
     public static void ValidateConfiguration(IConfiguration configuration)
     {
         _ = ReadIssuer(configuration);
+        _ = ReadAudience(configuration);
         _ = ReadKey(configuration);
     }
 
@@ -46,6 +49,14 @@ public sealed class JwtTokenService(IConfiguration configuration)
         if (string.IsNullOrWhiteSpace(issuer))
             throw new InvalidOperationException("Jwt:Issuer must be supplied through the environment.");
         return issuer;
+    }
+
+    private static string ReadAudience(IConfiguration configuration)
+    {
+        var audience = configuration["Jwt:Audience"];
+        if (string.IsNullOrWhiteSpace(audience))
+            throw new InvalidOperationException("Jwt:Audience must be supplied through the environment.");
+        return audience;
     }
 
     private static byte[] ReadKey(IConfiguration configuration)

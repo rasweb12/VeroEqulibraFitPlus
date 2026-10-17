@@ -13,6 +13,7 @@ using VeroEqulibraFit.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 JwtTokenService.ValidateConfiguration(builder.Configuration);
+GeminiAiClient.ValidateConfiguration(builder.Configuration);
 builder.Services.AddSingleton<ExerciseSearchService>();
 builder.Services.AddControllers();
 builder.Services.AddHttpClient<GeminiAiClient>(client =>
@@ -46,7 +47,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     {
         ValidateIssuer = true,
         ValidIssuer = tokenService.Issuer,
-        ValidateAudience = false,
+        ValidateAudience = true,
+        ValidAudience = tokenService.Audience,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = tokenService.SigningKey,
