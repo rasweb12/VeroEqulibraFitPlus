@@ -11,7 +11,8 @@
 | Flutter analyze | NÃO CONCLUSIVO | A análise iniciou e não retornou relatório final dentro da janela disponível. |
 | Login/cadastro/recuperação reais | NÃO TESTADO | Exige deploy das correções, SMTP homologado e conta de teste. |
 | Deep links Android/iOS | NÃO TESTADO | Requer aparelhos/emuladores com o APK atualizado. |
-| Gemini real/foto/plano | NÃO TESTADO | Requer deploy controlado e chamadas autorizadas com dados de homologação. |
+| Coach Gemini real | APROVADO | Em 17/10/2026, resposta real foi exibida no Flutter autenticado após deploy da API e da IA. |
+| Foto/plano Gemini | NÃO TESTADO | Requer chamadas autorizadas separadas e revisão funcional no aplicativo. |
 | Sincronização dois dispositivos | REPROVADO | Não há implementação/evidência suficiente de outbox e resolução de conflitos. |
 
 Os resultados acima não inferem aprovação de nenhum fluxo não executado.

@@ -7,7 +7,7 @@
 | Confirmação/recuperação SMTP | BLOQUEADO | Implementação existe; não há evidência ponta a ponta de entrega e uso de link. |
 | Isolamento local por conta | PARCIAL | Secure storage com namespace por usuário; falta teste físico A/B. |
 | Exclusão de conta | PARCIAL | Remoção transacional de dados adicionada localmente; falta teste PostgreSQL. |
-| Coach Gemini | NÃO TESTADO | Gateway interno protegido, mas fluxo real não foi executado. |
+| Coach Gemini | APROVADO | Em 17/10/2026, uma pergunta no Flutter autenticado recebeu resposta real pelo fluxo API → IA → Gemini. |
 | Foto de refeições Gemini | PARCIAL | Fluxo e contratos existem; falta teste real e edição individual completa. |
 | Plano alimentar | PARCIAL | API possui gerar/aprovar/listar/editar; Flutter e persistência remota ainda não homologados. |
 | Fichas e catálogo | PARCIAL | Busca antes da IA e CRUD local existem; falta sincronização real entre dispositivos. |

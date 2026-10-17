@@ -1,5 +1,16 @@
 # Validação Gemini
 
-Não homologada. Não houve chamada Gemini paga nesta auditoria. O fluxo real depende de ambiente isolado e credencial de servidor.
+## Coach — homologado em 17/10/2026
 
-Atualização 2026-10-16: o cliente Flutter do Coach passou a depender da sessão autenticada e usa `API_BASE_URL` centralizado. O token segue apenas para a API .NET. A execução Flutter→.NET→FastAPI→Gemini ainda não foi homologada ponta a ponta; o Neon isolado e os serviços Render passaram a existir, mas a IA precisa ser mantida privada, receber o deploy dos endpoints de health e ser exercitada com uma conta de teste autorizada.
+Foi comprovada uma resposta real do Coach no aplicativo autenticado. A cadeia verificada foi Flutter → API .NET pública → FastAPI Render → Google Gemini → Flutter. A resposta exibiu o modelo Gemini configurado e não foi uma resposta estática local.
+
+Os health checks da IA respondem `200` em `/health/live`. A comunicação entre API e IA usa uma chave interna compartilhada; a chave Gemini permanece apenas no serviço IA.
+
+## Itens ainda não homologados
+
+- Reconhecimento de foto de refeição com Gemini.
+- Geração e persistência de plano alimentar com Gemini.
+- Cadastro assistido de exercícios com Gemini.
+- Quotas, timeouts, respostas inválidas e indisponibilidade em ambiente real.
+
+O Coach aprovado não torna os demais fluxos Gemini aprovados.
