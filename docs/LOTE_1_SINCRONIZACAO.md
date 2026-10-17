@@ -39,3 +39,9 @@ Portanto não há sincronização Flutter ↔ Neon implementada e nenhum dado de
 Fichas novas, cópias de fichas e refeições novas agora recebem UUID v4 no próprio dispositivo. A API aceita opcionalmente esse `clientId` na criação de fichas e refeições: se o mesmo identificador já existir para o mesmo proprietário, ela devolve o registro existente; se pertencer a outra conta, responde conflito. Isso torna reenvios de criação seguros e impede que uma conta escolha o identificador de outra.
 
 O incremento é apenas a base de identidade para a futura outbox. Os repositórios ainda não fazem chamadas remotas e a API não possui `push/pull`, cursor ou atualização versionada. O estado deste lote continua **PARCIAL — NÃO HOMOLOGADO**.
+
+## Push inicial autenticado — 17/10/2026
+
+Foi criado `POST /api/v1/sync/push`. Ele aceita lotes de até 50 operações e suporta, por enquanto, `training-plan.create` e `meal.create`. Cada operação é vinculada ao proprietário obtido exclusivamente do JWT, tem limite de payload, hash SHA-256 e recibo único por proprietário e `operationId`. A gravação da entidade e do recibo ocorre na mesma transação do PostgreSQL; reenvio idêntico retorna `duplicate` e a reutilização da chave com conteúdo diferente retorna conflito.
+
+Este endpoint não é liberado pelo aplicativo ainda: falta o adaptador Flutter que consome a outbox, renova a sessão e interpreta os resultados. Também faltam `pull`, atualização/exclusão, cursor, versionamento e teste em Neon isolado. Assim, esta implementação não é evidência de sincronização entre dispositivos.

@@ -51,4 +51,8 @@ Em 17/10/2026, a análise de foto passou a abrir uma rota protegida de revisão 
 
 `dart analyze` dos arquivos modificados e `flutter test` concluíram sem falhas (9 testes). Isso corrige a revisão agregada, mas não cria persistência individual de alimentos no Neon: **P2-VISION-001 permanece PARCIAL**. A validação real com imagem autorizada, Gemini, API, Neon e recuperação em outro dispositivo permanece pendente.
 
+### Push inicial da sincronização — 17/10/2026
+
+`P2-SYNC-002` evoluiu para **PARCIAL**: a API possui `POST /api/v1/sync/push`, autenticado, idempotente por proprietário e transacional, para criar fichas e refeições com IDs estáveis. O build de `VeroEqulibraFit.Api` foi concluído sem avisos ou erros. O Flutter ainda não envia a outbox, e não existem pull, cursor, tombstones, versões de edição ou demonstração em dois dispositivos; a sincronização ponta a ponta continua **REPROVADA**.
+
 O status do MVP continua **REPROVADO — NÃO HOMOLOGADO**.
