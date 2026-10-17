@@ -23,3 +23,26 @@ Foram verificados o controle de rota Flutter, a configuração de autenticação
 ## Conclusão
 
 P2 permanece **REPROVADA**. As correções locais reduzem bloqueadores de configuração e privacidade, mas não substituem o deploy controlado, testes reais de e-mail/Gemini/Neon, testes em dois dispositivos e a implementação da administração e sincronização.
+
+## Reavaliação v4 — 17/10/2026
+
+HEAD de início da reavaliação: `5b6c12e1d751d3d33d9dbd94ea16b06fdd68fd7a` (`main`, sem alterações locais). O commit era exatamente a referência informada. Projetos originais e pasta de vídeos não foram alterados.
+
+### Evidências reexecutadas
+
+- `dart analyze lib/core/offline`: aprovado após a atualização da outbox.
+- Testes Flutter direcionados: 9 aprovados (persistência de refeições, edição, isolamento por proprietário e fichas).
+- `build_runner build --delete-conflicting-outputs`: concluído para atualizar o schema Isar. Houve aviso de versão do analyzer do gerador; não houve falha de geração.
+
+### Estado corrigido
+
+| ID | Estado | Evidência |
+| --- | --- | --- |
+| P2-SYNC-001 | PARCIAL | Outbox Isar agora persiste entidade, versão de cliente, estado, tentativas, backoff e erro sanitizado. Commit `29b3a1b`. Ela ainda não é chamada pelos repositórios nem enviada à API. |
+| P2-SYNC-002 | REPROVADO | API não possui push/pull, cursor, versão de registro, tombstone remoto ou resolução de conflito. |
+| P2-STORE-001 | PARCIAL | Treino, refeições, hábitos e medidas usam SecureOwnerStore por conta no código atual. Falta teste físico A/B e migração/limpeza de armazenamento legado. |
+| P2-VISION-001 | PARCIAL | O caminho de foto e o contrato Gemini existem; a revisão ainda é agregada e não persiste alimentos individuais no Neon. |
+| P2-AUTH-001 | PARCIAL | AuthGate e sessão existem. Confirmação e recuperação SMTP não têm evidência ponta a ponta. |
+| P2-ADMIN-001 | REPROVADO | Blazor continua shell sem autenticação administrativa e operações reais. |
+
+O status do MVP continua **REPROVADO — NÃO HOMOLOGADO**.
