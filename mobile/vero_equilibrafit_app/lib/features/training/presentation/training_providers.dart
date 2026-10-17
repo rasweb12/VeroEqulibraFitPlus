@@ -6,14 +6,14 @@ import '../domain/exercise.dart';
 import '../domain/training_plan.dart';
 import '../domain/planned_exercise.dart';
 
-final trainingRepositoryProvider = Provider.autoDispose<TrainingRepository>(
+final trainingRepositoryProvider = Provider<TrainingRepository>(
   (ref) => TrainingRepository(
     ownerId: ref.watch(currentOwnerIdProvider),
     store: ref.read(secureOwnerStoreProvider),
   ),
 );
 final plansProvider =
-    StateNotifierProvider.autoDispose<PlansController, List<TrainingPlan>>(
+    StateNotifierProvider<PlansController, List<TrainingPlan>>(
       (ref) => PlansController(ref.read(trainingRepositoryProvider)),
     );
 

@@ -54,6 +54,21 @@ class CoachRepository {
         'Entre na sua conta para usar o Coach Gemini.',
       );
     }
+    if (response.statusCode == 403) {
+      throw const CoachUnavailable(
+        'Sua conta precisa estar confirmada para usar o Coach.',
+      );
+    }
+    if (response.statusCode == 429) {
+      throw const CoachUnavailable(
+        'O limite de consultas foi atingido. Aguarde alguns instantes e tente novamente.',
+      );
+    }
+    if (response.statusCode == 502 || response.statusCode == 503) {
+      throw const CoachUnavailable(
+        'O serviço Gemini está indisponível agora. Tente novamente em alguns minutos.',
+      );
+    }
     if (response.statusCode != 200) {
       throw const CoachUnavailable(
         'O Coach não está disponível agora. Você pode continuar registrando seu treino manualmente.',

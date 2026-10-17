@@ -5,19 +5,15 @@ import '../../auth/presentation/current_owner_provider.dart';
 import '../data/measurements_repository.dart';
 import '../domain/body_measurement.dart';
 
-final measurementsRepositoryProvider =
-    Provider.autoDispose<MeasurementsRepository>(
-      (ref) => MeasurementsRepository(
-        ownerId: ref.watch(currentOwnerIdProvider),
-        store: ref.read(secureOwnerStoreProvider),
-      ),
-    );
+final measurementsRepositoryProvider = Provider<MeasurementsRepository>(
+  (ref) => MeasurementsRepository(
+    ownerId: ref.watch(currentOwnerIdProvider),
+    store: ref.read(secureOwnerStoreProvider),
+  ),
+);
 
 final measurementsProvider =
-    StateNotifierProvider.autoDispose<
-      MeasurementsController,
-      List<BodyMeasurement>
-    >(
+    StateNotifierProvider<MeasurementsController, List<BodyMeasurement>>(
       (ref) => MeasurementsController(ref.read(measurementsRepositoryProvider)),
     );
 

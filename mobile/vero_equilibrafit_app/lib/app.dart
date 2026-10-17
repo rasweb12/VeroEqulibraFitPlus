@@ -362,7 +362,14 @@ class TrainingPlanPage extends ConsumerWidget {
     }
     final plan = matchingPlans.first;
     return Scaffold(
-      appBar: AppBar(title: Text(plan.name)),
+      appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Voltar para fichas',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/training'),
+        ),
+        title: Text(plan.name),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/training/$planId/exercises'),
         icon: const Icon(Icons.add),
@@ -564,7 +571,17 @@ class ExerciseLibraryPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final exercises = ref.watch(exercisesProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Adicionar exercício')),
+      appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Voltar',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () =>
+              context.go(planId == null ? '/training' : '/training/$planId'),
+        ),
+        title: Text(
+          planId == null ? 'Biblioteca de exercícios' : 'Adicionar exercício',
+        ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _createCustomExercise(context, ref),
         icon: const Icon(Icons.add),
@@ -594,17 +611,31 @@ class ExerciseLibraryPage extends ConsumerWidget {
                   subtitle: Text(
                     '${exercise.primaryMuscle} · ${exercise.equipment}${exercise.isCustom ? ' · Personalizado' : ''}',
                   ),
-                  trailing: Icon(
-                    planId == null
-                        ? Icons.info_outline
-                        : Icons.add_circle_outline,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (exercise.demoVideoAsset != null)
+                        IconButton(
+                          tooltip: 'Ver demonstração',
+                          icon: const Icon(Icons.play_circle_outline),
+                          onPressed: () =>
+                              _showExerciseDetails(context, exercise),
+                        ),
+                      Icon(
+                        planId == null
+                            ? Icons.info_outline
+                            : Icons.add_circle_outline,
+                      ),
+                    ],
                   ),
                   onTap: planId == null
                       ? () => _showExerciseDetails(context, exercise)
-                      : () {
+                      : () async {
                           ref
                               .read(plansProvider.notifier)
                               .addExercise(planId!, exercise.id);
+                          await Future<void>.delayed(Duration.zero);
+                          if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(

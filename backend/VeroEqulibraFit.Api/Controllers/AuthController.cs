@@ -17,7 +17,8 @@ public sealed class AuthController(
     UserManager<AppUser> userManager,
     VeroEqulibraFitDbContext database,
     JwtTokenService tokenService,
-    IAccountEmailSender emailSender) : ControllerBase
+    IAccountEmailSender emailSender,
+    ILogger<AuthController> logger) : ControllerBase
 {
     private static readonly TimeSpan RefreshLifetime = TimeSpan.FromDays(30);
 
@@ -91,7 +92,11 @@ public sealed class AuthController(
                 var token = await userManager.GeneratePasswordResetTokenAsync(user);
                 var link = BuildPublicLink("reset-password", user.Id, token);
                 try { await emailSender.SendPasswordResetAsync(user.Email!, link, cancellationToken); }
-                catch (Exception exception) when (IsExpectedEmailFailure(exception)) { /* Generic response prevents account enumeration. */ }
+                catch (Exception exception) when (IsExpectedEmailFailure(exception))
+                {
+                    logger.LogWarning("smtp.password_reset_delivery_failed type={ErrorType}", exception.GetType().Name);
+                    // Generic response prevents account enumeration.
+                }
             }
         }
         return Accepted();
@@ -196,7 +201,11 @@ public sealed class AuthController(
     private async Task TrySendConfirmationAsync(AppUser user, CancellationToken cancellationToken)
     {
         try { await SendConfirmationAsync(user, cancellationToken); }
-        catch (Exception exception) when (IsExpectedEmailFailure(exception)) { /* Response remains generic to avoid account enumeration. */ }
+        catch (Exception exception) when (IsExpectedEmailFailure(exception))
+        {
+            logger.LogWarning("smtp.confirmation_delivery_failed type={ErrorType}", exception.GetType().Name);
+            // Response remains generic to avoid account enumeration.
+        }
     }
 
     private string BuildPublicLink(string route, Guid userId, string token)
