@@ -1,3 +1,9 @@
 # Validação de sincronização
 
-REPROVADO. O Neon isolado foi criado e recebeu as migrations versionadas em 2026-10-16, mas o Flutter ainda não sincroniza fichas, refeições, hábitos e medidas com a API. Os dados locais continuam sem cifra em `SharedPreferences` e não existe outbox, retry com backoff, resolução de conflitos entre dispositivos ou teste de troca de aparelho.
+**Estado: REPROVADO — NÃO HOMOLOGADO.**
+
+Em 17/10/2026, os repositórios locais de treino, refeições, hábitos e medidas foram reavaliados: usam `SecureOwnerStore` com namespace por conta. Não há dados de saúde/histórico nesses módulos em `SharedPreferences`.
+
+A outbox Isar recebeu estados, tentativas e backoff local, mas ainda não está conectada aos repositórios nem à API. A API não disponibiliza push/pull, cursor, conflitos ou tombstones remotos. Neon possui schema de domínio e recibos de idempotência, porém isso não constitui sincronização.
+
+Não foram executados os cenários offline/online, dois dispositivos, conflito ou recuperação após reinstalação. Até que sejam implementados e demonstrados em ambiente isolado, sincronização permanece REPROVADA.
