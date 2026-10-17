@@ -29,6 +29,17 @@ public sealed class MealsController(VeroEqulibraFitDbContext database, GeminiAiC
         catch (HttpRequestException) { return StatusCode(503, new { error = "O serviço de análise está indisponível." }); }
         catch (InvalidOperationException) { return StatusCode(502, new { error = "A resposta da análise não foi aceita." }); }
     }
+
+    [HttpPost("estimate-text")]
+    public async Task<ActionResult<EstimateMealTextResponse>> EstimateText([FromBody] EstimateMealTextRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Description) || request.Description.Trim().Length is < 3 or > 600)
+            return BadRequest(new { error = "Informe uma descrição entre 3 e 600 caracteres." });
+        try { return Ok(await gemini.EstimateMealTextAsync(request with { Description = request.Description.Trim() }, cancellationToken)); }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) { return StatusCode(504, new { error = "A estimativa demorou mais que o limite." }); }
+        catch (HttpRequestException) { return StatusCode(503, new { error = "O serviço de estimativa está indisponível." }); }
+        catch (InvalidOperationException) { return StatusCode(502, new { error = "A resposta da estimativa não foi aceita." }); }
+    }
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<MealEntryResponse>>> List(CancellationToken cancellationToken)
     {

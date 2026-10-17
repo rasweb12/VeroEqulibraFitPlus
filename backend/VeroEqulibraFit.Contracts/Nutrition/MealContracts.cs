@@ -19,6 +19,7 @@ public sealed record MealEntryResponse(
     bool RequiresUserReview);
 
 public sealed record AnalyzeMealPhotoRequest(string ImageBase64, string MimeType, string? MealContext);
+public sealed record EstimateMealTextRequest(string Description, string? MealType);
 public sealed record RecognizedMealItemResponse(
     string Name,
     decimal Portion,
@@ -32,6 +33,11 @@ public sealed record AnalyzeMealPhotoResponse(
     decimal Confidence,
     IReadOnlyList<RecognizedMealItemResponse> Items,
     bool RequiresUserReview,
+    string Model,
+    bool FallbackUsed,
+    string Message);
+public sealed record EstimateMealTextResponse(
+    IReadOnlyList<RecognizedMealItemResponse> Items,
     string Model,
     bool FallbackUsed,
     string Message);

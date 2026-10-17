@@ -471,6 +471,10 @@ class _PlanExerciseTile extends ConsumerWidget {
       ),
     );
     if (configure == true && context.mounted) {
+      // Let the bottom-sheet route dispose before opening another modal. This
+      // prevents Flutter from disposing inherited dependencies mid-transition.
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (!context.mounted) return;
       await _edit(context, ref);
     }
   }

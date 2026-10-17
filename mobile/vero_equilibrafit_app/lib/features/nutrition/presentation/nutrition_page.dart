@@ -23,7 +23,11 @@ class NutritionPage extends ConsumerWidget {
             onPressed: () => _pickAndAnalyzePhoto(context, ref),
             icon: const Icon(Icons.camera_alt_outlined),
           ),
-          IconButton(tooltip: 'Plano alimentar', onPressed: () => context.go('/nutrition/plans'), icon: const Icon(Icons.menu_book_outlined)),
+          IconButton(
+            tooltip: 'Plano alimentar',
+            onPressed: () => context.go('/nutrition/plans'),
+            icon: const Icon(Icons.menu_book_outlined),
+          ),
         ],
       ),
       drawer: const AppDrawer(),
@@ -41,7 +45,10 @@ class NutritionPage extends ConsumerWidget {
                   children: [
                     const Icon(Icons.restaurant_outlined, size: 48),
                     const SizedBox(height: 16),
-                    Text('Registre sua primeira refeição', style: Theme.of(context).textTheme.titleLarge),
+                    Text(
+                      'Registre sua primeira refeição',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                     const SizedBox(height: 8),
                     const Text(
                       'Use um registro simples agora e complemente com análise pelo Coach quando o serviço estiver configurado.',
@@ -60,12 +67,16 @@ class NutritionPage extends ConsumerWidget {
                   child: ListTile(
                     leading: const Icon(Icons.restaurant_outlined),
                     title: Text(meal.name),
-                    subtitle: Text('${meal.mealType} · ${TimeOfDay.fromDateTime(meal.recordedAt).format(context)}${meal.estimatedCalories == null ? '' : '\n≈ ${meal.estimatedCalories!.round()} kcal · P ${meal.proteinGrams?.round() ?? 0} g · C ${meal.carbohydrateGrams?.round() ?? 0} g · G ${meal.fatGrams?.round() ?? 0} g'}${meal.notes.isEmpty ? '' : '\n${meal.notes}'}'),
-                    isThreeLine: meal.notes.isNotEmpty || meal.estimatedCalories != null,
+                    subtitle: Text(
+                      '${meal.mealType} · ${TimeOfDay.fromDateTime(meal.recordedAt).format(context)}${meal.estimatedCalories == null ? '' : '\n≈ ${meal.estimatedCalories!.round()} kcal · P ${meal.proteinGrams?.round() ?? 0} g · C ${meal.carbohydrateGrams?.round() ?? 0} g · G ${meal.fatGrams?.round() ?? 0} g'}${meal.notes.isEmpty ? '' : '\n${meal.notes}'}',
+                    ),
+                    isThreeLine:
+                        meal.notes.isNotEmpty || meal.estimatedCalories != null,
                     trailing: IconButton(
                       tooltip: 'Excluir registro',
                       icon: const Icon(Icons.delete_outline),
-                      onPressed: () => ref.read(mealsProvider.notifier).delete(meal.id),
+                      onPressed: () =>
+                          ref.read(mealsProvider.notifier).delete(meal.id),
                     ),
                   ),
                 );
@@ -78,7 +89,7 @@ class NutritionPage extends ConsumerWidget {
     final name = TextEditingController();
     final notes = TextEditingController();
     var mealType = 'Refeição';
-    final save = await showDialog<bool>(
+    final action = await showDialog<_ManualMealAction>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
@@ -87,84 +98,309 @@ class NutritionPage extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: name, autofocus: true, decoration: const InputDecoration(labelText: 'O que você comeu?')),
+                TextField(
+                  controller: name,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: 'O que você comeu?',
+                  ),
+                ),
                 DropdownButtonFormField<String>(
                   initialValue: mealType,
                   decoration: const InputDecoration(labelText: 'Momento'),
-                  items: const ['Café da manhã', 'Almoço', 'Lanche', 'Jantar', 'Refeição'].map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(growable: false),
+                  items:
+                      const [
+                            'Café da manhã',
+                            'Almoço',
+                            'Lanche',
+                            'Jantar',
+                            'Refeição',
+                          ]
+                          .map(
+                            (item) => DropdownMenuItem(
+                              value: item,
+                              child: Text(item),
+                            ),
+                          )
+                          .toList(growable: false),
                   onChanged: (value) => setState(() => mealType = value!),
                 ),
-                TextField(controller: notes, maxLines: 2, decoration: const InputDecoration(labelText: 'Observações (opcional)')),
+                TextField(
+                  controller: notes,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Observações (opcional)',
+                  ),
+                ),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancelar')),
-            FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Salvar')),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () =>
+                  Navigator.pop(dialogContext, _ManualMealAction.save),
+              child: const Text('Salvar sem estimativa'),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.pop(dialogContext, _ManualMealAction.estimate),
+              child: const Text('Estimar com Gemini'),
+            ),
           ],
         ),
       ),
     );
-    if (save == true && name.text.trim().isNotEmpty && context.mounted) {
-      ref.read(mealsProvider.notifier).add(name: name.text, mealType: mealType, notes: notes.text);
+    if (action != null && name.text.trim().isNotEmpty && context.mounted) {
+      if (action == _ManualMealAction.save) {
+        ref
+            .read(mealsProvider.notifier)
+            .add(name: name.text, mealType: mealType, notes: notes.text);
+      } else {
+        await _estimateManualMeal(
+          context,
+          ref,
+          name.text.trim(),
+          mealType,
+          notes.text,
+        );
+      }
     }
     name.dispose();
     notes.dispose();
   }
 
+  Future<void> _estimateManualMeal(
+    BuildContext context,
+    WidgetRef ref,
+    String description,
+    String mealType,
+    String notes,
+  ) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Estimando informações nutricionais com Gemini…'),
+      ),
+    );
+    try {
+      final result = await ref
+          .read(mealPhotoAnalysisRepositoryProvider)
+          .estimateText(description: description, mealType: mealType);
+      if (!context.mounted) return;
+      final calories = result.items.fold<num>(
+        0,
+        (sum, item) => sum + item.calories,
+      );
+      final protein = result.items.fold<num>(
+        0,
+        (sum, item) => sum + item.proteinGrams,
+      );
+      final carbs = result.items.fold<num>(
+        0,
+        (sum, item) => sum + item.carbohydrateGrams,
+      );
+      final fat = result.items.fold<num>(0, (sum, item) => sum + item.fatGrams);
+      await _reviewManualEstimate(
+        context,
+        ref,
+        name: description,
+        mealType: mealType,
+        notes: notes,
+        message: result.message,
+        calories: calories.toDouble(),
+        protein: protein.toDouble(),
+        carbs: carbs.toDouble(),
+        fat: fat.toDouble(),
+      );
+    } on Object {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Não foi possível estimar agora. Você pode salvar manualmente.',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _reviewManualEstimate(
+    BuildContext context,
+    WidgetRef ref, {
+    required String name,
+    required String mealType,
+    required String notes,
+    required String message,
+    required double calories,
+    required double protein,
+    required double carbs,
+    required double fat,
+  }) async {
+    final kcal = TextEditingController(text: calories.toStringAsFixed(0));
+    final proteinField = TextEditingController(
+      text: protein.toStringAsFixed(1),
+    );
+    final carbsField = TextEditingController(text: carbs.toStringAsFixed(1));
+    final fatField = TextEditingController(text: fat.toStringAsFixed(1));
+    final accept = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Revisar estimativa nutricional'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(message),
+              const SizedBox(height: 8),
+              const Text(
+                'Valores estimados, não medidos. Ajuste antes de aceitar.',
+              ),
+              _numberField(kcal, 'Calorias (kcal)'),
+              _numberField(proteinField, 'Proteínas (g)'),
+              _numberField(carbsField, 'Carboidratos (g)'),
+              _numberField(fatField, 'Gorduras (g)'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Aceitar e salvar'),
+          ),
+        ],
+      ),
+    );
+    if (accept == true && context.mounted) {
+      ref
+          .read(mealsProvider.notifier)
+          .add(
+            name: name,
+            mealType: mealType,
+            notes: notes.isEmpty
+                ? 'Estimativa Gemini revisada pelo usuário.'
+                : '$notes\nEstimativa Gemini revisada pelo usuário.',
+            estimatedCalories: _number(kcal.text),
+            proteinGrams: _number(proteinField.text),
+            carbohydrateGrams: _number(carbsField.text),
+            fatGrams: _number(fatField.text),
+          );
+    }
+    for (final controller in [kcal, proteinField, carbsField, fatField]) {
+      controller.dispose();
+    }
+  }
+
+  Widget _numberField(TextEditingController controller, String label) =>
+      TextField(
+        controller: controller,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        decoration: InputDecoration(labelText: label),
+      );
+
+  double? _number(String value) => double.tryParse(value.replaceAll(',', '.'));
+
   Future<void> _pickAndAnalyzePhoto(BuildContext context, WidgetRef ref) async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       builder: (sheetContext) => SafeArea(
-        child: Wrap(children: [
-          ListTile(
-            leading: const Icon(Icons.camera_alt_outlined),
-            title: const Text('Fotografar refeição'),
-            onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
-          ),
-          ListTile(
-            leading: const Icon(Icons.photo_library_outlined),
-            title: const Text('Escolher da galeria'),
-            onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
-          ),
-        ]),
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Fotografar refeição'),
+              onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Escolher da galeria'),
+              onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
+            ),
+          ],
+        ),
       ),
     );
     if (source == null || !context.mounted) return;
-    final file = await ImagePicker().pickImage(source: source, imageQuality: 85, maxWidth: 1600, maxHeight: 1600);
-    if (file == null || !context.mounted) return;
+    final file = await ImagePicker().pickImage(
+      source: source,
+      imageQuality: 85,
+      maxWidth: 1600,
+      maxHeight: 1600,
+    );
+    if (file == null || !context.mounted) {
+      return;
+    }
     final bytes = await file.readAsBytes();
     final mime = file.mimeType ?? _mimeFromPath(file.path);
     if (!const {'image/jpeg', 'image/png', 'image/webp'}.contains(mime)) {
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Use uma imagem JPEG, PNG ou WebP.')));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Use uma imagem JPEG, PNG ou WebP.')),
+        );
+      }
       return;
     }
     if (bytes.length > 5 * 1024 * 1024) {
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A foto deve ter até 5 MB.')));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('A foto deve ter até 5 MB.')),
+        );
+      }
       return;
     }
     if (!context.mounted) return;
     await _reviewPhoto(context, ref, bytes, mime);
   }
 
-  Future<void> _reviewPhoto(BuildContext context, WidgetRef ref, Uint8List bytes, String mime) async {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Analisando foto com Gemini…')));
+  Future<void> _reviewPhoto(
+    BuildContext context,
+    WidgetRef ref,
+    Uint8List bytes,
+    String mime,
+  ) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Analisando foto com Gemini…')),
+    );
     List<String> suggestions;
     double calories = 0, protein = 0, carbs = 0, fat = 0;
     String message;
     try {
-      final result = await ref.read(mealPhotoAnalysisRepositoryProvider).analyze(bytes: bytes, mimeType: mime);
+      final result = await ref
+          .read(mealPhotoAnalysisRepositoryProvider)
+          .analyze(bytes: bytes, mimeType: mime);
       suggestions = result.items
           .map((item) => '${item.name} — ${item.portion} ${item.unit}')
           .toList(growable: false);
-      calories = result.items.fold(0, (sum, item) => sum + item.calories.toDouble());
-      protein = result.items.fold(0, (sum, item) => sum + item.proteinGrams.toDouble());
-      carbs = result.items.fold(0, (sum, item) => sum + item.carbohydrateGrams.toDouble());
+      calories = result.items.fold(
+        0,
+        (sum, item) => sum + item.calories.toDouble(),
+      );
+      protein = result.items.fold(
+        0,
+        (sum, item) => sum + item.proteinGrams.toDouble(),
+      );
+      carbs = result.items.fold(
+        0,
+        (sum, item) => sum + item.carbohydrateGrams.toDouble(),
+      );
       fat = result.items.fold(0, (sum, item) => sum + item.fatGrams.toDouble());
       message = result.message;
     } on Object {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Não foi possível analisar esta foto. Registre manualmente.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Não foi possível analisar esta foto. Registre manualmente.',
+            ),
+          ),
+        );
       }
       return;
     }
@@ -172,21 +408,46 @@ class NutritionPage extends ConsumerWidget {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-            title: const Text('Revisar estimativa'),
-            content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        title: const Text('Revisar estimativa'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               Image.memory(bytes, height: 150, fit: BoxFit.cover),
               const SizedBox(height: 12),
-              Text('$message\n\n≈ ${calories.round()} kcal · P ${protein.round()} g · C ${carbs.round()} g · G ${fat.round()} g\nValores estimados, não medidos.'),
+              Text(
+                '$message\n\n≈ ${calories.round()} kcal · P ${protein.round()} g · C ${carbs.round()} g · G ${fat.round()} g\nValores estimados, não medidos.',
+              ),
               ...suggestions.map((item) => ListTile(title: Text(item))),
-            ])),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancelar')),
-              FilledButton(onPressed: () {
-                ref.read(mealsProvider.notifier).add(name: suggestions.isEmpty ? 'Refeição revisada' : suggestions.join(', '), mealType: 'Refeição', notes: 'Estimativa por foto revisada pelo usuário.', estimatedCalories: calories, proteinGrams: protein, carbohydrateGrams: carbs, fatGrams: fat);
-                Navigator.pop(dialogContext);
-              }, child: const Text('Confirmar e salvar')),
             ],
           ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              ref
+                  .read(mealsProvider.notifier)
+                  .add(
+                    name: suggestions.isEmpty
+                        ? 'Refeição revisada'
+                        : suggestions.join(', '),
+                    mealType: 'Refeição',
+                    notes: 'Estimativa por foto revisada pelo usuário.',
+                    estimatedCalories: calories,
+                    proteinGrams: protein,
+                    carbohydrateGrams: carbs,
+                    fatGrams: fat,
+                  );
+              Navigator.pop(dialogContext);
+            },
+            child: const Text('Confirmar e salvar'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -197,3 +458,5 @@ class NutritionPage extends ConsumerWidget {
     return 'image/jpeg';
   }
 }
+
+enum _ManualMealAction { save, estimate }

@@ -58,6 +58,23 @@ public sealed class GeminiAiClient(HttpClient httpClient, IConfiguration configu
             response.Message ?? "Revise os alimentos e porções antes de salvar.");
     }
 
+    public async Task<EstimateMealTextResponse> EstimateMealTextAsync(EstimateMealTextRequest request, CancellationToken cancellationToken)
+    {
+        var response = await SendAsync("/api/v1/meals/estimate-text", new
+        {
+            description = request.Description,
+            meal_type = request.MealType,
+        }, cancellationToken);
+        return new EstimateMealTextResponse(
+            (response.Items ?? []).Select(item => new RecognizedMealItemResponse(
+                item.Name ?? "Alimento não identificado", item.Portion ?? 0,
+                item.Unit ?? "porção", item.Calories ?? 0,
+                item.ProteinGrams ?? 0, item.CarbohydrateGrams ?? 0,
+                item.FatGrams ?? 0, item.Confidence ?? 0)).ToList(),
+            response.Model ?? "gemini", response.FallbackUsed,
+            response.Message ?? "Valores estimados: revise antes de salvar.");
+    }
+
     public async Task<string> GenerateNutritionPlanAsync(GenerateNutritionPlanRequest request, CancellationToken cancellationToken)
     {
         using var message = new HttpRequestMessage(HttpMethod.Post, "/api/v1/plans/generate") { Content = JsonContent.Create(new { objective = request.Objective, routine = request.Routine, preferences = request.Preferences ?? [], restrictions = request.Restrictions ?? [], min_calories = request.MinCalories, max_calories = request.MaxCalories, protein_target_g = request.ProteinTargetGrams }) };
