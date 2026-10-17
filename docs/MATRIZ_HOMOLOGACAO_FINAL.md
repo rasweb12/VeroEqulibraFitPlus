@@ -14,5 +14,5 @@
 | Vídeos | BLOQUEADO | Inventário existe; licença e associação não comprovadas. |
 | Administração Blazor | REPROVADO | Shell sem autenticação e sem operações previstas. |
 | Neon | PARCIAL | Health ready e migrations previamente verificadas; fluxos funcionais ainda não foram testados. |
-| APK atualizado/instalado | NÃO TESTADO | Build anterior encontrou cache CMake corrompido e ADB indisponível. |
+| APK atualizado/instalado | PARCIAL | APK debug atualizado foi compilado e instalado no emulador em 17/10/2026. Falta roteiro funcional completo no dispositivo. |
 | MVP | REPROVADO | Há bloqueios P0/P1/P2 acima. |
