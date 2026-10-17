@@ -57,3 +57,9 @@ O adaptador ainda não é disparado pelo aplicativo: não há abertura centraliz
 A versão instalada do Isar (`3.1.0+1`) foi inspecionada e sua API de abertura não aceita chave de criptografia. Por isso, a outbox não será aberta nem conectada ao aplicativo nessa versão: seu payload pode conter dados de treino e alimentação, que não podem ir para armazenamento local em texto claro. A tentativa de inicialização foi descartada antes de qualquer uso.
 
 Para concluir o fluxo será necessário adotar uma camada local que forneça criptografia de banco verificável, ou atualizar o mecanismo de persistência mediante migração testada. Até essa decisão e seus testes de migração, o estado de sincronização permanece **REPROVADO** para homologação, embora os contratos e o adaptador possam continuar evoluindo isoladamente.
+
+## Substituição da outbox por armazenamento cifrado — 17/10/2026
+
+Foi implementada `SecureOperationQueue`, com o envelope completo de operações persistido pela `SecureOwnerStore`, que usa Android Keystore/iOS Keychain. A chave é isolada por `ownerId`, foi incluída na rotina de exclusão de conta e não permite leitura por outra conta. `SyncPushClient` passou a depender de uma interface de fila, permitindo usar essa implementação cifrada sem abrir o Isar não cifrável.
+
+Evidências: análise estática dos arquivos de outbox sem problemas e 11 testes Flutter aprovados, incluindo persistência após reinstanciar a fila e isolamento entre contas. A fila ainda não é alimentada pelos repositórios nem acionada automaticamente; também não há transação comum entre o registro local e o envelope no keystore. Assim, a sincronização ponta a ponta continua **REPROVADA**, e o próximo incremento deve enfileirar mutações de criação sem bloquear o uso offline.

@@ -57,4 +57,6 @@ Em 17/10/2026, a análise de foto passou a abrir uma rota protegida de revisão 
 
 `P2-STORE-002` foi confirmado como bloqueador: Isar `3.1.0+1` não expõe abertura com chave de criptografia. A outbox não foi aberta no aplicativo e não recebeu dados, evitando persistência local desprotegida de dados de saúde. É necessária uma mudança de camada local com migração e testes antes de ativar a sincronização automática.
 
+Atualização posterior do mesmo achado: a outbox deixou de depender de Isar e passou a ter implementação por `SecureOwnerStore`, cifrada pelo keystore/Keychain e isolada por proprietário. Os testes locais de persistência e isolamento foram aprovados. Ainda faltam enfileiramento pelos repositórios, acionamento após login, transação entre dado local e outbox, pull, conflitos e homologação Neon; `P2-STORE-002` fica **PARCIAL**, e a sincronização ponta a ponta segue **REPROVADA**.
+
 O status do MVP continua **REPROVADO — NÃO HOMOLOGADO**.

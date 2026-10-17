@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../features/auth/data/auth_repository.dart';
-import 'offline_operation_queue.dart';
 import 'pending_operation.dart';
+import 'sync_operation_queue.dart';
 
 /// Sends only persisted outbox entries. It never considers a network response
 /// successful until the server returns `accepted` or the same idempotency key
@@ -15,7 +15,7 @@ class SyncPushClient {
   final http.Client _client;
 
   Future<SyncPushResult> pushDue({
-    required OfflineOperationQueue queue,
+    required SyncOperationQueue queue,
     required AuthSession session,
     int limit = 50,
   }) async {

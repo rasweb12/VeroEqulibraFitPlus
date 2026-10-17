@@ -1,10 +1,12 @@
 import 'package:isar/isar.dart';
 import 'pending_operation.dart';
+import 'sync_operation_queue.dart';
 
-class OfflineOperationQueue {
+class OfflineOperationQueue implements SyncOperationQueue {
   const OfflineOperationQueue(this._isar);
   final Isar _isar;
 
+  @override
   Future<void> enqueue({
     required String ownerId,
     required String idempotencyKey,
@@ -39,6 +41,7 @@ class OfflineOperationQueue {
     );
   }
 
+  @override
   Future<List<PendingOperation>> due({
     required String ownerId,
     int limit = 50,
@@ -61,9 +64,11 @@ class OfflineOperationQueue {
         .toList(growable: false);
   }
 
+  @override
   Future<void> markProcessing(int id) =>
       _change(id, OfflineOperationStatus.processing);
 
+  @override
   Future<void> markCompleted(int id) async {
     await _isar.writeTxn(() async {
       final operation = await _isar.pendingOperations.get(id);
@@ -77,9 +82,11 @@ class OfflineOperationQueue {
     });
   }
 
+  @override
   Future<void> markConflict(int id) =>
       _change(id, OfflineOperationStatus.conflict);
 
+  @override
   Future<void> retry(int id, {required String errorCode}) async {
     await _isar.writeTxn(() async {
       final operation = await _isar.pendingOperations.get(id);
@@ -107,12 +114,4 @@ class OfflineOperationQueue {
       await _isar.pendingOperations.put(operation);
     });
   }
-}
-
-enum OfflineOperationStatus {
-  pending,
-  processing,
-  synchronized,
-  conflict,
-  failed,
 }
