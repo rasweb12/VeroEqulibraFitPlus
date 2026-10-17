@@ -7,11 +7,8 @@ import '../../../core/persistence/secure_owner_store.dart';
 import '../domain/meal_entry.dart';
 
 class NutritionRepository {
-  NutritionRepository({
-    required String ownerId,
-    required SecureOwnerStore store,
-  }) : _store = store,
-       _storageKey = ownerScopedKey(ownerId, 'nutrition_repository_v2_secure');
+  NutritionRepository({required String ownerId, required this._store})
+    : _storageKey = ownerScopedKey(ownerId, 'nutrition_repository_v2_secure');
   final String _storageKey;
   final SecureOwnerStore _store;
   final List<MealEntry> _entries = [];
@@ -26,6 +23,7 @@ class NutritionRepository {
     double? proteinGrams,
     double? carbohydrateGrams,
     double? fatGrams,
+    DateTime? recordedAt,
   }) {
     _entries.add(
       MealEntry(
@@ -33,7 +31,7 @@ class NutritionRepository {
         name: name.trim(),
         mealType: mealType,
         notes: notes.trim(),
-        recordedAt: DateTime.now(),
+        recordedAt: recordedAt ?? DateTime.now(),
         estimatedCalories: estimatedCalories,
         proteinGrams: proteinGrams,
         carbohydrateGrams: carbohydrateGrams,

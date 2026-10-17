@@ -88,7 +88,13 @@ class NutritionPage extends ConsumerWidget {
   Future<void> _addMeal(BuildContext context, WidgetRef ref) async {
     final name = TextEditingController();
     final notes = TextEditingController();
+    final portion = TextEditingController();
+    final calories = TextEditingController();
+    final protein = TextEditingController();
+    final carbs = TextEditingController();
+    final fat = TextEditingController();
     var mealType = 'Refeição';
+    var recordedAt = DateTime.now();
     final action = await showDialog<_ManualMealAction>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -104,6 +110,28 @@ class NutritionPage extends ConsumerWidget {
                   decoration: const InputDecoration(
                     labelText: 'O que você comeu?',
                   ),
+                ),
+                TextField(
+                  controller: portion,
+                  decoration: const InputDecoration(
+                    labelText: 'Porção (ex.: 150 g, 1 unidade)',
+                  ),
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.calendar_today_outlined),
+                  title: Text(
+                    'Data: ${MaterialLocalizations.of(context).formatMediumDate(recordedAt)}',
+                  ),
+                  onTap: () async {
+                    final selected = await showDatePicker(
+                      context: context,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now().add(const Duration(days: 1)),
+                      initialDate: recordedAt,
+                    );
+                    if (selected != null) setState(() => recordedAt = selected);
+                  },
                 ),
                 DropdownButtonFormField<String>(
                   initialValue: mealType,
@@ -132,6 +160,12 @@ class NutritionPage extends ConsumerWidget {
                     labelText: 'Observações (opcional)',
                   ),
                 ),
+                const SizedBox(height: 8),
+                const Text('Preencha estes campos para salvar sem estimativa.'),
+                _numberField(calories, 'Calorias (kcal)'),
+                _numberField(protein, 'Proteínas (g)'),
+                _numberField(carbs, 'Carboidratos (g)'),
+                _numberField(fat, 'Gorduras (g)'),
               ],
             ),
           ),
@@ -158,19 +192,32 @@ class NutritionPage extends ConsumerWidget {
       if (action == _ManualMealAction.save) {
         ref
             .read(mealsProvider.notifier)
-            .add(name: name.text, mealType: mealType, notes: notes.text);
+            .add(
+              name: name.text,
+              mealType: mealType,
+              notes: _notesWithPortion(notes.text, portion.text),
+              estimatedCalories: _number(calories.text),
+              proteinGrams: _number(protein.text),
+              carbohydrateGrams: _number(carbs.text),
+              fatGrams: _number(fat.text),
+              recordedAt: recordedAt,
+            );
       } else {
         await _estimateManualMeal(
           context,
           ref,
           name.text.trim(),
           mealType,
-          notes.text,
+          _notesWithPortion(notes.text, portion.text),
+          recordedAt,
         );
       }
     }
     name.dispose();
     notes.dispose();
+    for (final controller in [portion, calories, protein, carbs, fat]) {
+      controller.dispose();
+    }
   }
 
   Future<void> _estimateManualMeal(
@@ -179,6 +226,7 @@ class NutritionPage extends ConsumerWidget {
     String description,
     String mealType,
     String notes,
+    DateTime recordedAt,
   ) async {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -209,6 +257,7 @@ class NutritionPage extends ConsumerWidget {
         name: description,
         mealType: mealType,
         notes: notes,
+        recordedAt: recordedAt,
         message: result.message,
         calories: calories.toDouble(),
         protein: protein.toDouble(),
@@ -234,6 +283,7 @@ class NutritionPage extends ConsumerWidget {
     required String name,
     required String mealType,
     required String notes,
+    required DateTime recordedAt,
     required String message,
     required double calories,
     required double protein,
@@ -291,6 +341,7 @@ class NutritionPage extends ConsumerWidget {
             proteinGrams: _number(proteinField.text),
             carbohydrateGrams: _number(carbsField.text),
             fatGrams: _number(fatField.text),
+            recordedAt: recordedAt,
           );
     }
     for (final controller in [kcal, proteinField, carbsField, fatField]) {
@@ -306,6 +357,14 @@ class NutritionPage extends ConsumerWidget {
       );
 
   double? _number(String value) => double.tryParse(value.replaceAll(',', '.'));
+
+  String _notesWithPortion(String notes, String portion) {
+    final normalized = portion.trim();
+    if (normalized.isEmpty) return notes.trim();
+    return notes.trim().isEmpty
+        ? 'Porção: $normalized'
+        : '${notes.trim()}\nPorção: $normalized';
+  }
 
   Future<void> _pickAndAnalyzePhoto(BuildContext context, WidgetRef ref) async {
     final source = await showModalBottomSheet<ImageSource>(

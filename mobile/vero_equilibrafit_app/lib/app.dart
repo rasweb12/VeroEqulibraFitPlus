@@ -115,6 +115,13 @@ class VeroEqulibraFitApp extends ConsumerWidget {
           TrainingPlanPage(planId: state.pathParameters['planId']!),
     ),
     GoRoute(
+      path: '/training/:planId/exercise/:exerciseId',
+      builder: (context, state) => TrainingExerciseConfigPage(
+        planId: state.pathParameters['planId']!,
+        exerciseId: state.pathParameters['exerciseId']!,
+      ),
+    ),
+    GoRoute(
       path: '/exercises',
       builder: (context, state) => const ExerciseLibraryPage(),
     ),
@@ -417,7 +424,9 @@ class _PlanExerciseTile extends ConsumerWidget {
         subtitle: Text(
           '${exercise.primaryMuscle} · ${plannedExercise.sets} séries × ${plannedExercise.repetitions} · descanso ${plannedExercise.restSeconds}s${plannedExercise.targetLoadKg == null ? '' : ' · ${plannedExercise.targetLoadKg!.toStringAsFixed(1)} kg'}',
         ),
-        onTap: () => _showExercise(context, ref, exercise),
+        onTap: () => context.go(
+          '/training/$planId/exercise/${plannedExercise.exerciseId}',
+        ),
         trailing: IconButton(
           tooltip: 'Remover da ficha',
           onPressed: () => ref
@@ -428,144 +437,158 @@ class _PlanExerciseTile extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Future<void> _showExercise(
-    BuildContext context,
-    WidgetRef ref,
-    Exercise exercise,
-  ) async {
-    final configure = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  exercise.name,
-                  style: Theme.of(sheetContext).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 12),
-                if (exercise.demoVideoAsset != null)
-                  ExerciseDemoPlayer(assetPath: exercise.demoVideoAsset!)
-                else
-                  const Text(
-                    'Ainda não há demonstração autorizada associada a este exercício.',
-                  ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(sheetContext, true);
-                  },
-                  icon: const Icon(Icons.tune),
-                  label: const Text('Configurar exercício'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+/// A dedicated route avoids stacking a dialog over a closing bottom sheet.
+/// That sequence was responsible for the framework dependency assertion seen
+/// while configuring an exercise on Android.
+class TrainingExerciseConfigPage extends ConsumerStatefulWidget {
+  const TrainingExerciseConfigPage({
+    super.key,
+    required this.planId,
+    required this.exerciseId,
+  });
+  final String planId;
+  final String exerciseId;
+
+  @override
+  ConsumerState<TrainingExerciseConfigPage> createState() =>
+      _TrainingExerciseConfigPageState();
+}
+
+class _TrainingExerciseConfigPageState
+    extends ConsumerState<TrainingExerciseConfigPage> {
+  late final TextEditingController _sets;
+  late final TextEditingController _repetitions;
+  late final TextEditingController _load;
+  late final TextEditingController _rest;
+  late final TextEditingController _notes;
+  PlannedExercise? _exercise;
+
+  @override
+  void initState() {
+    super.initState();
+    final plans = ref.read(plansProvider);
+    final plan = plans.where((item) => item.id == widget.planId).firstOrNull;
+    _exercise = plan?.exercises
+        .where((item) => item.exerciseId == widget.exerciseId)
+        .firstOrNull;
+    final exercise = _exercise;
+    _sets = TextEditingController(text: exercise?.sets.toString() ?? '3');
+    _repetitions = TextEditingController(text: exercise?.repetitions ?? '10');
+    _load = TextEditingController(
+      text: exercise?.targetLoadKg?.toString() ?? '',
     );
-    if (configure == true && context.mounted) {
-      // Let the bottom-sheet route dispose before opening another modal. This
-      // prevents Flutter from disposing inherited dependencies mid-transition.
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-      if (!context.mounted) return;
-      await _edit(context, ref);
-    }
+    _rest = TextEditingController(
+      text: exercise?.restSeconds.toString() ?? '60',
+    );
+    _notes = TextEditingController(text: exercise?.notes ?? '');
   }
 
-  Future<void> _edit(BuildContext context, WidgetRef ref) async {
-    final sets = TextEditingController(text: plannedExercise.sets.toString());
-    final repetitions = TextEditingController(
-      text: plannedExercise.repetitions,
-    );
-    final load = TextEditingController(
-      text: plannedExercise.targetLoadKg?.toString() ?? '',
-    );
-    final rest = TextEditingController(
-      text: plannedExercise.restSeconds.toString(),
-    );
-    final notes = TextEditingController(text: plannedExercise.notes);
-    final save = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Configurar exercício'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _field(sets, 'Séries', number: true),
-              _field(repetitions, 'Repetições'),
-              _field(load, 'Carga alvo em kg (opcional)', number: true),
-              _field(rest, 'Descanso em segundos', number: true),
-              TextField(
-                controller: notes,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'Observações (opcional)',
-                ),
-              ),
-            ],
-          ),
+  @override
+  void dispose() {
+    for (final controller in [_sets, _repetitions, _load, _rest, _notes]) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final exercise = _exercise;
+    if (exercise == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Configurar exercício')),
+        body: const Center(
+          child: Text('Exercício não encontrado nesta ficha.'),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancelar'),
+      );
+    }
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Voltar',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/training/${widget.planId}'),
+        ),
+        title: const Text('Configurar exercício'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Text(
+            'Ajuste séries, repetições, carga e descanso.',
+            style: Theme.of(context).textTheme.titleMedium,
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Salvar'),
+          const SizedBox(height: 12),
+          _field(_sets, 'Séries', number: true),
+          _field(_repetitions, 'Repetições'),
+          _field(_load, 'Carga alvo em kg (opcional)', number: true),
+          _field(_rest, 'Descanso em segundos', number: true),
+          TextField(
+            controller: _notes,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Observações (opcional)',
+            ),
+          ),
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            onPressed: _save,
+            icon: const Icon(Icons.save_outlined),
+            label: const Text('Salvar configurações'),
           ),
         ],
       ),
     );
-    if (save == true && context.mounted) {
-      final parsedSets = int.tryParse(sets.text);
-      final parsedRest = int.tryParse(rest.text);
-      final parsedLoad = double.tryParse(load.text.replaceAll(',', '.'));
-      if (parsedSets != null &&
-          parsedSets > 0 &&
-          parsedSets <= 100 &&
-          parsedRest != null &&
-          parsedRest >= 0 &&
-          parsedRest <= 3600 &&
-          repetitions.text.trim().isNotEmpty) {
-        ref
-            .read(plansProvider.notifier)
-            .updateExercise(
-              planId,
-              plannedExercise.copyWith(
-                sets: parsedSets,
-                repetitions: repetitions.text.trim(),
-                targetLoadKg: parsedLoad,
-                restSeconds: parsedRest,
-                notes: notes.text,
-              ),
-            );
-      }
-    }
-    for (final controller in [sets, repetitions, load, rest, notes]) {
-      controller.dispose();
-    }
   }
 
   Widget _field(
     TextEditingController controller,
     String label, {
     bool number = false,
-  }) => TextField(
-    controller: controller,
-    keyboardType: number
-        ? const TextInputType.numberWithOptions(decimal: true)
-        : null,
-    decoration: InputDecoration(labelText: label),
+  }) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: TextField(
+      controller: controller,
+      keyboardType: number
+          ? const TextInputType.numberWithOptions(decimal: true)
+          : null,
+      decoration: InputDecoration(labelText: label),
+    ),
   );
+
+  void _save() {
+    final exercise = _exercise;
+    final sets = int.tryParse(_sets.text);
+    final rest = int.tryParse(_rest.text);
+    if (exercise == null ||
+        sets == null ||
+        sets < 1 ||
+        sets > 100 ||
+        rest == null ||
+        rest < 0 ||
+        rest > 3600 ||
+        _repetitions.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Revise séries, repetições e descanso.')),
+      );
+      return;
+    }
+    ref
+        .read(plansProvider.notifier)
+        .updateExercise(
+          widget.planId,
+          exercise.copyWith(
+            sets: sets,
+            repetitions: _repetitions.text.trim(),
+            targetLoadKg: double.tryParse(_load.text.replaceAll(',', '.')),
+            restSeconds: rest,
+            notes: _notes.text.trim(),
+          ),
+        );
+    context.go('/training/${widget.planId}');
+  }
 }
 
 class ExerciseLibraryPage extends ConsumerWidget {

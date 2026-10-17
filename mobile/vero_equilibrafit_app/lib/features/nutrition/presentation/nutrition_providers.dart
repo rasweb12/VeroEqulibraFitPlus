@@ -46,6 +46,7 @@ class MealsController extends StateNotifier<List<MealEntry>> {
     double? proteinGrams,
     double? carbohydrateGrams,
     double? fatGrams,
+    DateTime? recordedAt,
   }) {
     _repository.add(
       name: name,
@@ -55,6 +56,7 @@ class MealsController extends StateNotifier<List<MealEntry>> {
       proteinGrams: proteinGrams,
       carbohydrateGrams: carbohydrateGrams,
       fatGrams: fatGrams,
+      recordedAt: recordedAt,
     );
     state = _repository.entries();
   }
