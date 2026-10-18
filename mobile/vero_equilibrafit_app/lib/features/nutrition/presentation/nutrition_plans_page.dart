@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import '../../auth/data/auth_repository.dart';
 import '../../auth/presentation/auth_providers.dart';
+import '../../../shared/presentation/vero_design.dart';
 
 class NutritionPlansPage extends ConsumerStatefulWidget {
   const NutritionPlansPage({super.key});
@@ -36,10 +37,27 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Plano alimentar')),
     body: ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       children: [
-        const Text(
-          'Crie uma proposta flexível e revise cada sugestão antes de salvar.',
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: VeroColors.gemini.withValues(alpha: .08),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.auto_awesome_outlined, color: VeroColors.gemini),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Crie uma proposta flexível e revise cada sugestão antes de salvar.',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
         TextField(
@@ -96,14 +114,19 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
             maxLines: 16,
             decoration: const InputDecoration(
               labelText: 'Conteúdo do plano (JSON revisável)',
-              helperText: 'Revise refeições, alternativas e observações antes de salvar.',
+              helperText:
+                  'Revise refeições, alternativas e observações antes de salvar.',
             ),
             onChanged: (value) => proposal = value,
           ),
           const SizedBox(height: 12),
           FilledButton(
             onPressed: approve,
-            child: Text(editingPlanId == null ? 'Aprovar e salvar plano' : 'Salvar alterações'),
+            child: Text(
+              editingPlanId == null
+                  ? 'Aprovar e salvar plano'
+                  : 'Salvar alterações',
+            ),
           ),
         ],
       ],
@@ -114,11 +137,16 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
       setState(() => error = 'Informe seu objetivo.');
       return;
     }
-    await request('/api/v1/nutrition-plans/generate', {
-      'objective': objective.text.trim(),
-      'preferences': _list(preferences.text),
-      'restrictions': _list(restrictions.text),
-    }, false, 'POST');
+    await request(
+      '/api/v1/nutrition-plans/generate',
+      {
+        'objective': objective.text.trim(),
+        'preferences': _list(preferences.text),
+        'restrictions': _list(restrictions.text),
+      },
+      false,
+      'POST',
+    );
   }
 
   Future<void> approve() async {
@@ -130,7 +158,10 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
     try {
       jsonDecode(content);
     } catch (_) {
-      setState(() => error = 'O conteúdo revisado do plano está inválido. Gere novamente ou ajuste o JSON.');
+      setState(
+        () => error =
+            'O conteúdo revisado do plano está inválido. Gere novamente ou ajuste o JSON.',
+      );
       return;
     }
     final id = editingPlanId;
@@ -164,15 +195,13 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
     });
     final client = http.Client();
     try {
-      final request = http.Request(
-        method,
-        Uri.parse('${AuthRepository.apiBaseUrl}$path'),
-      )
-        ..headers.addAll({
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${session.accessToken}',
-        })
-        ..body = jsonEncode(body);
+      final request =
+          http.Request(method, Uri.parse('${AuthRepository.apiBaseUrl}$path'))
+            ..headers.addAll({
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ${session.accessToken}',
+            })
+            ..body = jsonEncode(body);
       final streamed = await client
           .send(request)
           .timeout(const Duration(seconds: 35));
@@ -213,44 +242,60 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
       setState(() => error = 'Sessão ou API indisponível.');
       return;
     }
-    setState(() { loading = true; error = null; });
+    setState(() {
+      loading = true;
+      error = null;
+    });
     try {
-      final response = await http.get(
-        Uri.parse('${AuthRepository.apiBaseUrl}/api/v1/nutrition-plans'),
-        headers: {'Authorization': 'Bearer ${session.accessToken}'},
-      ).timeout(const Duration(seconds: 35));
+      final response = await http
+          .get(
+            Uri.parse('${AuthRepository.apiBaseUrl}/api/v1/nutrition-plans'),
+            headers: {'Authorization': 'Bearer ${session.accessToken}'},
+          )
+          .timeout(const Duration(seconds: 35));
       if (response.statusCode != 200) throw HttpException(_message(response));
       final decoded = jsonDecode(response.body) as List<dynamic>;
-      savedPlans = decoded.whereType<Map<String, dynamic>>().toList(growable: false);
+      savedPlans = decoded.whereType<Map<String, dynamic>>().toList(
+        growable: false,
+      );
       if (!mounted) return;
       if (savedPlans.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nenhum plano salvo ainda.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nenhum plano salvo ainda.')),
+        );
         return;
       }
       await showModalBottomSheet<void>(
         context: context,
         builder: (sheetContext) => ListView(
           shrinkWrap: true,
-          children: savedPlans.map((plan) => ListTile(
-            title: Text(plan['name'] as String? ?? 'Plano alimentar'),
-            subtitle: const Text('Toque para revisar e editar'),
-            onTap: () {
-              final content = plan['contentJson'] as String? ?? '{}';
-              setState(() {
-                editingPlanId = plan['id'] as String?;
-                planName.text = plan['name'] as String? ?? 'Plano alimentar';
-                proposal = content;
-                proposalEditor.text = content;
-              });
-              Navigator.pop(sheetContext);
-            },
-          )).toList(growable: false),
+          children: savedPlans
+              .map(
+                (plan) => ListTile(
+                  title: Text(plan['name'] as String? ?? 'Plano alimentar'),
+                  subtitle: const Text('Toque para revisar e editar'),
+                  onTap: () {
+                    final content = plan['contentJson'] as String? ?? '{}';
+                    setState(() {
+                      editingPlanId = plan['id'] as String?;
+                      planName.text =
+                          plan['name'] as String? ?? 'Plano alimentar';
+                      proposal = content;
+                      proposalEditor.text = content;
+                    });
+                    Navigator.pop(sheetContext);
+                  },
+                ),
+              )
+              .toList(growable: false),
         ),
       );
     } on HttpException catch (exception) {
       if (mounted) setState(() => error = exception.message);
     } catch (_) {
-      if (mounted) setState(() => error = 'Não foi possível carregar seus planos agora.');
+      if (mounted) {
+        setState(() => error = 'Não foi possível carregar seus planos agora.');
+      }
     } finally {
       if (mounted) setState(() => loading = false);
     }

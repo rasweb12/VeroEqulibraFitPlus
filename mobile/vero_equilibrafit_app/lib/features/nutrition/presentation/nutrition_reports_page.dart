@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../measurements/presentation/measurements_providers.dart';
+import '../../../shared/presentation/vero_design.dart';
 import 'nutrition_providers.dart';
 
 class NutritionReportsPage extends ConsumerStatefulWidget {
@@ -71,7 +72,7 @@ class _NutritionReportsPageState extends ConsumerState<NutritionReportsPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Relatório nutricional')),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
         children: [
           SegmentedButton<int>(
             segments: const [
@@ -86,7 +87,9 @@ class _NutritionReportsPageState extends ConsumerState<NutritionReportsPage> {
           const SizedBox(height: 16),
           Text(
             'Dados registrados nos últimos $_period dias',
-            style: Theme.of(context).textTheme.titleLarge,
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
           const Text(
             'Calorias e macronutrientes podem ser estimativas. Fibras só aparecem quando registradas por uma fonte nutricional.',
@@ -140,7 +143,7 @@ class _NutritionReportsPageState extends ConsumerState<NutritionReportsPage> {
   Widget _metric(String label, String value, String detail) => Card(
     child: ListTile(
       title: Text(label),
-      subtitle: Text(detail),
+      subtitle: Text(detail, style: const TextStyle(color: VeroColors.muted)),
       trailing: Text(
         value,
         style: const TextStyle(fontWeight: FontWeight.bold),

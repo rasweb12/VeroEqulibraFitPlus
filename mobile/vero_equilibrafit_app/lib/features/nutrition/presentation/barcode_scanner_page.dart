@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../data/barcode_validator.dart';
 import '../data/food_barcode_repository.dart';
+import '../../../shared/presentation/vero_design.dart';
 
 class BarcodeScannerPage extends StatefulWidget {
   const BarcodeScannerPage({super.key});
@@ -49,10 +50,22 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
           right: 24,
           top: 80,
           child: Card(
+            color: VeroColors.surface,
             child: Padding(
-              padding: EdgeInsets.all(12),
-              child: Text(
-                'Aponte a câmera para um código EAN ou UPC. O produto só será preenchido quando uma fonte de dados autorizada estiver configurada.',
+              padding: EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.center_focus_strong_outlined,
+                    color: VeroColors.primary,
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Aponte a câmera para um código EAN ou UPC. O produto só será preenchido quando uma fonte autorizada estiver configurada.',
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -145,7 +158,7 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
             children: [
               const Text(
                 'Código identificado',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 8),
               SelectableText(value),

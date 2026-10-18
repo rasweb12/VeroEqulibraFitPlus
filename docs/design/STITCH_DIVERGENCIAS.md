@@ -8,3 +8,5 @@
 | UI-004 | Alta | Protótipos usam números, nomes, imagens e telemetria fictícios. | Derivar textos e métricas de providers; usar estado vazio quando ausente. |
 | UI-005 | Média | Referências usam Plus Jakarta Sans remota. | Não baixar fonte sem licença/asset; usar tipografia de sistema. |
 | UI-006 | Média | HTML inclui imagens externas de demonstração. | Não importar imagens; usar ícones e cartões próprios. |
+| UI-007 | Média | Telas detalhadas ainda usam composição Material simples. | Aplicação progressiva dos componentes compartilhados, iniciada em relatórios, planos, scanner e missões. |
+| UI-008 | Alta | Não há evidência visual Android do novo build. | Gerar APK e executar roteiro de captura quando ADB/emulador estiver disponível. |

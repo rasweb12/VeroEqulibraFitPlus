@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../nutrition/presentation/nutrition_providers.dart';
+import '../../../shared/presentation/app_drawer.dart';
+import '../../../shared/presentation/vero_design.dart';
 import 'habits_page.dart';
 
 class MissionsPage extends ConsumerWidget {
@@ -35,15 +38,54 @@ class MissionsPage extends ConsumerWidget {
     ];
     final completed = missions.where((item) => item.$2 >= item.$3).length;
     return Scaffold(
-      appBar: AppBar(title: const Text('Missões de hoje')),
+      drawer: const AppDrawer(),
+      bottomNavigationBar: const VeroBottomNavigation(location: '/missions'),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
-          Text(
-            '$completed de ${missions.length} missões concluídas',
-            style: Theme.of(context).textTheme.titleLarge,
+          Builder(
+            builder: (context) => VeroTopBar(
+              title: 'Missões',
+              onMenu: () => Scaffold.of(context).openDrawer(),
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: VeroColors.gold.withValues(alpha: .13),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.emoji_events_outlined,
+                  color: VeroColors.gold,
+                  size: 34,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$completed de ${missions.length} missões concluídas',
+                        style: const TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const Text(
+                        'Metas opcionais, sem punições.',
+                        style: TextStyle(color: VeroColors.muted),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           const Text(
             'As missões são opcionais e baseadas somente nos seus registros. Ajuste sua rotina sem punições.',
           ),
@@ -55,7 +97,10 @@ class MissionsPage extends ConsumerWidget {
             final done = progress >= 1;
             return Card(
               child: ListTile(
-                leading: Icon(mission.$4),
+                leading: Icon(
+                  mission.$4,
+                  color: done ? VeroColors.primary : VeroColors.muted,
+                ),
                 title: Text(mission.$1),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,11 +114,16 @@ class MissionsPage extends ConsumerWidget {
                 ),
                 trailing: Icon(
                   done ? Icons.check_circle : Icons.circle_outlined,
-                  color: done ? Theme.of(context).colorScheme.primary : null,
+                  color: done ? VeroColors.primary : VeroColors.muted,
                 ),
               ),
             );
           }),
+          TextButton.icon(
+            onPressed: () => context.go('/habits'),
+            icon: const Icon(Icons.water_drop_outlined),
+            label: const Text('Voltar para hábitos'),
+          ),
         ],
       ),
     );
