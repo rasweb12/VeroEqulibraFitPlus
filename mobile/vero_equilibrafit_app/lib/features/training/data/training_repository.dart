@@ -309,6 +309,10 @@ class TrainingRepository {
             deletedAt: plan['deletedAt'] == null
                 ? null
                 : DateTime.tryParse(plan['deletedAt'] as String),
+            revision: plan['revision'] as int? ?? 0,
+            updatedAt: plan['updatedAt'] == null
+                ? null
+                : DateTime.tryParse(plan['updatedAt'] as String),
           ),
         );
       }
@@ -333,6 +337,63 @@ class TrainingRepository {
     }
   }
 
+  /// Applies a server change only when it is newer than the encrypted local
+  /// copy. A tombstone is retained so a deleted plan cannot reappear.
+  Future<void> applyRemote(Map<String, dynamic> change) async {
+    if (change['entityType'] != 'training-plan') return;
+    final id = change['entityId'] as String?;
+    final revision = change['revision'] as int?;
+    final changedAt = DateTime.tryParse(change['changedAt'] as String? ?? '');
+    if (id == null || revision == null || changedAt == null) return;
+    final index = _plans.indexWhere((plan) => plan.id == id);
+    if (index >= 0 && _plans[index].revision > revision) return;
+    if (change['action'] == 'delete') {
+      final existing = index < 0
+          ? TrainingPlan(id: id, name: '', objective: '', exercises: const [])
+          : _plans[index];
+      final deleted = existing.copyWith(
+        deletedAt: changedAt.toUtc(),
+        revision: revision,
+        updatedAt: changedAt.toUtc(),
+      );
+      if (index < 0) {
+        _plans.add(deleted);
+      } else {
+        _plans[index] = deleted;
+      }
+      await _save();
+      return;
+    }
+    final payload = change['payload'];
+    if (payload is! Map<String, dynamic>) return;
+    final exercises = (payload['exercises'] as List<dynamic>? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map((item) => PlannedExercise(
+              exerciseId: item['exerciseId'] as String? ?? '',
+              sets: item['sets'] as int? ?? 3,
+              repetitions: item['repetitions'] as String? ?? '10',
+              targetLoadKg: (item['targetLoadKg'] as num?)?.toDouble(),
+              restSeconds: item['restSeconds'] as int? ?? 60,
+              notes: item['notes'] as String? ?? '',
+            ))
+        .where((item) => item.exerciseId.isNotEmpty)
+        .toList(growable: false);
+    final remote = TrainingPlan(
+      id: id,
+      name: payload['name'] as String? ?? '',
+      objective: payload['objective'] as String? ?? '',
+      exercises: exercises,
+      revision: revision,
+      updatedAt: changedAt.toUtc(),
+    );
+    if (index < 0) {
+      _plans.add(remote);
+    } else {
+      _plans[index] = remote;
+    }
+    await _save();
+  }
+
   Future<void> _save() async {
     final payload = {
       'plans': _plans
@@ -355,6 +416,8 @@ class TrainingRepository {
                   )
                   .toList(growable: false),
               'deletedAt': plan.deletedAt?.toIso8601String(),
+              'revision': plan.revision,
+              'updatedAt': plan.updatedAt?.toIso8601String(),
             },
           )
           .toList(growable: false),

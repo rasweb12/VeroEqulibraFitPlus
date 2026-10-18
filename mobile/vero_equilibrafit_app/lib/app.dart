@@ -15,10 +15,12 @@ import 'features/measurements/presentation/measurements_page.dart';
 import 'features/auth/presentation/auth_page.dart';
 import 'features/auth/presentation/auth_splash_page.dart';
 import 'features/auth/presentation/auth_providers.dart';
+import 'features/auth/data/auth_repository.dart';
 import 'features/auth/presentation/forgot_password_page.dart';
 import 'features/auth/presentation/reset_password_page.dart';
 import 'features/auth/presentation/confirm_email_page.dart';
 import 'features/nutrition/presentation/nutrition_plans_page.dart';
+import 'features/nutrition/presentation/nutrition_providers.dart';
 import 'features/profile/presentation/profile_page.dart';
 import 'core/offline/sync_providers.dart';
 
@@ -30,7 +32,7 @@ class VeroEqulibraFitApp extends ConsumerWidget {
     ref.listen(authSessionProvider, (previous, next) {
       final session = next.valueOrNull;
       if (session != null) {
-        unawaited(ref.read(syncServiceProvider).pushPending(session));
+        unawaited(_synchronize(ref, session));
       }
     });
     final router = GoRouter(
@@ -113,6 +115,14 @@ class VeroEqulibraFitApp extends ConsumerWidget {
       ),
       routerConfig: router,
     );
+  }
+
+  static Future<void> _synchronize(WidgetRef ref, AuthSession session) async {
+    final service = ref.read(syncServiceProvider);
+    await service.pushPending(session);
+    await service.pullRemote(session);
+    ref.invalidate(plansProvider);
+    ref.invalidate(mealsProvider);
   }
 
   static final _privateRoutes = <RouteBase>[

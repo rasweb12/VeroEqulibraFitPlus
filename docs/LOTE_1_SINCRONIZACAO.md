@@ -91,3 +91,9 @@ Foi criado `GET /api/v1/sync/pull`, protegido por JWT e limitado a 50 alteraçõ
 Evidências locais: `dotnet build backend/VeroEqulibraFit.Api/VeroEqulibraFit.Api.csproj --no-restore -m:1 -v normal` concluído com êxito e sem avisos/erros. A suíte de API identificou um arranjo incorreto no teste de JWT ausente, que foi corrigido para informar issuer e audience antes de verificar a chave.
 
 Permanece **PARCIAL — NÃO HOMOLOGADO**: o Flutter ainda não aplica o pull, atualizações ainda não usam `Revision` como pré-condição, não existe atomicidade entre o dado local e a outbox, e não houve teste contra Neon ou dois dispositivos.
+
+## Cliente Flutter de pull e aplicação idempotente — 18/10/2026
+
+O aplicativo agora chama o `pull` autenticado após o `push` da sessão validada. O cursor opaco fica no armazenamento seguro por conta e cada página é aplicada ao repositório de treino e alimentação. Uma alteração só substitui a cópia local quando a revisão remota for igual ou superior; tombstones de fichas permanecem persistidos para impedir reaparecimento. Refeições removidas deixam de ser apresentadas localmente.
+
+Após uma sincronização, os providers de fichas e refeições são invalidados para recarregar o conteúdo cifrado. A análise estática dos arquivos alterados passou sem erros. Ainda faltam atualização versionada, filas transacionais, hábitos/medidas, testes de API contra Neon e homologação em dois dispositivos. O lote segue **PARCIAL — NÃO HOMOLOGADO**.

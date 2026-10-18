@@ -9,6 +9,8 @@ class MealEntry {
     this.proteinGrams,
     this.carbohydrateGrams,
     this.fatGrams,
+    this.revision = 0,
+    this.updatedAt,
   });
 
   final String id;
@@ -20,6 +22,8 @@ class MealEntry {
   final double? proteinGrams;
   final double? carbohydrateGrams;
   final double? fatGrams;
+  final int revision;
+  final DateTime? updatedAt;
 
   MealEntry copyWith({
     String? name,
@@ -30,6 +34,8 @@ class MealEntry {
     double? proteinGrams,
     double? carbohydrateGrams,
     double? fatGrams,
+    int? revision,
+    DateTime? updatedAt,
   }) => MealEntry(
     id: id,
     name: name ?? this.name,
@@ -40,5 +46,7 @@ class MealEntry {
     proteinGrams: proteinGrams ?? this.proteinGrams,
     carbohydrateGrams: carbohydrateGrams ?? this.carbohydrateGrams,
     fatGrams: fatGrams ?? this.fatGrams,
+    revision: revision ?? this.revision,
+    updatedAt: updatedAt ?? this.updatedAt,
   );
 }

@@ -82,12 +82,58 @@ class NutritionRepository {
             proteinGrams: (entry['proteinGrams'] as num?)?.toDouble(),
             carbohydrateGrams: (entry['carbohydrateGrams'] as num?)?.toDouble(),
             fatGrams: (entry['fatGrams'] as num?)?.toDouble(),
+            revision: entry['revision'] as int? ?? 0,
+            updatedAt: entry['updatedAt'] == null
+                ? null
+                : DateTime.tryParse(entry['updatedAt'] as String),
           ),
         );
       }
     } on FormatException {
       // Ignore only the local cache if it cannot be decoded.
     }
+  }
+
+  /// Keeps the newest server revision and never exposes another owner's data.
+  Future<void> applyRemote(Map<String, dynamic> change) async {
+    if (change['entityType'] != 'meal') return;
+    final id = change['entityId'] as String?;
+    final revision = change['revision'] as int?;
+    final changedAt = DateTime.tryParse(change['changedAt'] as String? ?? '');
+    if (id == null || revision == null || changedAt == null) return;
+    final index = _entries.indexWhere((entry) => entry.id == id);
+    if (index >= 0 && _entries[index].revision > revision) return;
+    if (change['action'] == 'delete') {
+      if (index >= 0) {
+        _entries.removeAt(index);
+      }
+      await _save();
+      return;
+    }
+    final payload = change['payload'];
+    if (payload is! Map<String, dynamic>) return;
+    final consumedAt = DateTime.tryParse(payload['consumedAt'] as String? ?? '');
+    if (consumedAt == null) return;
+    final existing = index < 0 ? null : _entries[index];
+    final remote = MealEntry(
+      id: id,
+      name: payload['description'] as String? ?? '',
+      mealType: existing?.mealType ?? 'Refeição',
+      notes: existing?.notes ?? '',
+      recordedAt: consumedAt.toLocal(),
+      estimatedCalories: (payload['estimatedCalories'] as num?)?.toDouble(),
+      proteinGrams: (payload['proteinGrams'] as num?)?.toDouble(),
+      carbohydrateGrams: (payload['carbohydrateGrams'] as num?)?.toDouble(),
+      fatGrams: (payload['fatGrams'] as num?)?.toDouble(),
+      revision: revision,
+      updatedAt: changedAt.toUtc(),
+    );
+    if (index < 0) {
+      _entries.add(remote);
+    } else {
+      _entries[index] = remote;
+    }
+    await _save();
   }
 
   Future<void> _save() => _store.write(
@@ -105,6 +151,8 @@ class NutritionRepository {
               'proteinGrams': entry.proteinGrams,
               'carbohydrateGrams': entry.carbohydrateGrams,
               'fatGrams': entry.fatGrams,
+              'revision': entry.revision,
+              'updatedAt': entry.updatedAt?.toIso8601String(),
             },
           )
           .toList(growable: false),
