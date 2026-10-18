@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../../../../shared/presentation/app_drawer.dart';
 import '../../../core/offline/sync_conflicts_provider.dart';
@@ -24,6 +25,18 @@ class ProfilePage extends ConsumerWidget {
             ),
             if (session?.displayName != null) Text(session!.email),
             const SizedBox(height: 20),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.flag_outlined),
+                title: const Text('Metas nutricionais'),
+                subtitle: const Text(
+                  'Revise calorias e macronutrientes usados no diário.',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/nutrition/goals'),
+              ),
+            ),
+            const SizedBox(height: 12),
             conflicts.when(
               data: (items) => items.isEmpty
                   ? const SizedBox.shrink()
