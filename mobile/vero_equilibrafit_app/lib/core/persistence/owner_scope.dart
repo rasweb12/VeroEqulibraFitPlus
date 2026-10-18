@@ -22,6 +22,9 @@ Iterable<String> ownerPrivateKeys(String ownerId) sync* {
     'nutrition_repository_v2_secure',
     'body_measurements_v2_secure',
     'habits_v3_secure',
+    'habits_v4_secure',
+    'nutrition_goals_v1_secure',
+    'missions_v1_secure',
     'sync_outbox_v1_secure',
   ]) {
     yield ownerScopedKey(ownerId, resource);

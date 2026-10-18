@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../../../../shared/presentation/app_drawer.dart';
 import '../../../core/offline/sync_conflicts_provider.dart';
+import '../../../core/persistence/owner_scope.dart';
+import '../../../core/persistence/preferences_provider.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -57,6 +59,20 @@ class ProfilePage extends ConsumerWidget {
             const Text(
               'Questionário de saúde e objetivos será solicitado antes de recomendações personalizadas. Compartilhe somente o necessário e procure acompanhamento profissional para situações clínicas.',
             ),
+            const SizedBox(height: 12),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.privacy_tip_outlined),
+                title: const Text('Privacidade e dados'),
+                subtitle: const Text(
+                  'Exporte os dados locais desta conta ou exclua sua conta pelo fluxo protegido.',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: session == null
+                    ? null
+                    : () => _privacy(context, ref, session.userId),
+              ),
+            ),
             const Spacer(),
             FilledButton.icon(
               onPressed: () => ref.read(authSessionProvider.notifier).logout(),
@@ -64,6 +80,71 @@ class ProfilePage extends ConsumerWidget {
               label: const Text('Sair da conta'),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _privacy(
+    BuildContext context,
+    WidgetRef ref,
+    String ownerId,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (sheet) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.download_outlined),
+                title: const Text('Visualizar exportação local'),
+                subtitle: const Text(
+                  'Somente dados protegidos desta conta neste aparelho.',
+                ),
+                onTap: () async {
+                  final store = ref.read(secureOwnerStoreProvider);
+                  final data = <String, String?>{};
+                  for (final key in ownerPrivateKeys(ownerId)) {
+                    data[key.split(':').last] = await store.read(key);
+                  }
+                  if (!sheet.mounted) return;
+                  Navigator.pop(sheet);
+                  await showDialog<void>(
+                    context: context,
+                    builder: (dialog) => AlertDialog(
+                      title: const Text('Dados locais'),
+                      content: SingleChildScrollView(
+                        child: SelectableText(data.toString()),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialog),
+                          child: const Text('Fechar'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.delete_forever_outlined,
+                  color: Colors.red,
+                ),
+                title: const Text('Excluir conta'),
+                subtitle: const Text(
+                  'Remove a conta e os dados associados conforme a política do servidor.',
+                ),
+                onTap: () async {
+                  Navigator.pop(sheet);
+                  await ref.read(authSessionProvider.notifier).deleteAccount();
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
