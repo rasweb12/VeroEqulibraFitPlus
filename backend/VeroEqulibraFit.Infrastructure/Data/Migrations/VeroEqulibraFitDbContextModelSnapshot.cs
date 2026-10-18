@@ -179,9 +179,21 @@ namespace VeroEqulibraFit.Infrastructure.Data.Migrations
                     b.Property<bool>("RequiresUserReview")
                         .HasColumnType("boolean");
 
+                    b.Property<int>("Revision")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
                     b.HasKey("Id");
 
                     b.HasIndex("OwnerId", "ConsumedAt");
+
+                    b.HasIndex("OwnerId", "UpdatedAt");
 
                     b.ToTable("meal_entries", (string)null);
                 });
@@ -286,9 +298,21 @@ namespace VeroEqulibraFit.Infrastructure.Data.Migrations
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("Revision")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
                     b.HasKey("Id");
 
                     b.HasIndex("OwnerId", "DeletedAt");
+
+                    b.HasIndex("OwnerId", "UpdatedAt");
 
                     b.ToTable("training_plans", (string)null);
                 });

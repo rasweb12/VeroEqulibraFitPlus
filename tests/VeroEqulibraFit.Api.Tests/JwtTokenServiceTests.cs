@@ -16,7 +16,7 @@ public sealed class JwtTokenServiceTests
     [Fact]
     public void ValidateConfiguration_RejectsMissingSigningKey()
     {
-        var configuration = Configuration(false, [("Jwt:Issuer", Issuer)]);
+        var configuration = Configuration(false, [("Jwt:Issuer", Issuer), ("Jwt:Audience", Audience)]);
 
         var exception = Assert.Throws<InvalidOperationException>(() => JwtTokenService.ValidateConfiguration(configuration));
 

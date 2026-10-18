@@ -46,7 +46,10 @@ public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbC
             entity.HasKey(plan => plan.Id);
             entity.Property(plan => plan.Name).HasMaxLength(160).IsRequired();
             entity.Property(plan => plan.Objective).HasMaxLength(500).IsRequired();
+            entity.Property(plan => plan.Revision).HasDefaultValue(1);
+            entity.Property(plan => plan.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.HasIndex(plan => new { plan.OwnerId, plan.DeletedAt });
+            entity.HasIndex(plan => new { plan.OwnerId, plan.UpdatedAt });
             entity.HasQueryFilter(plan => plan.DeletedAt == null);
             entity.HasMany(plan => plan.Exercises).WithOne().HasForeignKey(exercise => exercise.TrainingPlanId).OnDelete(DeleteBehavior.Cascade);
         });
@@ -76,7 +79,10 @@ public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbC
         {
             entity.ToTable("meal_entries");
             entity.Property(meal => meal.Description).HasMaxLength(1000).IsRequired();
+            entity.Property(meal => meal.Revision).HasDefaultValue(1);
+            entity.Property(meal => meal.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.HasIndex(meal => new { meal.OwnerId, meal.ConsumedAt });
+            entity.HasIndex(meal => new { meal.OwnerId, meal.UpdatedAt });
             entity.HasQueryFilter(meal => meal.DeletedAt == null);
         });
         modelBuilder.Entity<NutritionPlan>(entity =>

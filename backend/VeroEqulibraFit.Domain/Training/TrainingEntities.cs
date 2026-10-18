@@ -7,6 +7,8 @@ public sealed class TrainingPlan
     public string Name { get; set; } = string.Empty;
     public string Objective { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public int Revision { get; set; } = 1;
     public DateTimeOffset? DeletedAt { get; set; }
     public List<TrainingPlanExercise> Exercises { get; set; } = [];
 }

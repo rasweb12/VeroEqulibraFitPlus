@@ -12,8 +12,8 @@ A outbox Isar existia, mas não era acionada por nenhum repositório e só possu
 ## Limites atuais
 
 - Os repositórios ainda não registram cada mutação na outbox de forma atômica.
-- Não existem endpoints `push`, `pull` ou cursor de sincronização na API.
-- Não há versão de registro, tombstone remoto ou resolução de conflito por entidade.
+- Não há aplicação de alterações remotas no armazenamento Flutter; o cliente ainda só faz `push`.
+- Atualizações concorrentes ainda não carregam uma revisão-base e não há tela de resolução de conflito.
 - Não há demonstração em dois dispositivos/emuladores.
 
 Portanto não há sincronização Flutter ↔ Neon implementada e nenhum dado deve ser considerado recuperável em outro dispositivo.
@@ -28,10 +28,10 @@ Portanto não há sincronização Flutter ↔ Neon implementada e nenhum dado de
 
 ## Próximas correções
 
-1. Definir contratos de push/pull e versão de entidade.
+1. Aplicar o `pull` no armazenamento local com deduplicação por revisão.
 2. Gravar mutação local e outbox no mesmo armazenamento transacional.
-3. Implementar processamento idempotente no PostgreSQL e cursor de pull.
-4. Integrar treino, alimentação, hábitos e medidas progressivamente.
+3. Implementar atualização condicionada à revisão e resolução explícita de conflito.
+4. Integrar hábitos e medidas progressivamente.
 5. Testar contas A/B e dois emuladores com falha/retry/conflito.
 
 ## Incremento de identidade estável — 17/10/2026
@@ -81,3 +81,13 @@ Esta etapa conecta criação local → outbox cifrada → tentativa autenticada 
 Excluir uma ficha com UUID estável ou uma refeição com UUID estável agora gera `training-plan.delete` ou `meal.delete` na fila cifrada. O `push` aplica a exclusão lógica exclusivamente ao registro daquele proprietário; fichas são mantidas no banco com `DeletedAt`, sem apagar sessões de treino. Reenvios recebem o mesmo tratamento idempotente do recibo de operação.
 
 Evidências locais: build da API .NET sem avisos/erros e teste Flutter `deleting a new local meal preserves a tombstone operation` aprovado. Ainda falta pull dos tombstones e a verificação em Neon, portanto exclusão entre dispositivos não está homologada.
+
+## Versionamento e pull remoto — 18/10/2026
+
+Fichas e refeições agora possuem `Revision` e `UpdatedAt`. A migration local `AddSyncRecordVersions` inicializa linhas existentes com revisão `1` e `CURRENT_TIMESTAMP`, evitando que registros já existentes fiquem invisíveis no primeiro `pull`. Ela **não foi aplicada no Neon**.
+
+Foi criado `GET /api/v1/sync/pull`, protegido por JWT e limitado a 50 alterações por página. Ele usa `OwnerId` somente do token, inclui tombstones e devolve cursor opaco composto por instante, tipo e ID da entidade. Esse cursor evita perder alterações com o mesmo instante de atualização; os dados são ordenados de forma determinística. O endpoint devolve apenas fichas e refeições neste incremento.
+
+Evidências locais: `dotnet build backend/VeroEqulibraFit.Api/VeroEqulibraFit.Api.csproj --no-restore -m:1 -v normal` concluído com êxito e sem avisos/erros. A suíte de API identificou um arranjo incorreto no teste de JWT ausente, que foi corrigido para informar issuer e audience antes de verificar a chave.
+
+Permanece **PARCIAL — NÃO HOMOLOGADO**: o Flutter ainda não aplica o pull, atualizações ainda não usam `Revision` como pré-condição, não existe atomicidade entre o dado local e a outbox, e não houve teste contra Neon ou dois dispositivos.

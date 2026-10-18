@@ -34,6 +34,37 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
         return Ok(new SyncPushResponse(results));
     }
 
+    [HttpGet("pull")]
+    public async Task<ActionResult<SyncPullResponse>> Pull(
+        [FromQuery] string? cursor,
+        [FromQuery] int limit = 50,
+        CancellationToken cancellationToken = default)
+    {
+        var ownerId = GetOwnerId();
+        if (ownerId is null) return Unauthorized();
+        limit = Math.Clamp(limit, 1, MaxBatchSize);
+        if (!TryReadCursor(cursor, out var parsedCursor))
+            return BadRequest(new { error = "cursor inválido" });
+        var from = parsedCursor?.ChangedAt ?? DateTimeOffset.MinValue;
+        var plans = await database.TrainingPlans.IgnoreQueryFilters().AsNoTracking().Include(plan => plan.Exercises)
+            .Where(plan => plan.OwnerId == ownerId && plan.UpdatedAt >= from)
+            .Select(plan => new { Plan = plan, ChangedAt = plan.UpdatedAt })
+            .ToListAsync(cancellationToken);
+        var meals = await database.MealEntries.IgnoreQueryFilters().AsNoTracking()
+            .Where(meal => meal.OwnerId == ownerId && meal.UpdatedAt >= from)
+            .Select(meal => new { Meal = meal, ChangedAt = meal.UpdatedAt })
+            .ToListAsync(cancellationToken);
+        var changes = plans.Select(item => ToPlanChange(item.Plan))
+            .Concat(meals.Select(item => ToMealChange(item.Meal)))
+            .OrderBy(change => change.ChangedAt)
+            .ThenBy(change => change.EntityType, StringComparer.Ordinal)
+            .ThenBy(change => change.EntityId)
+            .Where(change => parsedCursor is null || IsAfter(change, parsedCursor))
+            .Take(limit)
+            .ToList();
+        return Ok(new SyncPullResponse(changes, changes.Count == limit ? WriteCursor(changes[^1]) : null));
+    }
+
     private async Task<SyncPushOperationResponse> Apply(Guid ownerId, SyncPushOperationRequest operation, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(operation.OperationId) || operation.OperationId.Length > 128 ||
@@ -144,7 +175,12 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
         var plan = await database.TrainingPlans.IgnoreQueryFilters()
             .SingleOrDefaultAsync(item => item.Id == entityId && item.OwnerId == ownerId, cancellationToken);
         if (plan is null) return new(string.Empty, "conflict", "entity_not_found");
-        if (plan.DeletedAt is null) plan.DeletedAt = DateTimeOffset.UtcNow;
+        if (plan.DeletedAt is null)
+        {
+            plan.DeletedAt = DateTimeOffset.UtcNow;
+            plan.UpdatedAt = plan.DeletedAt.Value;
+            plan.Revision += 1;
+        }
         return new(string.Empty, "accepted");
     }
 
@@ -153,10 +189,59 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
         var meal = await database.MealEntries.IgnoreQueryFilters()
             .SingleOrDefaultAsync(item => item.Id == entityId && item.OwnerId == ownerId, cancellationToken);
         if (meal is null) return new(string.Empty, "conflict", "entity_not_found");
-        if (meal.DeletedAt is null) meal.DeletedAt = DateTimeOffset.UtcNow;
+        if (meal.DeletedAt is null)
+        {
+            meal.DeletedAt = DateTimeOffset.UtcNow;
+            meal.UpdatedAt = meal.DeletedAt.Value;
+            meal.Revision += 1;
+        }
         return new(string.Empty, "accepted");
     }
 
     private Guid? GetOwnerId() => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub"), out var ownerId) ? ownerId : null;
+    private static SyncPullChangeResponse ToPlanChange(TrainingPlan plan) => new(
+        "training-plan", plan.Id, plan.DeletedAt is null ? "upsert" : "delete", plan.Revision, plan.UpdatedAt,
+        JsonSerializer.SerializeToElement(new {
+            id = plan.Id, name = plan.Name, objective = plan.Objective, revision = plan.Revision,
+            exercises = plan.Exercises.OrderBy(exercise => exercise.Position).Select(exercise => new {
+                exerciseId = exercise.ExerciseId, exercise.Position, exercise.Sets, exercise.Repetitions,
+                exercise.TargetLoadKg, exercise.RestSeconds, exercise.Notes,
+            }),
+        }, JsonOptions));
+    private static SyncPullChangeResponse ToMealChange(MealEntry meal) => new(
+        "meal", meal.Id, meal.DeletedAt is null ? "upsert" : "delete", meal.Revision, meal.UpdatedAt,
+        JsonSerializer.SerializeToElement(new {
+            id = meal.Id, description = meal.Description, consumedAt = meal.ConsumedAt, revision = meal.Revision,
+            meal.EstimatedCalories, meal.ProteinGrams, meal.CarbohydrateGrams, meal.FatGrams,
+        }, JsonOptions));
+
+    private static bool TryReadCursor(string? cursor, out SyncCursor? result)
+    {
+        result = null;
+        if (string.IsNullOrWhiteSpace(cursor)) return true;
+        try
+        {
+            var json = Encoding.UTF8.GetString(Convert.FromBase64String(cursor));
+            var parsed = JsonSerializer.Deserialize<SyncCursor>(json, JsonOptions);
+            if (parsed is null || parsed.EntityId == Guid.Empty || string.IsNullOrWhiteSpace(parsed.EntityType)) return false;
+            result = parsed;
+            return true;
+        }
+        catch (FormatException) { return false; }
+        catch (JsonException) { return false; }
+    }
+
+    private static string WriteCursor(SyncPullChangeResponse change) => Convert.ToBase64String(
+        Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new SyncCursor(change.ChangedAt, change.EntityType, change.EntityId), JsonOptions)));
+
+    private static bool IsAfter(SyncPullChangeResponse change, SyncCursor cursor)
+    {
+        var timestampComparison = change.ChangedAt.CompareTo(cursor.ChangedAt);
+        if (timestampComparison != 0) return timestampComparison > 0;
+        var typeComparison = string.CompareOrdinal(change.EntityType, cursor.EntityType);
+        return typeComparison > 0 || typeComparison == 0 && change.EntityId.CompareTo(cursor.EntityId) > 0;
+    }
+
+    private sealed record SyncCursor(DateTimeOffset ChangedAt, string EntityType, Guid EntityId);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 }

@@ -20,3 +20,15 @@ public sealed record SyncPushOperationResponse(
     string? ErrorCode = null);
 
 public sealed record SyncPushResponse(IReadOnlyList<SyncPushOperationResponse> Operations);
+
+public sealed record SyncPullResponse(
+    IReadOnlyList<SyncPullChangeResponse> Changes,
+    string? NextCursor);
+
+public sealed record SyncPullChangeResponse(
+    string EntityType,
+    Guid EntityId,
+    string Action,
+    int Revision,
+    DateTimeOffset ChangedAt,
+    JsonElement Payload);

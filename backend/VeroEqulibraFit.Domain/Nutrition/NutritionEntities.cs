@@ -11,6 +11,8 @@ public sealed class MealEntry
     public decimal? CarbohydrateGrams { get; set; }
     public decimal? FatGrams { get; set; }
     public bool RequiresUserReview { get; set; } = true;
+    public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public int Revision { get; set; } = 1;
     public DateTimeOffset? DeletedAt { get; set; }
 }
 
