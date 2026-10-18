@@ -14,8 +14,12 @@ class NutritionPlansPage extends ConsumerStatefulWidget {
 class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
   final objective = TextEditingController(),
       preferences = TextEditingController(),
-      restrictions = TextEditingController();
+      restrictions = TextEditingController(),
+      planName = TextEditingController(text: 'Plano alimentar'),
+      proposalEditor = TextEditingController();
   String? proposal;
+  String? editingPlanId;
+  List<Map<String, dynamic>> savedPlans = const [];
   bool loading = false;
   String? error;
   @override
@@ -23,6 +27,8 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
     objective.dispose();
     preferences.dispose();
     restrictions.dispose();
+    planName.dispose();
+    proposalEditor.dispose();
     super.dispose();
   }
 
@@ -57,6 +63,11 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
           onPressed: loading ? null : generate,
           child: Text(loading ? 'Gerando...' : 'Gerar proposta com Gemini'),
         ),
+        TextButton.icon(
+          onPressed: loading ? null : loadSavedPlans,
+          icon: const Icon(Icons.folder_open_outlined),
+          label: const Text('Carregar plano salvo'),
+        ),
         if (error != null)
           Padding(
             padding: const EdgeInsets.only(top: 12),
@@ -74,9 +85,25 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
           const SizedBox(height: 8),
           Text(_summary(proposal!)),
           const SizedBox(height: 12),
+          TextField(
+            controller: planName,
+            decoration: const InputDecoration(labelText: 'Nome do plano'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: proposalEditor,
+            minLines: 5,
+            maxLines: 16,
+            decoration: const InputDecoration(
+              labelText: 'Conteúdo do plano (JSON revisável)',
+              helperText: 'Revise refeições, alternativas e observações antes de salvar.',
+            ),
+            onChanged: (value) => proposal = value,
+          ),
+          const SizedBox(height: 12),
           FilledButton(
             onPressed: approve,
-            child: const Text('Aprovar e salvar plano'),
+            child: Text(editingPlanId == null ? 'Aprovar e salvar plano' : 'Salvar alterações'),
           ),
         ],
       ],
@@ -91,14 +118,28 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
       'objective': objective.text.trim(),
       'preferences': _list(preferences.text),
       'restrictions': _list(restrictions.text),
-    }, false);
+    }, false, 'POST');
   }
 
   Future<void> approve() async {
-    await request('/api/v1/nutrition-plans', {
-      'name': 'Plano alimentar',
-      'contentJson': proposal,
-    }, true);
+    final content = proposalEditor.text.trim();
+    if (planName.text.trim().isEmpty || content.isEmpty) {
+      setState(() => error = 'Informe o nome e o conteúdo do plano.');
+      return;
+    }
+    try {
+      jsonDecode(content);
+    } catch (_) {
+      setState(() => error = 'O conteúdo revisado do plano está inválido. Gere novamente ou ajuste o JSON.');
+      return;
+    }
+    final id = editingPlanId;
+    await request(
+      id == null ? '/api/v1/nutrition-plans' : '/api/v1/nutrition-plans/$id',
+      {'name': planName.text.trim(), 'contentJson': content},
+      true,
+      id == null ? 'POST' : 'PUT',
+    );
     if (mounted && error == null) {
       ScaffoldMessenger.of(
         context,
@@ -110,6 +151,7 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
     String path,
     Map<String, dynamic> body,
     bool saving,
+    String method,
   ) async {
     final session = ref.read(authSessionProvider).valueOrNull;
     if (session == null || AuthRepository.apiBaseUrl.isEmpty) {
@@ -120,24 +162,32 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
       loading = true;
       error = null;
     });
+    final client = http.Client();
     try {
-      final response = await http
-          .post(
-            Uri.parse('${AuthRepository.apiBaseUrl}$path'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ${session.accessToken}',
-            },
-            body: jsonEncode(body),
-          )
+      final request = http.Request(
+        method,
+        Uri.parse('${AuthRepository.apiBaseUrl}$path'),
+      )
+        ..headers.addAll({
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${session.accessToken}',
+        })
+        ..body = jsonEncode(body);
+      final streamed = await client
+          .send(request)
           .timeout(const Duration(seconds: 35));
+      final response = await http.Response.fromStream(streamed);
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw HttpException(_message(response));
       }
       if (!saving) {
         jsonDecode(response.body);
         if (mounted) {
-          setState(() => proposal = response.body);
+          setState(() {
+            proposal = response.body;
+            proposalEditor.text = response.body;
+            editingPlanId = null;
+          });
         }
       }
     } on HttpException catch (exception) {
@@ -151,6 +201,56 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
               'Não foi possível concluir agora. Tente novamente ou revise seus registros manualmente.',
         );
       }
+    } finally {
+      client.close();
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> loadSavedPlans() async {
+    final session = ref.read(authSessionProvider).valueOrNull;
+    if (session == null || AuthRepository.apiBaseUrl.isEmpty) {
+      setState(() => error = 'Sessão ou API indisponível.');
+      return;
+    }
+    setState(() { loading = true; error = null; });
+    try {
+      final response = await http.get(
+        Uri.parse('${AuthRepository.apiBaseUrl}/api/v1/nutrition-plans'),
+        headers: {'Authorization': 'Bearer ${session.accessToken}'},
+      ).timeout(const Duration(seconds: 35));
+      if (response.statusCode != 200) throw HttpException(_message(response));
+      final decoded = jsonDecode(response.body) as List<dynamic>;
+      savedPlans = decoded.whereType<Map<String, dynamic>>().toList(growable: false);
+      if (!mounted) return;
+      if (savedPlans.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nenhum plano salvo ainda.')));
+        return;
+      }
+      await showModalBottomSheet<void>(
+        context: context,
+        builder: (sheetContext) => ListView(
+          shrinkWrap: true,
+          children: savedPlans.map((plan) => ListTile(
+            title: Text(plan['name'] as String? ?? 'Plano alimentar'),
+            subtitle: const Text('Toque para revisar e editar'),
+            onTap: () {
+              final content = plan['contentJson'] as String? ?? '{}';
+              setState(() {
+                editingPlanId = plan['id'] as String?;
+                planName.text = plan['name'] as String? ?? 'Plano alimentar';
+                proposal = content;
+                proposalEditor.text = content;
+              });
+              Navigator.pop(sheetContext);
+            },
+          )).toList(growable: false),
+        ),
+      );
+    } on HttpException catch (exception) {
+      if (mounted) setState(() => error = exception.message);
+    } catch (_) {
+      if (mounted) setState(() => error = 'Não foi possível carregar seus planos agora.');
     } finally {
       if (mounted) setState(() => loading = false);
     }
