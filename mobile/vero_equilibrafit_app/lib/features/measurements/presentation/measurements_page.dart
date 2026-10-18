@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/presentation/app_drawer.dart';
+import '../../../shared/presentation/vero_design.dart';
 import 'measurements_providers.dart';
 
 class MeasurementsPage extends ConsumerWidget {
@@ -20,6 +21,9 @@ class MeasurementsPage extends ConsumerWidget {
         ),
       ),
       drawer: const AppDrawer(),
+      bottomNavigationBar: const VeroBottomNavigation(
+        location: '/measurements',
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _add(context, ref),
         icon: const Icon(Icons.add),

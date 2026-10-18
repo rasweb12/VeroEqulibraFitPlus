@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../shared/presentation/app_drawer.dart';
+import '../../../shared/presentation/vero_design.dart';
 import '../data/coach_repository.dart';
 import 'coach_providers.dart';
 
@@ -26,16 +28,39 @@ class _CoachPageState extends ConsumerState<CoachPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Coach Gemini')),
     drawer: const AppDrawer(),
+    bottomNavigationBar: const VeroBottomNavigation(location: '/coach'),
     body: ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
-        Text(
-          'Orientação como apoio',
-          style: Theme.of(context).textTheme.titleLarge,
+        Builder(
+          builder: (context) => VeroTopBar(
+            title: 'Coach Gemini',
+            onMenu: () => Scaffold.of(context).openDrawer(),
+          ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: VeroColors.gemini.withValues(alpha: .08),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.auto_awesome_rounded, color: VeroColors.gemini),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Orientação como apoio',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
         const Text(
           'O Coach usa somente Gemini pela API autenticada. Ele não substitui profissionais de saúde e nunca altera uma ficha sem sua confirmação.',
         ),
@@ -46,7 +71,9 @@ class _CoachPageState extends ConsumerState<CoachPage> {
           maxLines: 6,
           textCapitalization: TextCapitalization.sentences,
           decoration: const InputDecoration(
-            border: OutlineInputBorder(),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(16)),
+            ),
             labelText: 'Sua pergunta',
             hintText: 'Ex.: Como posso adaptar meu treino hoje?',
           ),
@@ -96,6 +123,12 @@ class _CoachPageState extends ConsumerState<CoachPage> {
             ),
           ),
         ],
+        const SizedBox(height: 8),
+        TextButton.icon(
+          onPressed: () => context.go('/nutrition'),
+          icon: const Icon(Icons.restaurant_outlined),
+          label: const Text('Registrar uma refeição'),
+        ),
       ],
     ),
   );

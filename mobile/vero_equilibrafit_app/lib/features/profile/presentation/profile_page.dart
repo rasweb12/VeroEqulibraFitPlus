@@ -1,42 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../auth/presentation/auth_providers.dart';
+
 import '../../../../shared/presentation/app_drawer.dart';
+import '../../../../shared/presentation/vero_design.dart';
 import '../../../core/offline/sync_conflicts_provider.dart';
 import '../../../core/persistence/owner_scope.dart';
 import '../../../core/persistence/preferences_provider.dart';
+import '../../auth/presentation/auth_providers.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(authSessionProvider).valueOrNull;
     final conflicts = ref.watch(syncConflictsProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Perfil')),
       drawer: const AppDrawer(),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      bottomNavigationBar: const VeroBottomNavigation(location: '/profile'),
+      body: Builder(
+        builder: (context) => ListView(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
           children: [
-            Text(
-              session?.displayName ?? session?.email ?? 'Conta',
-              style: Theme.of(context).textTheme.headlineSmall,
+            VeroTopBar(
+              title: 'Perfil',
+              onMenu: () => Scaffold.of(context).openDrawer(),
             ),
-            if (session?.displayName != null) Text(session!.email),
             const SizedBox(height: 20),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.flag_outlined),
-                title: const Text('Metas nutricionais'),
-                subtitle: const Text(
-                  'Revise calorias e macronutrientes usados no diário.',
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push('/nutrition/goals'),
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: VeroColors.primary.withValues(alpha: .08),
+                borderRadius: BorderRadius.circular(24),
               ),
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 28,
+                    backgroundColor: VeroColors.primary,
+                    child: Icon(
+                      Icons.person_outline,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          session?.displayName ?? session?.email ?? 'Conta',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        if (session?.displayName != null)
+                          Text(
+                            session!.email,
+                            style: const TextStyle(color: VeroColors.muted),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            VeroActionCard(
+              icon: Icons.flag_outlined,
+              title: 'Metas nutricionais',
+              subtitle: 'Revise calorias e macronutrientes usados no diário.',
+              tint: VeroColors.primary,
+              onTap: () => context.push('/nutrition/goals'),
             ),
             const SizedBox(height: 12),
             conflicts.when(
@@ -56,24 +91,23 @@ class ProfilePage extends ConsumerWidget {
               loading: () => const SizedBox.shrink(),
               error: (_, _) => const SizedBox.shrink(),
             ),
-            const Text(
-              'Questionário de saúde e objetivos será solicitado antes de recomendações personalizadas. Compartilhe somente o necessário e procure acompanhamento profissional para situações clínicas.',
-            ),
             const SizedBox(height: 12),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.privacy_tip_outlined),
-                title: const Text('Privacidade e dados'),
-                subtitle: const Text(
+            VeroActionCard(
+              icon: Icons.privacy_tip_outlined,
+              title: 'Privacidade e dados',
+              subtitle:
                   'Exporte os dados locais desta conta ou exclua sua conta pelo fluxo protegido.',
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: session == null
-                    ? null
-                    : () => _privacy(context, ref, session.userId),
-              ),
+              tint: VeroColors.gemini,
+              onTap: session == null
+                  ? () {}
+                  : () => _privacy(context, ref, session.userId),
             ),
-            const Spacer(),
+            const SizedBox(height: 16),
+            const Text(
+              'Questionário de saúde e objetivos será solicitado antes de recomendações personalizadas. Compartilhe somente o necessário.',
+              style: TextStyle(color: VeroColors.muted),
+            ),
+            const SizedBox(height: 20),
             FilledButton.icon(
               onPressed: () => ref.read(authSessionProvider.notifier).logout(),
               icon: const Icon(Icons.logout),

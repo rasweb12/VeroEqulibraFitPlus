@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/presentation/app_drawer.dart';
+import '../../../shared/presentation/vero_design.dart';
 import '../data/meal_photo_analysis_repository.dart';
 import 'nutrition_providers.dart';
 import 'nutrition_goals_page.dart';
@@ -70,6 +71,7 @@ class NutritionPage extends ConsumerWidget {
         ],
       ),
       drawer: const AppDrawer(),
+      bottomNavigationBar: const VeroBottomNavigation(location: '/nutrition'),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/nutrition/new'),
         icon: const Icon(Icons.add),
@@ -284,7 +286,7 @@ class _DiarySummary extends StatelessWidget {
   Widget build(BuildContext context) => Card(
     margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
     child: Padding(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       child: Column(
         children: [
           Row(
@@ -310,15 +312,20 @@ class _DiarySummary extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 8),
           Text(
             calorieGoal == 0
                 ? '≈ ${calories.round()} kcal registradas'
                 : '≈ ${calories.round()} / $calorieGoal kcal',
-            style: Theme.of(context).textTheme.titleLarge,
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 4),
           Text(
             'Proteínas ${protein.round()}${proteinGoal == 0 ? '' : ' / $proteinGoal'} g  ·  Carboidratos ${carbs.round()}${carbsGoal == 0 ? '' : ' / $carbsGoal'} g  ·  Gorduras ${fat.round()}${fatGoal == 0 ? '' : ' / $fatGoal'} g',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: VeroColors.muted),
           ),
         ],
       ),

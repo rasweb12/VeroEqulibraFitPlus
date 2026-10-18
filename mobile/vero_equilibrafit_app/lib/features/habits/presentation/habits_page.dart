@@ -9,6 +9,8 @@ import '../../../core/persistence/preferences_provider.dart';
 import '../../../core/persistence/secure_owner_store.dart';
 import '../../auth/presentation/current_owner_provider.dart';
 import '../../../shared/presentation/app_drawer.dart';
+import '../../../shared/presentation/vero_design.dart';
+import 'package:go_router/go_router.dart';
 
 @immutable
 class HabitEntry {
@@ -190,30 +192,83 @@ class HabitsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(habitsProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Hábitos e hidratação')),
       drawer: const AppDrawer(),
+      bottomNavigationBar: const VeroBottomNavigation(location: '/habits'),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
-          Text(
+          Builder(
+            builder: (context) => VeroTopBar(
+              title: 'Hábitos',
+              onMenu: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text(
             'Registre o que fez hoje, no seu ritmo.',
-            style: Theme.of(context).textTheme.titleLarge,
+            style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 16),
           Card(
-            child: ListTile(
-              leading: const Icon(Icons.water_drop_outlined),
-              title: const Text('Hidratação'),
-              subtitle: Text(
-                '${state.waterMl} ml de ${state.waterGoalMl} ml hoje',
-              ),
-              trailing: IconButton(
-                icon: const Icon(Icons.tune_outlined),
-                tooltip: 'Ajustar meta',
-                onPressed: () => _waterGoal(context, ref, state.waterGoalMl),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: VeroColors.water.withValues(alpha: .12),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.water_drop_outlined,
+                          color: VeroColors.water,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Hidratação',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 17,
+                              ),
+                            ),
+                            Text(
+                              '${state.waterMl} ml de ${state.waterGoalMl} ml hoje',
+                              style: const TextStyle(color: VeroColors.muted),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.tune_outlined),
+                        tooltip: 'Ajustar meta',
+                        onPressed: () =>
+                            _waterGoal(context, ref, state.waterGoalMl),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  LinearProgressIndicator(
+                    value: (state.waterMl / state.waterGoalMl).clamp(0, 1),
+                    minHeight: 8,
+                    borderRadius: BorderRadius.circular(8),
+                    color: VeroColors.water,
+                    backgroundColor: const Color(0xffE7EEF8),
+                  ),
+                ],
               ),
             ),
           ),
+          const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             children: [150, 200, 250, 300, 500]
@@ -226,46 +281,50 @@ class HabitsPage extends ConsumerWidget {
                 )
                 .toList(),
           ),
+          const SizedBox(height: 16),
           Card(
             child: SwitchListTile(
-              secondary: const Icon(Icons.self_improvement_outlined),
+              secondary: const Icon(
+                Icons.self_improvement_outlined,
+                color: VeroColors.primary,
+              ),
               title: const Text('Mobilidade'),
               subtitle: const Text('Marque quando concluir sua prática.'),
               value: state.mobilityDone,
               onChanged: ref.read(habitsProvider.notifier).setMobility,
             ),
           ),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.directions_run_outlined),
-              title: const Text('Atividade'),
-              subtitle: Text(
-                state.hasActivityToday
-                    ? 'Atividade registrada hoje'
-                    : 'Registre duração e observações.',
-              ),
-              trailing: const Icon(Icons.add),
-              onTap: () => _activity(context, ref),
-            ),
+          const SizedBox(height: 12),
+          VeroActionCard(
+            icon: Icons.directions_run_outlined,
+            title: 'Atividade',
+            subtitle: state.hasActivityToday
+                ? 'Atividade registrada hoje.'
+                : 'Registre duração e observações.',
+            tint: VeroColors.primary,
+            onTap: () => _activity(context, ref),
           ),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.note_alt_outlined),
-              title: const Text('Anotação do dia'),
-              subtitle: Text(
-                state.hasNoteToday
-                    ? 'Anotação registrada hoje'
-                    : 'Registre algo que queira lembrar.',
-              ),
-              trailing: const Icon(Icons.add),
-              onTap: () => _note(context, ref),
-            ),
+          const SizedBox(height: 12),
+          VeroActionCard(
+            icon: Icons.note_alt_outlined,
+            title: 'Anotação do dia',
+            subtitle: state.hasNoteToday
+                ? 'Anotação registrada hoje.'
+                : 'Registre algo que queira lembrar.',
+            tint: VeroColors.gemini,
+            onTap: () => _note(context, ref),
           ),
           const Padding(
             padding: EdgeInsets.only(top: 12),
             child: Text(
               'Atividades e anotações ficam protegidas neste aparelho. Elas não são enviadas ao Coach automaticamente.',
             ),
+          ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: () => context.go('/missions'),
+            icon: const Icon(Icons.emoji_events_outlined),
+            label: const Text('Ver missões opcionais'),
           ),
         ],
       ),

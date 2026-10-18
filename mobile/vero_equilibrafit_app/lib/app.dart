@@ -27,6 +27,7 @@ import 'features/nutrition/presentation/nutrition_goals_page.dart';
 import 'features/nutrition/presentation/barcode_scanner_page.dart';
 import 'features/profile/presentation/profile_page.dart';
 import 'core/offline/sync_providers.dart';
+import 'shared/presentation/vero_design.dart';
 
 class VeroEqulibraFitApp extends ConsumerWidget {
   const VeroEqulibraFitApp({super.key});
@@ -103,20 +104,8 @@ class VeroEqulibraFitApp extends ConsumerWidget {
     );
     return MaterialApp.router(
       title: 'VeroEqulibraFit+',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xff185b49),
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xff67d7b0),
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
+      theme: veroTheme(Brightness.light),
+      darkTheme: veroTheme(Brightness.dark),
       routerConfig: router,
     );
   }
@@ -248,14 +237,20 @@ class PlansPage extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: const Text('Nova ficha'),
       ),
+      bottomNavigationBar: const VeroBottomNavigation(location: '/training'),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Seu ritmo. Seus resultados.',
-              style: Theme.of(context).textTheme.titleLarge,
+            const Text(
+              'Treinos da semana',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Planeje, inicie e acompanhe suas fichas.',
+              style: TextStyle(color: VeroColors.muted),
             ),
             const SizedBox(height: 16),
             if (plans.isEmpty)
