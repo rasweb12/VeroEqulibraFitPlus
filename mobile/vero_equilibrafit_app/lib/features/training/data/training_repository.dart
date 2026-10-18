@@ -4,6 +4,7 @@ import 'dart:convert';
 import '../../../core/persistence/owner_scope.dart';
 import '../../../core/persistence/secure_owner_store.dart';
 import '../../../core/persistence/stable_id.dart';
+import '../../../core/offline/sync_operation_queue.dart';
 
 import '../domain/exercise.dart';
 import '../domain/planned_exercise.dart';
@@ -11,10 +12,12 @@ import '../domain/training_plan.dart';
 
 /// Local-first repository. Sync adapters can later enqueue the stable IDs.
 class TrainingRepository {
-  TrainingRepository({required String ownerId, required this.store})
+  TrainingRepository({required this.ownerId, required this.store, this.outbox})
     : _storageKey = ownerScopedKey(ownerId, 'training_repository_v2_secure');
+  final String ownerId;
   final String _storageKey;
   final SecureOwnerStore store;
+  final SyncOperationQueue? outbox;
   final List<TrainingPlan> _plans = [];
   final List<Exercise> _customExercises = [];
   static const catalog = <Exercise>[
@@ -168,6 +171,7 @@ class TrainingRepository {
     );
     _plans.add(copy);
     unawaited(_save());
+    unawaited(_enqueuePlan(copy));
     return copy;
   }
 
@@ -185,6 +189,7 @@ class TrainingRepository {
     );
     _plans.add(plan);
     unawaited(_save());
+    unawaited(_enqueuePlan(plan));
     return plan;
   }
 
@@ -365,6 +370,39 @@ class TrainingRepository {
           .toList(growable: false),
     };
     await store.write(_storageKey, jsonEncode(payload));
+  }
+
+  Future<void> _enqueuePlan(TrainingPlan plan) async {
+    final queue = outbox;
+    if (queue == null) return;
+    await queue.enqueue(
+      ownerId: ownerId,
+      idempotencyKey: 'training-plan-create:${plan.id}',
+      entityType: 'training-plan',
+      entityId: plan.id,
+      operationType: 'training-plan.create',
+      clientVersion: '1.0.0',
+      payloadJson: jsonEncode({
+        'name': plan.name,
+        'objective': plan.objective,
+        'clientId': plan.id,
+        'exercises': plan.exercises
+            .asMap()
+            .entries
+            .map(
+              (entry) => {
+                'exerciseId': entry.value.exerciseId,
+                'position': entry.key,
+                'sets': entry.value.sets,
+                'repetitions': entry.value.repetitions,
+                'targetLoadKg': entry.value.targetLoadKg,
+                'restSeconds': entry.value.restSeconds,
+                'notes': entry.value.notes,
+              },
+            )
+            .toList(growable: false),
+      }),
+    );
   }
 
   String _normalize(String value) => value

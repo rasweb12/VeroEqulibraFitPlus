@@ -63,3 +63,9 @@ Para concluir o fluxo será necessário adotar uma camada local que forneça cri
 Foi implementada `SecureOperationQueue`, com o envelope completo de operações persistido pela `SecureOwnerStore`, que usa Android Keystore/iOS Keychain. A chave é isolada por `ownerId`, foi incluída na rotina de exclusão de conta e não permite leitura por outra conta. `SyncPushClient` passou a depender de uma interface de fila, permitindo usar essa implementação cifrada sem abrir o Isar não cifrável.
 
 Evidências: análise estática dos arquivos de outbox sem problemas e 11 testes Flutter aprovados, incluindo persistência após reinstanciar a fila e isolamento entre contas. A fila ainda não é alimentada pelos repositórios nem acionada automaticamente; também não há transação comum entre o registro local e o envelope no keystore. Assim, a sincronização ponta a ponta continua **REPROVADA**, e o próximo incremento deve enfileirar mutações de criação sem bloquear o uso offline.
+
+## Enfileiramento de criações locais — 17/10/2026
+
+Fichas novas, duplicações de fichas e refeições novas agora geram operações de criação na fila cifrada do proprietário. O payload contém o UUID estável e os dados necessários para o `push` inicial. O registro local é salvo primeiro e seu uso não fica bloqueado caso a fila apresente falha; portanto, não há perda intencional de histórico por indisponibilidade de sincronização.
+
+O teste `new local meal also creates an encrypted sync operation` confirmou o enfileiramento de uma refeição, e a suíte Flutter total passou com 12 testes. A operação ainda não é disparada automaticamente após login, e a gravação local/outbox não possui transação comum. Atualizações, exclusões, hábitos, medidas e pull permanecem fora deste incremento.

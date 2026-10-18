@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/persistence/preferences_provider.dart';
+import '../../../core/offline/secure_operation_queue.dart';
 import '../../auth/presentation/current_owner_provider.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../data/meal_photo_analysis_repository.dart';
@@ -11,6 +12,10 @@ final nutritionRepositoryProvider = Provider.autoDispose<NutritionRepository>(
   (ref) => NutritionRepository(
     ownerId: ref.watch(currentOwnerIdProvider),
     store: ref.read(secureOwnerStoreProvider),
+    outbox: SecureOperationQueue(
+      ownerId: ref.watch(currentOwnerIdProvider),
+      store: ref.read(secureOwnerStoreProvider),
+    ),
   ),
 );
 

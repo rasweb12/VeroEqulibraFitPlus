@@ -4,14 +4,20 @@ import 'dart:convert';
 import '../../../core/persistence/owner_scope.dart';
 import '../../../core/persistence/secure_owner_store.dart';
 import '../../../core/persistence/stable_id.dart';
+import '../../../core/offline/sync_operation_queue.dart';
 
 import '../domain/meal_entry.dart';
 
 class NutritionRepository {
-  NutritionRepository({required String ownerId, required this._store})
-    : _storageKey = ownerScopedKey(ownerId, 'nutrition_repository_v2_secure');
+  NutritionRepository({
+    required this.ownerId,
+    required this._store,
+    this.outbox,
+  }) : _storageKey = ownerScopedKey(ownerId, 'nutrition_repository_v2_secure');
+  final String ownerId;
   final String _storageKey;
   final SecureOwnerStore _store;
+  final SyncOperationQueue? outbox;
   final List<MealEntry> _entries = [];
 
   List<MealEntry> entries() => List.unmodifiable(_entries.reversed);
@@ -26,20 +32,20 @@ class NutritionRepository {
     double? fatGrams,
     DateTime? recordedAt,
   }) {
-    _entries.add(
-      MealEntry(
-        id: newStableId(),
-        name: name.trim(),
-        mealType: mealType,
-        notes: notes.trim(),
-        recordedAt: recordedAt ?? DateTime.now(),
-        estimatedCalories: estimatedCalories,
-        proteinGrams: proteinGrams,
-        carbohydrateGrams: carbohydrateGrams,
-        fatGrams: fatGrams,
-      ),
+    final entry = MealEntry(
+      id: newStableId(),
+      name: name.trim(),
+      mealType: mealType,
+      notes: notes.trim(),
+      recordedAt: recordedAt ?? DateTime.now(),
+      estimatedCalories: estimatedCalories,
+      proteinGrams: proteinGrams,
+      carbohydrateGrams: carbohydrateGrams,
+      fatGrams: fatGrams,
     );
+    _entries.add(entry);
     unawaited(_save());
+    unawaited(_enqueueMeal(entry));
   }
 
   void delete(String id) {
@@ -102,4 +108,26 @@ class NutritionRepository {
           .toList(growable: false),
     ),
   );
+
+  Future<void> _enqueueMeal(MealEntry entry) async {
+    final queue = outbox;
+    if (queue == null) return;
+    await queue.enqueue(
+      ownerId: ownerId,
+      idempotencyKey: 'meal-create:${entry.id}',
+      entityType: 'meal',
+      entityId: entry.id,
+      operationType: 'meal.create',
+      clientVersion: '1.0.0',
+      payloadJson: jsonEncode({
+        'description': entry.name,
+        'consumedAt': entry.recordedAt.toUtc().toIso8601String(),
+        'estimatedCalories': entry.estimatedCalories,
+        'proteinGrams': entry.proteinGrams,
+        'carbohydrateGrams': entry.carbohydrateGrams,
+        'fatGrams': entry.fatGrams,
+        'clientId': entry.id,
+      }),
+    );
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/persistence/preferences_provider.dart';
+import '../../../core/offline/secure_operation_queue.dart';
 import '../../auth/presentation/current_owner_provider.dart';
 import '../data/training_repository.dart';
 import '../domain/exercise.dart';
@@ -10,6 +11,10 @@ final trainingRepositoryProvider = Provider<TrainingRepository>(
   (ref) => TrainingRepository(
     ownerId: ref.watch(currentOwnerIdProvider),
     store: ref.read(secureOwnerStoreProvider),
+    outbox: SecureOperationQueue(
+      ownerId: ref.watch(currentOwnerIdProvider),
+      store: ref.read(secureOwnerStoreProvider),
+    ),
   ),
 );
 final plansProvider =

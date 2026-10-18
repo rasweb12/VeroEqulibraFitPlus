@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vero_equilibrafit_app/core/offline/secure_operation_queue.dart';
 import 'package:vero_equilibrafit_app/core/persistence/secure_owner_store.dart';
+import 'package:vero_equilibrafit_app/features/nutrition/data/nutrition_repository.dart';
 
 void main() {
   test('persists pending operations in the owner encrypted store', () async {
@@ -40,5 +41,22 @@ void main() {
     final second = SecureOperationQueue(ownerId: 'account-b', store: store);
     expect(await second.due(ownerId: 'account-b'), isEmpty);
     await expectLater(second.due(ownerId: 'account-a'), throwsStateError);
+  });
+
+  test('new local meal also creates an encrypted sync operation', () async {
+    final store = MemorySecureOwnerStore();
+    final queue = SecureOperationQueue(ownerId: 'account-a', store: store);
+    final repository = NutritionRepository(
+      ownerId: 'account-a',
+      store: store,
+      outbox: queue,
+    );
+
+    repository.add(name: 'Almoço', mealType: 'Almoço', notes: '');
+    await Future<void>.delayed(Duration.zero);
+
+    final pending = await queue.due(ownerId: 'account-a');
+    expect(pending, hasLength(1));
+    expect(pending.single.operationType, 'meal.create');
   });
 }
