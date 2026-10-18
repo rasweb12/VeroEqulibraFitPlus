@@ -62,6 +62,16 @@ class SecureOperationQueue implements SyncOperationQueue {
   }
 
   @override
+  Future<void> replacePayload({required String idempotencyKey, required String payloadJson}) async {
+    await _load();
+    final item = _operations.where((item) => item.idempotencyKey == idempotencyKey).firstOrNull;
+    if (item == null || item.status != OfflineOperationStatus.pending.name) return;
+    item.payloadJson = payloadJson;
+    item.updatedAt = DateTime.now().toUtc();
+    await _save();
+  }
+
+  @override
   Future<List<PendingOperation>> due({
     required String ownerId,
     int limit = 50,

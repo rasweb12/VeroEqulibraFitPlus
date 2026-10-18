@@ -10,6 +10,7 @@ abstract interface class SyncOperationQueue {
     required String payloadJson,
     required String clientVersion,
   });
+  Future<void> replacePayload({required String idempotencyKey, required String payloadJson});
   Future<List<PendingOperation>> due({required String ownerId, int limit = 50});
   Future<List<PendingOperation>> conflicts({required String ownerId});
   Future<void> markProcessing(int id);

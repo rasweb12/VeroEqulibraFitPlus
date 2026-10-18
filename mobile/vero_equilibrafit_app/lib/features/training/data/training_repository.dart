@@ -20,6 +20,7 @@ class TrainingRepository {
   final SyncOperationQueue? outbox;
   final List<TrainingPlan> _plans = [];
   final List<Exercise> _customExercises = [];
+  final Map<String, int> _customRevisions = {};
   static const catalog = <Exercise>[
     Exercise(
       id: 'incline-dumbbell',
@@ -288,6 +289,16 @@ class TrainingRepository {
     unawaited(_enqueueCustomDelete(id));
   }
 
+  void updateCustom({required String id, required String name, required String primaryMuscle, required String equipment}) {
+    final index = _customExercises.indexWhere((item) => item.id == id);
+    if (index < 0) return;
+    final updated = Exercise(id: id, name: name.trim(), primaryMuscle: primaryMuscle.trim(), equipment: equipment.trim(), isCustom: true);
+    _customExercises[index] = updated;
+    unawaited(_save());
+    final revision = _customRevisions[id] ?? 0;
+    unawaited(_enqueueCustomUpdate(updated, revision));
+  }
+
   Future<void> applyRemoteCustomExercise(Map<String, dynamic> change) async {
     if (change['entityType'] != 'custom-exercise') return;
     final id = change['entityId'] as String?;
@@ -297,6 +308,7 @@ class TrainingRepository {
       final payload = change['payload'];
       if (payload is Map<String, dynamic>) {
         _customExercises.add(Exercise(id: id, name: payload['name'] as String? ?? '', primaryMuscle: payload['primaryMuscle'] as String? ?? '', equipment: payload['equipment'] as String? ?? '', isCustom: true));
+        _customRevisions[id] = change['revision'] as int? ?? 0;
       }
     }
     await _save();
@@ -357,6 +369,7 @@ class TrainingRepository {
             isCustom: true,
           ),
         );
+        _customRevisions[exercise['id'] as String] = exercise['revision'] as int? ?? 0;
       }
     } on FormatException {
       // A corrupt cache is ignored; no remote or historical data is removed.
@@ -455,6 +468,7 @@ class TrainingRepository {
               'primaryMuscle': exercise.primaryMuscle,
               'equipment': exercise.equipment,
               'aliases': exercise.aliases,
+              'revision': _customRevisions[exercise.id] ?? 0,
             },
           )
           .toList(growable: false),
@@ -555,6 +569,17 @@ class TrainingRepository {
     final queue = outbox;
     if (queue == null || !_isUuid(id)) return;
     await queue.enqueue(ownerId: ownerId, idempotencyKey: 'custom-exercise-delete:$id', entityType: 'custom-exercise', entityId: id, operationType: 'custom-exercise.delete', clientVersion: '1.0.0', payloadJson: '{}');
+  }
+
+  Future<void> _enqueueCustomUpdate(Exercise exercise, int revision) async {
+    final queue = outbox;
+    if (queue == null || !_isUuid(exercise.id)) return;
+    final payload = jsonEncode({'name': exercise.name, 'primaryMuscle': exercise.primaryMuscle, 'equipment': exercise.equipment, 'baseRevision': revision});
+    if (revision < 1) {
+      await queue.replacePayload(idempotencyKey: 'custom-exercise-create:${exercise.id}', payloadJson: payload);
+      return;
+    }
+    await queue.enqueue(ownerId: ownerId, idempotencyKey: 'custom-exercise-update:${exercise.id}:$revision', entityType: 'custom-exercise', entityId: exercise.id, operationType: 'custom-exercise.update', clientVersion: '1.0.0', payloadJson: payload);
   }
 
   bool _isUuid(String value) => RegExp(

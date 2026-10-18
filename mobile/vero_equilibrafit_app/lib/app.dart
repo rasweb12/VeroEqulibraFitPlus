@@ -719,6 +719,9 @@ class ExerciseLibraryPage extends ConsumerWidget {
                           );
                           context.go('/training/$planId');
                         },
+                  onLongPress: exercise.isCustom && planId == null
+                      ? () => _editCustomExercise(context, ref, exercise)
+                      : null,
                 );
               },
             ),
@@ -843,5 +846,17 @@ class ExerciseLibraryPage extends ConsumerWidget {
     name.dispose();
     muscle.dispose();
     equipment.dispose();
+  }
+
+  Future<void> _editCustomExercise(BuildContext context, WidgetRef ref, Exercise exercise) async {
+    final name = TextEditingController(text: exercise.name);
+    final muscle = TextEditingController(text: exercise.primaryMuscle);
+    final equipment = TextEditingController(text: exercise.equipment);
+    final save = await showDialog<bool>(context: context, builder: (dialogContext) => AlertDialog(title: const Text('Editar exercício personalizado'), content: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: name, decoration: const InputDecoration(labelText: 'Nome')), TextField(controller: muscle, decoration: const InputDecoration(labelText: 'Grupo muscular')), TextField(controller: equipment, decoration: const InputDecoration(labelText: 'Equipamento'))]), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancelar')), FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Salvar'))]));
+    if (save == true && name.text.trim().isNotEmpty) {
+      ref.read(trainingRepositoryProvider).updateCustom(id: exercise.id, name: name.text, primaryMuscle: muscle.text.isEmpty ? 'Não informado' : muscle.text, equipment: equipment.text.isEmpty ? 'Não informado' : equipment.text);
+      ref.read(catalogRevisionProvider.notifier).state++;
+    }
+    name.dispose(); muscle.dispose(); equipment.dispose();
   }
 }
