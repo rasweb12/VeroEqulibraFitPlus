@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../data/barcode_validator.dart';
 
 class BarcodeScannerPage extends StatefulWidget {
   const BarcodeScannerPage({super.key});
@@ -22,8 +23,10 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
           if (_handled) return;
           final value = capture.barcodes.firstOrNull?.rawValue;
           if (value == null || value.isEmpty) return;
+          final result = BarcodeValidator.validate(value);
+          if (!result.isValid) return;
           _handled = true;
-          _showResult(value);
+          _showResult(result.gtin);
         },
       ),
       const Positioned(
@@ -31,7 +34,27 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
         child: Card(child: Padding(padding: EdgeInsets.all(12), child: Text('Aponte a câmera para um código EAN ou UPC. O produto só será preenchido quando uma fonte de dados autorizada estiver configurada.'))),
       ),
     ]),
+    floatingActionButton: FloatingActionButton.extended(
+      onPressed: _manualCode,
+      icon: const Icon(Icons.keyboard_outlined),
+      label: const Text('Digitar código'),
+    ),
   );
+
+  Future<void> _manualCode() async {
+    final controller = TextEditingController();
+    final code = await showDialog<String>(context: context, builder: (dialogContext) => AlertDialog(
+      title: const Text('Digitar código'),
+      content: TextField(controller: controller, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'EAN ou UPC')),
+      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancelar')), FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text), child: const Text('Continuar'))],
+    ));
+    controller.dispose();
+    if (code == null) return;
+    final result = BarcodeValidator.validate(code);
+    if (!result.isValid) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.error!))); return; }
+    _handled = true;
+    await _showResult(result.gtin);
+  }
 
   Future<void> _showResult(String value) async {
     if (!mounted) return;
