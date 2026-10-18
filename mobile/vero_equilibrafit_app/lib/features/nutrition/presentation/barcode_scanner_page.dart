@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../data/barcode_validator.dart';
+import '../data/food_barcode_repository.dart';
 
 class BarcodeScannerPage extends StatefulWidget {
   const BarcodeScannerPage({super.key});
@@ -124,6 +125,14 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
 
   Future<void> _showResult(String value) async {
     if (!mounted) return;
+    FoodBarcodeProduct? product;
+    String? error;
+    try {
+      product = await FoodBarcodeRepository().lookup(value);
+    } on FoodBarcodeException catch (exception) {
+      error = exception.message;
+    }
+    if (!mounted) return;
     await showModalBottomSheet<void>(
       context: context,
       isDismissible: false,
@@ -141,16 +150,36 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
               const SizedBox(height: 8),
               SelectableText(value),
               const SizedBox(height: 12),
-              const Text(
-                'O catálogo por código de barras ainda não está configurado. Você pode registrar o alimento manualmente e revisar todos os valores.',
+              Text(
+                product == null
+                    ? (error ??
+                          'Produto não encontrado no catálogo disponível. Você pode cadastrá-lo manualmente.')
+                    : '${product.name}${product.brand == null ? '' : ' · ${product.brand}'}\n≈ ${product.calories?.round() ?? 0} kcal · P ${product.protein?.round() ?? 0} g · C ${product.carbs?.round() ?? 0} g · G ${product.fat?.round() ?? 0} g\nFonte: ${product.source}',
               ),
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () {
                   Navigator.pop(sheetContext);
-                  context.go('/nutrition/new?barcode=$value');
+                  final uri = Uri(
+                    path: '/nutrition/new',
+                    queryParameters: {
+                      'barcode': value,
+                      if (product != null) 'name': product.name,
+                      if (product?.calories != null)
+                        'calories': '${product!.calories}',
+                      if (product?.protein != null)
+                        'protein': '${product!.protein}',
+                      if (product?.carbs != null) 'carbs': '${product!.carbs}',
+                      if (product?.fat != null) 'fat': '${product!.fat}',
+                    },
+                  );
+                  context.go(uri.toString());
                 },
-                child: const Text('Registrar manualmente'),
+                child: Text(
+                  product == null
+                      ? 'Cadastrar manualmente'
+                      : 'Adicionar à refeição',
+                ),
               ),
               TextButton(
                 onPressed: () {

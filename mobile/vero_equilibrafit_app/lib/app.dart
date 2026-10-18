@@ -168,8 +168,18 @@ class VeroEqulibraFitApp extends ConsumerWidget {
     ),
     GoRoute(
       path: '/nutrition/new',
-      builder: (context, state) =>
-          NutritionMealFormPage(barcode: state.uri.queryParameters['barcode']),
+      builder: (context, state) => NutritionMealFormPage(
+        barcode: state.uri.queryParameters['barcode'],
+        initialName: state.uri.queryParameters['name'],
+        initialCalories: double.tryParse(
+          state.uri.queryParameters['calories'] ?? '',
+        ),
+        initialProtein: double.tryParse(
+          state.uri.queryParameters['protein'] ?? '',
+        ),
+        initialCarbs: double.tryParse(state.uri.queryParameters['carbs'] ?? ''),
+        initialFat: double.tryParse(state.uri.queryParameters['fat'] ?? ''),
+      ),
     ),
     GoRoute(
       path: '/nutrition/photo-review',

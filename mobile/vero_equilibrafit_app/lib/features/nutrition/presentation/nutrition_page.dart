@@ -654,9 +654,20 @@ class _PhotoFoodDraft {
 }
 
 class NutritionMealFormPage extends ConsumerStatefulWidget {
-  const NutritionMealFormPage({super.key, this.mealId, this.barcode});
+  const NutritionMealFormPage({
+    super.key,
+    this.mealId,
+    this.barcode,
+    this.initialName,
+    this.initialCalories,
+    this.initialProtein,
+    this.initialCarbs,
+    this.initialFat,
+  });
   final String? mealId;
   final String? barcode;
+  final String? initialName;
+  final double? initialCalories, initialProtein, initialCarbs, initialFat;
 
   @override
   ConsumerState<NutritionMealFormPage> createState() =>
@@ -686,6 +697,11 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
       if (barcode != null && barcode.isNotEmpty) {
         _notes.text = 'Código de barras: $barcode';
       }
+      _name.text = widget.initialName ?? '';
+      _calories.text = widget.initialCalories?.toString() ?? '';
+      _protein.text = widget.initialProtein?.toString() ?? '';
+      _carbs.text = widget.initialCarbs?.toString() ?? '';
+      _fat.text = widget.initialFat?.toString() ?? '';
       return;
     }
     for (final meal in ref.read(mealsProvider)) {
