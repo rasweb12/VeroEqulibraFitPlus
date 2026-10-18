@@ -378,7 +378,7 @@ class _NutritionPhotoReviewPageState
     return Scaffold(
       appBar: AppBar(title: const Text('Revisar estimativa da foto')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
@@ -389,10 +389,26 @@ class _NutritionPhotoReviewPageState
             ),
           ),
           const SizedBox(height: 16),
-          Text(widget.input.message),
-          const SizedBox(height: 8),
-          const Text(
-            'As porções e nutrientes são estimativas. Revise cada alimento antes de salvar.',
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: VeroColors.gemini.withValues(alpha: .08),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.input.message,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'As porções e nutrientes são estimativas. Revise cada alimento antes de salvar.',
+                  style: TextStyle(color: VeroColors.muted),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           ListTile(
@@ -407,9 +423,18 @@ class _NutritionPhotoReviewPageState
               child: const Text('Alterar'),
             ),
           ),
-          Text(
-            '≈ ${_calories.round()} kcal · P ${_protein.round()} g · C ${_carbs.round()} g · G ${_fat.round()} g',
-            style: theme.textTheme.titleMedium,
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: VeroColors.primary.withValues(alpha: .08),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              '≈ ${_calories.round()} kcal · P ${_protein.round()} g · C ${_carbs.round()} g · G ${_fat.round()} g',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           for (var index = 0; index < _items.length; index++)
@@ -436,7 +461,7 @@ class _NutritionPhotoReviewPageState
     return Card(
       key: ValueKey(item.key),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Row(
@@ -753,8 +778,18 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
       title: Text(_existing == null ? 'Registrar refeição' : 'Editar refeição'),
     ),
     body: ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       children: [
+        Text(
+          _existing == null ? 'Registrar refeição' : 'Editar refeição',
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Preencha os dados ou use o Gemini como sugestão revisável.',
+          style: TextStyle(color: VeroColors.muted),
+        ),
+        const SizedBox(height: 16),
         TextField(
           controller: _name,
           autofocus: true,
