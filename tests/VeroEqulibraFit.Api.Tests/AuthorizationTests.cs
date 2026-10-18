@@ -15,6 +15,18 @@ public sealed class AuthorizationTests
         Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    [Fact]
+    public async Task AdminOverview_RejectsUnauthenticatedRequest()
+    {
+        await using var environment = new TestEnvironment();
+        using var factory = new WebApplicationFactory<Program>();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/admin/overview");
+
+        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
     private sealed class TestEnvironment : IAsyncDisposable
     {
         private static readonly SemaphoreSlim Gate = new(1, 1);

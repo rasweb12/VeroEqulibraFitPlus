@@ -55,7 +55,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ClockSkew = TimeSpan.FromSeconds(30),
     };
 });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("admin", policy => policy.RequireRole(AdminAccessBootstrapper.AdministratorRole));
+});
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -68,6 +71,7 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 var app = builder.Build();
+await AdminAccessBootstrapper.ApplyAsync(app.Services, builder.Configuration, app.Logger);
 var forwardedHeaders = new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
