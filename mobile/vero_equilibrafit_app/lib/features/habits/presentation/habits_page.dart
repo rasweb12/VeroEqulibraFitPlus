@@ -11,11 +11,13 @@ import '../../../shared/presentation/app_drawer.dart';
 
 @immutable
 class HabitsState {
-  const HabitsState({this.waterMl = 0, this.mobilityDone = false});
+  const HabitsState({this.waterMl = 0, this.waterGoalMl = 2000, this.mobilityDone = false});
   final int waterMl;
+  final int waterGoalMl;
   final bool mobilityDone;
-  HabitsState copyWith({int? waterMl, bool? mobilityDone}) => HabitsState(
+  HabitsState copyWith({int? waterMl, int? waterGoalMl, bool? mobilityDone}) => HabitsState(
     waterMl: waterMl ?? this.waterMl,
+    waterGoalMl: waterGoalMl ?? this.waterGoalMl,
     mobilityDone: mobilityDone ?? this.mobilityDone,
   );
 }
@@ -37,6 +39,7 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
       if (mounted) {
         state = HabitsState(
           waterMl: saved['waterMl'] as int? ?? 0,
+          waterGoalMl: saved['waterGoalMl'] as int? ?? 2000,
           mobilityDone: saved['mobilityDone'] as bool? ?? false,
         );
       }
@@ -45,8 +48,15 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
     }
   }
 
-  void addWater() {
-    state = state.copyWith(waterMl: state.waterMl + 250);
+  void addWater([int volumeMl = 250]) {
+    if (volumeMl <= 0 || volumeMl > 2000) return;
+    state = state.copyWith(waterMl: state.waterMl + volumeMl);
+    unawaited(_save());
+  }
+
+  void setWaterGoal(int volumeMl) {
+    if (volumeMl < 250 || volumeMl > 10000) return;
+    state = state.copyWith(waterGoalMl: volumeMl);
     unawaited(_save());
   }
 
@@ -57,7 +67,7 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
 
   Future<void> _save() => _store.write(
     _storageKey,
-    jsonEncode({'waterMl': state.waterMl, 'mobilityDone': state.mobilityDone}),
+    jsonEncode({'waterMl': state.waterMl, 'waterGoalMl': state.waterGoalMl, 'mobilityDone': state.mobilityDone}),
   );
 }
 
@@ -89,12 +99,22 @@ class HabitsPage extends ConsumerWidget {
             child: ListTile(
               leading: const Icon(Icons.water_drop_outlined),
               title: const Text('Hidratação'),
-              subtitle: Text('${habits.waterMl} ml registrados hoje'),
-              trailing: FilledButton(
-                onPressed: () => ref.read(habitsProvider.notifier).addWater(),
-                child: const Text('+ 250 ml'),
+              subtitle: Text('${habits.waterMl} ml de ${habits.waterGoalMl} ml hoje'),
+              trailing: IconButton(
+                tooltip: 'Ajustar meta',
+                onPressed: () => _changeWaterGoal(context, ref, habits.waterGoalMl),
+                icon: const Icon(Icons.tune_outlined),
               ),
             ),
+          ),
+          Wrap(
+            spacing: 8,
+            children: [150, 200, 250, 300, 500]
+                .map((amount) => OutlinedButton(
+                  onPressed: () => ref.read(habitsProvider.notifier).addWater(amount),
+                  child: Text('+$amount ml'),
+                ))
+                .toList(growable: false),
           ),
           Card(
             child: SwitchListTile(
@@ -114,5 +134,27 @@ class HabitsPage extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _changeWaterGoal(BuildContext context, WidgetRef ref, int goal) async {
+    final controller = TextEditingController(text: goal.toString());
+    final result = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Meta diária de água'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(labelText: 'Volume em ml'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancelar')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, int.tryParse(controller.text)), child: const Text('Salvar')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (result == null || result < 250 || result > 10000) return;
+    ref.read(habitsProvider.notifier).setWaterGoal(result);
   }
 }
