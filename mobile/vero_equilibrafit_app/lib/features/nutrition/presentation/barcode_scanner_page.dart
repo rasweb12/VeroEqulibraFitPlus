@@ -47,7 +47,7 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
           const SizedBox(height: 12),
           const Text('O catálogo por código de barras ainda não está configurado. Você pode registrar o alimento manualmente e revisar todos os valores.'),
           const SizedBox(height: 16),
-          FilledButton(onPressed: () { Navigator.pop(sheetContext); context.go('/nutrition/new'); }, child: const Text('Registrar manualmente')),
+          FilledButton(onPressed: () { Navigator.pop(sheetContext); context.go('/nutrition/new?barcode=$value'); }, child: const Text('Registrar manualmente')),
           TextButton(onPressed: () { Navigator.pop(sheetContext); setState(() => _handled = false); }, child: const Text('Ler outro código')),
         ]),
       )),

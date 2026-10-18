@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../shared/presentation/app_drawer.dart';
 import '../data/meal_photo_analysis_repository.dart';
 import 'nutrition_providers.dart';
+import 'nutrition_goals_page.dart';
 import '../domain/meal_entry.dart';
 
 class NutritionPage extends ConsumerWidget {
@@ -17,6 +18,7 @@ class NutritionPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final meals = ref.watch(mealsProvider);
     final selectedDay = ref.watch(nutritionDiaryDateProvider);
+    final goals = ref.watch(nutritionGoalsProvider);
     final dayMeals = meals.where((meal) => _sameDay(meal.recordedAt, selectedDay)).toList(growable: false);
     final calories = dayMeals.fold<double>(0, (sum, meal) => sum + (meal.estimatedCalories ?? 0));
     final protein = dayMeals.fold<double>(0, (sum, meal) => sum + (meal.proteinGrams ?? 0));
@@ -62,6 +64,10 @@ class NutritionPage extends ConsumerWidget {
             protein: protein,
             carbs: carbs,
             fat: fat,
+            calorieGoal: goals.calories,
+            proteinGoal: goals.proteinGrams,
+            carbsGoal: goals.carbohydrateGrams,
+            fatGoal: goals.fatGrams,
             onPrevious: () => ref.read(nutritionDiaryDateProvider.notifier).state = selectedDay.subtract(const Duration(days: 1)),
             onNext: selectedDay.isBefore(DateTime.now())
                 ? () => ref.read(nutritionDiaryDateProvider.notifier).state = selectedDay.add(const Duration(days: 1))
@@ -230,9 +236,10 @@ class NutritionPage extends ConsumerWidget {
 }
 
 class _DiarySummary extends StatelessWidget {
-  const _DiarySummary({required this.selectedDay, required this.calories, required this.protein, required this.carbs, required this.fat, required this.onPrevious, required this.onNext});
+  const _DiarySummary({required this.selectedDay, required this.calories, required this.protein, required this.carbs, required this.fat, required this.calorieGoal, required this.proteinGoal, required this.carbsGoal, required this.fatGoal, required this.onPrevious, required this.onNext});
   final DateTime selectedDay;
   final double calories, protein, carbs, fat;
+  final int calorieGoal, proteinGoal, carbsGoal, fatGoal;
   final VoidCallback onPrevious;
   final VoidCallback? onNext;
   @override
@@ -246,9 +253,9 @@ class _DiarySummary extends StatelessWidget {
           Expanded(child: Text(MaterialLocalizations.of(context).formatMediumDate(selectedDay), textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium)),
           IconButton(onPressed: onNext, icon: const Icon(Icons.chevron_right), tooltip: 'Próximo dia'),
         ]),
-        Text('≈ ${calories.round()} kcal registradas', style: Theme.of(context).textTheme.titleLarge),
+        Text(calorieGoal == 0 ? '≈ ${calories.round()} kcal registradas' : '≈ ${calories.round()} / $calorieGoal kcal', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 4),
-        Text('Proteínas ${protein.round()} g  ·  Carboidratos ${carbs.round()} g  ·  Gorduras ${fat.round()} g'),
+        Text('Proteínas ${protein.round()}${proteinGoal == 0 ? '' : ' / $proteinGoal'} g  ·  Carboidratos ${carbs.round()}${carbsGoal == 0 ? '' : ' / $carbsGoal'} g  ·  Gorduras ${fat.round()}${fatGoal == 0 ? '' : ' / $fatGoal'} g'),
       ]),
     ),
   );
@@ -578,8 +585,9 @@ class _PhotoFoodDraft {
 }
 
 class NutritionMealFormPage extends ConsumerStatefulWidget {
-  const NutritionMealFormPage({super.key, this.mealId});
+  const NutritionMealFormPage({super.key, this.mealId, this.barcode});
   final String? mealId;
+  final String? barcode;
 
   @override
   ConsumerState<NutritionMealFormPage> createState() =>
@@ -604,7 +612,13 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
   void initState() {
     super.initState();
     final mealId = widget.mealId;
-    if (mealId == null) return;
+    if (mealId == null) {
+      final barcode = widget.barcode;
+      if (barcode != null && barcode.isNotEmpty) {
+        _notes.text = 'Código de barras: $barcode';
+      }
+      return;
+    }
     for (final meal in ref.read(mealsProvider)) {
       if (meal.id != mealId) continue;
       _existing = meal;
