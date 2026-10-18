@@ -280,6 +280,28 @@ class TrainingRepository {
     return exercise;
   }
 
+  void deleteCustom(String id) {
+    final index = _customExercises.indexWhere((item) => item.id == id);
+    if (index < 0) return;
+    _customExercises.removeAt(index);
+    unawaited(_save());
+    unawaited(_enqueueCustomDelete(id));
+  }
+
+  Future<void> applyRemoteCustomExercise(Map<String, dynamic> change) async {
+    if (change['entityType'] != 'custom-exercise') return;
+    final id = change['entityId'] as String?;
+    if (id == null) return;
+    _customExercises.removeWhere((item) => item.id == id);
+    if (change['action'] == 'upsert') {
+      final payload = change['payload'];
+      if (payload is Map<String, dynamic>) {
+        _customExercises.add(Exercise(id: id, name: payload['name'] as String? ?? '', primaryMuscle: payload['primaryMuscle'] as String? ?? '', equipment: payload['equipment'] as String? ?? '', isCustom: true));
+      }
+    }
+    await _save();
+  }
+
   Future<void> load() async {
     final encoded = await store.read(_storageKey);
     if (encoded == null || encoded.isEmpty) return;
@@ -527,6 +549,12 @@ class TrainingRepository {
       operationType: 'custom-exercise.create', clientVersion: '1.0.0',
       payloadJson: jsonEncode({'name': exercise.name, 'primaryMuscle': exercise.primaryMuscle, 'equipment': exercise.equipment}),
     );
+  }
+
+  Future<void> _enqueueCustomDelete(String id) async {
+    final queue = outbox;
+    if (queue == null || !_isUuid(id)) return;
+    await queue.enqueue(ownerId: ownerId, idempotencyKey: 'custom-exercise-delete:$id', entityType: 'custom-exercise', entityId: id, operationType: 'custom-exercise.delete', clientVersion: '1.0.0', payloadJson: '{}');
   }
 
   bool _isUuid(String value) => RegExp(

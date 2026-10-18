@@ -46,6 +46,7 @@ class SyncService {
       if (!page.isSuccess) return SyncPullResult(applied: applied, reason: page.reason);
       for (final change in page.changes) {
         await training.applyRemote(change);
+        await training.applyRemoteCustomExercise(change);
         await nutrition.applyRemote(change);
         applied++;
       }

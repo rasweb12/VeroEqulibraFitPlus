@@ -54,8 +54,12 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
             .Where(meal => meal.OwnerId == ownerId && meal.UpdatedAt >= from)
             .Select(meal => new { Meal = meal, ChangedAt = meal.UpdatedAt })
             .ToListAsync(cancellationToken);
+        var customExercises = await database.CustomExercises.IgnoreQueryFilters().AsNoTracking()
+            .Where(item => item.OwnerId == ownerId && item.UpdatedAt >= from)
+            .ToListAsync(cancellationToken);
         var changes = plans.Select(item => ToPlanChange(item.Plan))
             .Concat(meals.Select(item => ToMealChange(item.Meal)))
+            .Concat(customExercises.Select(ToCustomExerciseChange))
             .OrderBy(change => change.ChangedAt)
             .ThenBy(change => change.EntityType, StringComparer.Ordinal)
             .ThenBy(change => change.EntityId)
@@ -264,6 +268,9 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
             id = meal.Id, description = meal.Description, consumedAt = meal.ConsumedAt, revision = meal.Revision,
             meal.EstimatedCalories, meal.ProteinGrams, meal.CarbohydrateGrams, meal.FatGrams,
         }, JsonOptions));
+    private static SyncPullChangeResponse ToCustomExerciseChange(CustomExercise exercise) => new(
+        "custom-exercise", exercise.Id, exercise.DeletedAt is null ? "upsert" : "delete", exercise.Revision, exercise.UpdatedAt,
+        JsonSerializer.SerializeToElement(new { id = exercise.Id, name = exercise.Name, primaryMuscle = exercise.PrimaryMuscle, equipment = exercise.Equipment, revision = exercise.Revision }, JsonOptions));
 
     private static bool TryReadCursor(string? cursor, out SyncCursor? result)
     {

@@ -686,6 +686,15 @@ class ExerciseLibraryPage extends ConsumerWidget {
                           onPressed: () =>
                               _showExerciseDetails(context, exercise),
                         ),
+                      if (exercise.isCustom && planId == null)
+                        IconButton(
+                          tooltip: 'Excluir exercício personalizado',
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () {
+                            ref.read(trainingRepositoryProvider).deleteCustom(exercise.id);
+                            ref.read(catalogRevisionProvider.notifier).state++;
+                          },
+                        ),
                       Icon(
                         planId == null
                             ? Icons.info_outline
