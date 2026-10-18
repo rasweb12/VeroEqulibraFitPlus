@@ -1,10 +1,17 @@
 using VeroEqulibraFit.Admin.Components;
+using VeroEqulibraFit.Admin.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddHttpClient("vero-api", client =>
+{
+    client.BaseAddress = AdminApiSession.ReadBaseUrl(builder.Configuration);
+    client.Timeout = TimeSpan.FromSeconds(20);
+});
+builder.Services.AddScoped<AdminApiSession>();
 
 var app = builder.Build();
 

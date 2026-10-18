@@ -1,6 +1,7 @@
 .env
 .env.local
 .neon/
+/.vs/
 **/bin/
 **/obj/
 **/.dart_tool/

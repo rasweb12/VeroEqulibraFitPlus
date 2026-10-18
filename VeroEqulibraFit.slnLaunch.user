@@ -1,0 +1,12 @@
+[
+  {
+    "Name": "Novo Perfil",
+    "Projects": [
+      {
+        "Path": "admin\\VeroEqulibraFit.Admin\\VeroEqulibraFit.Admin.csproj",
+        "Action": "Start",
+        "DebugTarget": "https"
+      }
+    ]
+  }
+]
