@@ -69,3 +69,9 @@ Evidências: análise estática dos arquivos de outbox sem problemas e 11 testes
 Fichas novas, duplicações de fichas e refeições novas agora geram operações de criação na fila cifrada do proprietário. O payload contém o UUID estável e os dados necessários para o `push` inicial. O registro local é salvo primeiro e seu uso não fica bloqueado caso a fila apresente falha; portanto, não há perda intencional de histórico por indisponibilidade de sincronização.
 
 O teste `new local meal also creates an encrypted sync operation` confirmou o enfileiramento de uma refeição, e a suíte Flutter total passou com 12 testes. A operação ainda não é disparada automaticamente após login, e a gravação local/outbox não possui transação comum. Atualizações, exclusões, hábitos, medidas e pull permanecem fora deste incremento.
+
+## Envio após sessão autenticada — 17/10/2026
+
+`SyncService` é acionado quando o `authSessionProvider` obtém uma sessão válida após login ou restauração. Ele cria a fila cifrada da conta e chama o adaptador de push sem bloquear a navegação. Uma trava em memória impede execuções concorrentes; falhas permanecem na fila para tentativa posterior com backoff. Não há tokens, payloads ou respostas de servidor registrados localmente fora do envelope cifrado.
+
+Esta etapa conecta criação local → outbox cifrada → tentativa autenticada de push. A validação real contra Render/Neon, o pull, atualizações, exclusões/tombstones e conflitos entre dispositivos continuam pendentes, portanto o lote ainda é **PARCIAL — NÃO HOMOLOGADO**.

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,12 +20,19 @@ import 'features/auth/presentation/reset_password_page.dart';
 import 'features/auth/presentation/confirm_email_page.dart';
 import 'features/nutrition/presentation/nutrition_plans_page.dart';
 import 'features/profile/presentation/profile_page.dart';
+import 'core/offline/sync_providers.dart';
 
 class VeroEqulibraFitApp extends ConsumerWidget {
   const VeroEqulibraFitApp({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authSessionProvider);
+    ref.listen(authSessionProvider, (previous, next) {
+      final session = next.valueOrNull;
+      if (session != null) {
+        unawaited(ref.read(syncServiceProvider).pushPending(session));
+      }
+    });
     final router = GoRouter(
       initialLocation: '/splash',
       redirect: (context, state) {

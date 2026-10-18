@@ -59,4 +59,6 @@ Em 17/10/2026, a análise de foto passou a abrir uma rota protegida de revisão 
 
 Atualização posterior do mesmo achado: a outbox deixou de depender de Isar e passou a ter implementação por `SecureOwnerStore`, cifrada pelo keystore/Keychain e isolada por proprietário. Os testes locais de persistência e isolamento foram aprovados. Ainda faltam enfileiramento pelos repositórios, acionamento após login, transação entre dado local e outbox, pull, conflitos e homologação Neon; `P2-STORE-002` fica **PARCIAL**, e a sincronização ponta a ponta segue **REPROVADA**.
 
+Atualização 17/10/2026: criações de fichas/refeições agora entram na fila cifrada e o push é tentado após uma sessão válida, com exclusão mútua em memória. `P2-SYNC-003` é **PARCIAL**: o caminho local até o adaptador existe, mas não há validação contra Neon, pull, tombstones, edição remota ou fluxo em dois dispositivos.
+
 O status do MVP continua **REPROVADO — NÃO HOMOLOGADO**.
