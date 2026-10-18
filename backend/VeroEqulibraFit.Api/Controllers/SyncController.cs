@@ -179,6 +179,10 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
         var plan = await database.TrainingPlans.IgnoreQueryFilters().Include(item => item.Exercises).SingleOrDefaultAsync(item => item.Id == entityId && item.OwnerId == ownerId, cancellationToken);
         if (plan is null || plan.DeletedAt is not null) return new(string.Empty, "conflict", "entity_not_found");
         if (plan.Revision != request.BaseRevision) return new(string.Empty, "conflict", "revision_conflict");
+        var exercises = request.Exercises ?? [];
+        if (exercises.Count > 100 || exercises.Any(item => string.IsNullOrWhiteSpace(item.ExerciseId) || item.Sets is < 0 or > 100 || item.RestSeconds is < 0 or > 3600 || string.IsNullOrWhiteSpace(item.Repetitions))) return new(string.Empty, "rejected", "invalid_training_plan");
+        database.TrainingPlanExercises.RemoveRange(plan.Exercises);
+        plan.Exercises = exercises.OrderBy(item => item.Position).Select((item, position) => new TrainingPlanExercise { TrainingPlanId = plan.Id, ExerciseId = item.ExerciseId.Trim(), Position = position, Sets = item.Sets, Repetitions = item.Repetitions.Trim(), TargetLoadKg = item.TargetLoadKg, RestSeconds = item.RestSeconds, Notes = item.Notes?.Trim() }).ToList();
         plan.Name = request.Name.Trim(); plan.Objective = request.Objective.Trim(); plan.UpdatedAt = DateTimeOffset.UtcNow; plan.Revision++;
         return new(string.Empty, "accepted");
     }

@@ -219,6 +219,7 @@ class TrainingRepository {
       ],
     );
     unawaited(_save());
+    unawaited(_enqueueUpdate(_plans[index]));
   }
 
   void removeExerciseFromPlan(String planId, String exerciseId) {
@@ -233,6 +234,7 @@ class TrainingRepository {
           .toList(growable: false),
     );
     unawaited(_save());
+    unawaited(_enqueueUpdate(_plans[index]));
   }
 
   void updatePlannedExercise(String planId, PlannedExercise updated) {
@@ -250,6 +252,7 @@ class TrainingRepository {
           .toList(growable: false),
     );
     unawaited(_save());
+    unawaited(_enqueueUpdate(_plans[index]));
   }
 
   Exercise? exerciseById(String id) {
@@ -480,6 +483,37 @@ class TrainingRepository {
       operationType: 'training-plan.delete',
       clientVersion: '1.0.0',
       payloadJson: '{}',
+    );
+  }
+
+  Future<void> _enqueueUpdate(TrainingPlan plan) async {
+    final queue = outbox;
+    if (queue == null || !_isUuid(plan.id) || plan.revision < 1) return;
+    await queue.enqueue(
+      ownerId: ownerId,
+      idempotencyKey: 'training-plan-update:${plan.id}:${plan.revision}',
+      entityType: 'training-plan',
+      entityId: plan.id,
+      operationType: 'training-plan.update',
+      clientVersion: '1.0.0',
+      payloadJson: jsonEncode({
+        'baseRevision': plan.revision,
+        'name': plan.name,
+        'objective': plan.objective,
+        'exercises': plan.exercises
+            .asMap()
+            .entries
+            .map((entry) => {
+                  'exerciseId': entry.value.exerciseId,
+                  'position': entry.key,
+                  'sets': entry.value.sets,
+                  'repetitions': entry.value.repetitions,
+                  'targetLoadKg': entry.value.targetLoadKg,
+                  'restSeconds': entry.value.restSeconds,
+                  'notes': entry.value.notes,
+                })
+            .toList(growable: false),
+      }),
     );
   }
 

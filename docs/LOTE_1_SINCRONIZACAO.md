@@ -103,3 +103,9 @@ Após uma sincronização, os providers de fichas e refeições são invalidados
 O `push` agora reconhece `training-plan.update` e `meal.update`. Ambos exigem `baseRevision`; se a cópia remota tiver outra revisão, a resposta é `revision_conflict` e a operação fica marcada como conflito local. A edição de refeição com revisão conhecida é enfileirada com payload sanitizado. O backend compilou sem avisos ou erros.
 
 Fichas ainda não enfileiram alterações de exercícios, e hábitos, medidas, exercícios personalizados, sessões e planos alimentares continuam fora do contrato. Este incremento não demonstra resolução de conflito na interface ou validação em Neon.
+
+## Edição de fichas enfileirada — 18/10/2026
+
+Adicionar, remover ou reconfigurar um exercício em uma ficha que já tenha revisão remota passa a gerar `training-plan.update` com a lista ordenada completa de exercícios. O servidor valida e substitui a composição dentro da mesma transação do recibo idempotente. A edição de uma refeição sincronizada também tem teste automatizado: o item remoto de revisão 2 gera `meal.update` com essa revisão ao ser alterado localmente.
+
+Evidência: `flutter test test/secure_operation_queue_test.dart` aprovou 5 testes. Resta criar interface de resolução de conflitos, confirmar atualização do cursor após push, validar no Neon e ampliar a sincronização para os demais módulos.
