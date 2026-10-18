@@ -49,8 +49,10 @@ class NutritionRepository {
   }
 
   void delete(String id) {
+    final existing = _entries.where((entry) => entry.id == id).firstOrNull;
     _entries.removeWhere((entry) => entry.id == id);
     unawaited(_save());
+    if (existing != null) unawaited(_enqueueDelete(existing.id));
   }
 
   void update(MealEntry entry) {
@@ -130,4 +132,23 @@ class NutritionRepository {
       }),
     );
   }
+
+  Future<void> _enqueueDelete(String id) async {
+    final queue = outbox;
+    if (queue == null || !_isUuid(id)) return;
+    await queue.enqueue(
+      ownerId: ownerId,
+      idempotencyKey: 'meal-delete:$id',
+      entityType: 'meal',
+      entityId: id,
+      operationType: 'meal.delete',
+      clientVersion: '1.0.0',
+      payloadJson: '{}',
+    );
+  }
+
+  bool _isUuid(String value) => RegExp(
+    r'^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+    caseSensitive: false,
+  ).hasMatch(value);
 }

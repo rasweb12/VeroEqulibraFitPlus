@@ -64,7 +64,9 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
             result = operation.OperationType switch
             {
                 "training-plan.create" when operation.EntityType == "training-plan" => await CreateTrainingPlan(ownerId, operation.EntityId, rawPayload, cancellationToken),
+                "training-plan.delete" when operation.EntityType == "training-plan" => await DeleteTrainingPlan(ownerId, operation.EntityId, cancellationToken),
                 "meal.create" when operation.EntityType == "meal" => await CreateMeal(ownerId, operation.EntityId, rawPayload, cancellationToken),
+                "meal.delete" when operation.EntityType == "meal" => await DeleteMeal(ownerId, operation.EntityId, cancellationToken),
                 _ => new(string.Empty, "rejected", "unsupported_operation"),
             };
         }
@@ -134,6 +136,24 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
             EstimatedCalories = request.EstimatedCalories, ProteinGrams = request.ProteinGrams, CarbohydrateGrams = request.CarbohydrateGrams,
             FatGrams = request.FatGrams, RequiresUserReview = true,
         });
+        return new(string.Empty, "accepted");
+    }
+
+    private async Task<SyncPushOperationResponse> DeleteTrainingPlan(Guid ownerId, Guid entityId, CancellationToken cancellationToken)
+    {
+        var plan = await database.TrainingPlans.IgnoreQueryFilters()
+            .SingleOrDefaultAsync(item => item.Id == entityId && item.OwnerId == ownerId, cancellationToken);
+        if (plan is null) return new(string.Empty, "conflict", "entity_not_found");
+        if (plan.DeletedAt is null) plan.DeletedAt = DateTimeOffset.UtcNow;
+        return new(string.Empty, "accepted");
+    }
+
+    private async Task<SyncPushOperationResponse> DeleteMeal(Guid ownerId, Guid entityId, CancellationToken cancellationToken)
+    {
+        var meal = await database.MealEntries.IgnoreQueryFilters()
+            .SingleOrDefaultAsync(item => item.Id == entityId && item.OwnerId == ownerId, cancellationToken);
+        if (meal is null) return new(string.Empty, "conflict", "entity_not_found");
+        if (meal.DeletedAt is null) meal.DeletedAt = DateTimeOffset.UtcNow;
         return new(string.Empty, "accepted");
     }
 

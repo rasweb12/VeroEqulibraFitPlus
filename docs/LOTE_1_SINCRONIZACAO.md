@@ -75,3 +75,9 @@ O teste `new local meal also creates an encrypted sync operation` confirmou o en
 `SyncService` é acionado quando o `authSessionProvider` obtém uma sessão válida após login ou restauração. Ele cria a fila cifrada da conta e chama o adaptador de push sem bloquear a navegação. Uma trava em memória impede execuções concorrentes; falhas permanecem na fila para tentativa posterior com backoff. Não há tokens, payloads ou respostas de servidor registrados localmente fora do envelope cifrado.
 
 Esta etapa conecta criação local → outbox cifrada → tentativa autenticada de push. A validação real contra Render/Neon, o pull, atualizações, exclusões/tombstones e conflitos entre dispositivos continuam pendentes, portanto o lote ainda é **PARCIAL — NÃO HOMOLOGADO**.
+
+## Tombstones de exclusão — 17/10/2026
+
+Excluir uma ficha com UUID estável ou uma refeição com UUID estável agora gera `training-plan.delete` ou `meal.delete` na fila cifrada. O `push` aplica a exclusão lógica exclusivamente ao registro daquele proprietário; fichas são mantidas no banco com `DeletedAt`, sem apagar sessões de treino. Reenvios recebem o mesmo tratamento idempotente do recibo de operação.
+
+Evidências locais: build da API .NET sem avisos/erros e teste Flutter `deleting a new local meal preserves a tombstone operation` aprovado. Ainda falta pull dos tombstones e a verificação em Neon, portanto exclusão entre dispositivos não está homologada.

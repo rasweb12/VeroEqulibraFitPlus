@@ -146,6 +146,7 @@ class TrainingRepository {
     if (index < 0 || _plans[index].isDeleted) return;
     _plans[index] = _plans[index].copyWith(deletedAt: DateTime.now().toUtc());
     unawaited(_save());
+    unawaited(_enqueueDelete(_plans[index].id));
   }
 
   void restore(String id) {
@@ -404,6 +405,25 @@ class TrainingRepository {
       }),
     );
   }
+
+  Future<void> _enqueueDelete(String id) async {
+    final queue = outbox;
+    if (queue == null || !_isUuid(id)) return;
+    await queue.enqueue(
+      ownerId: ownerId,
+      idempotencyKey: 'training-plan-delete:$id',
+      entityType: 'training-plan',
+      entityId: id,
+      operationType: 'training-plan.delete',
+      clientVersion: '1.0.0',
+      payloadJson: '{}',
+    );
+  }
+
+  bool _isUuid(String value) => RegExp(
+    r'^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+    caseSensitive: false,
+  ).hasMatch(value);
 
   String _normalize(String value) => value
       .toLowerCase()

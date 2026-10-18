@@ -61,4 +61,6 @@ Atualização posterior do mesmo achado: a outbox deixou de depender de Isar e p
 
 Atualização 17/10/2026: criações de fichas/refeições agora entram na fila cifrada e o push é tentado após uma sessão válida, com exclusão mútua em memória. `P2-SYNC-003` é **PARCIAL**: o caminho local até o adaptador existe, mas não há validação contra Neon, pull, tombstones, edição remota ou fluxo em dois dispositivos.
 
+Atualização posterior: tombstones de fichas e refeições com UUID são enfileirados e o endpoint de push aplica exclusão lógica sob o proprietário JWT. Build .NET e teste local do tombstone foram aprovados. Sem pull/tombstones recebidos de outro dispositivo e sem Neon isolado, `P2-SYNC-003` continua **PARCIAL**.
+
 O status do MVP continua **REPROVADO — NÃO HOMOLOGADO**.

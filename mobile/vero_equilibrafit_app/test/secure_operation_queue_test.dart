@@ -59,4 +59,23 @@ void main() {
     expect(pending, hasLength(1));
     expect(pending.single.operationType, 'meal.create');
   });
+
+  test('deleting a new local meal preserves a tombstone operation', () async {
+    final store = MemorySecureOwnerStore();
+    final queue = SecureOperationQueue(ownerId: 'account-a', store: store);
+    final repository = NutritionRepository(
+      ownerId: 'account-a',
+      store: store,
+      outbox: queue,
+    );
+
+    repository.add(name: 'Jantar', mealType: 'Jantar', notes: '');
+    await Future<void>.delayed(Duration.zero);
+    final mealId = repository.entries().single.id;
+    repository.delete(mealId);
+    await Future<void>.delayed(Duration.zero);
+
+    final pending = await queue.due(ownerId: 'account-a');
+    expect(pending.map((item) => item.operationType), contains('meal.delete'));
+  });
 }
