@@ -9,6 +9,15 @@ public sealed record CreateMealEntryRequest(
     decimal? FatGrams,
     Guid? ClientId = null);
 
+public sealed record UpdateMealEntryRequest(
+    int BaseRevision,
+    string Description,
+    DateTimeOffset? ConsumedAt,
+    decimal? EstimatedCalories,
+    decimal? ProteinGrams,
+    decimal? CarbohydrateGrams,
+    decimal? FatGrams);
+
 public sealed record MealEntryResponse(
     Guid Id,
     string Description,

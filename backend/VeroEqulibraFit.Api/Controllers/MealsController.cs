@@ -86,6 +86,20 @@ public sealed class MealsController(VeroEqulibraFitDbContext database, GeminiAiC
         return CreatedAtAction(nameof(List), new { id = meal.Id }, ToResponse(meal));
     }
 
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<MealEntryResponse>> Update(Guid id, [FromBody] UpdateMealEntryRequest request, CancellationToken cancellationToken)
+    {
+        var ownerId = GetOwnerId();
+        if (ownerId is null) return Unauthorized();
+        if (request.BaseRevision < 1 || string.IsNullOrWhiteSpace(request.Description) || new[] { request.EstimatedCalories, request.ProteinGrams, request.CarbohydrateGrams, request.FatGrams }.Any(value => value is < 0)) return BadRequest(new { error = "Dados ou revisão inválidos." });
+        var meal = await database.MealEntries.SingleOrDefaultAsync(item => item.Id == id && item.OwnerId == ownerId && item.DeletedAt == null, cancellationToken);
+        if (meal is null) return NotFound();
+        if (meal.Revision != request.BaseRevision) return Conflict(new { error = "revision_conflict", currentRevision = meal.Revision });
+        meal.Description = request.Description.Trim(); meal.ConsumedAt = request.ConsumedAt ?? meal.ConsumedAt; meal.EstimatedCalories = request.EstimatedCalories; meal.ProteinGrams = request.ProteinGrams; meal.CarbohydrateGrams = request.CarbohydrateGrams; meal.FatGrams = request.FatGrams; meal.UpdatedAt = DateTimeOffset.UtcNow; meal.Revision++;
+        await database.SaveChangesAsync(cancellationToken);
+        return Ok(ToResponse(meal));
+    }
+
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
@@ -94,6 +108,8 @@ public sealed class MealsController(VeroEqulibraFitDbContext database, GeminiAiC
         var meal = await database.MealEntries.SingleOrDefaultAsync(entry => entry.Id == id && entry.OwnerId == ownerId, cancellationToken);
         if (meal is null) return NotFound();
         meal.DeletedAt = DateTimeOffset.UtcNow;
+        meal.UpdatedAt = meal.DeletedAt.Value;
+        meal.Revision++;
         await database.SaveChangesAsync(cancellationToken);
         return NoContent();
     }

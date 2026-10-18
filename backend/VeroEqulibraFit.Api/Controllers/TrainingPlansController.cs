@@ -73,6 +73,20 @@ public sealed class TrainingPlansController(VeroEqulibraFitDbContext database) :
         return Ok(ToResponse(copy));
     }
 
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<TrainingPlanResponse>> Update(Guid id, [FromBody] UpdateTrainingPlanRequest request, CancellationToken cancellationToken)
+    {
+        var ownerId = GetOwnerId();
+        if (ownerId is null) return Unauthorized();
+        if (request.BaseRevision < 1 || string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Objective)) return BadRequest(new { error = "Dados ou revisão inválidos." });
+        var plan = await database.TrainingPlans.Include(item => item.Exercises).SingleOrDefaultAsync(item => item.Id == id && item.OwnerId == ownerId && item.DeletedAt == null, cancellationToken);
+        if (plan is null) return NotFound();
+        if (plan.Revision != request.BaseRevision) return Conflict(new { error = "revision_conflict", currentRevision = plan.Revision });
+        plan.Name = request.Name.Trim(); plan.Objective = request.Objective.Trim(); plan.UpdatedAt = DateTimeOffset.UtcNow; plan.Revision++;
+        await database.SaveChangesAsync(cancellationToken);
+        return Ok(ToResponse(plan));
+    }
+
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
@@ -81,6 +95,8 @@ public sealed class TrainingPlansController(VeroEqulibraFitDbContext database) :
         var plan = await database.TrainingPlans.SingleOrDefaultAsync(plan => plan.Id == id && plan.OwnerId == ownerId && plan.DeletedAt == null, cancellationToken);
         if (plan is null) return NotFound();
         plan.DeletedAt = DateTimeOffset.UtcNow;
+        plan.UpdatedAt = plan.DeletedAt.Value;
+        plan.Revision++;
         await database.SaveChangesAsync(cancellationToken);
         return NoContent();
     }

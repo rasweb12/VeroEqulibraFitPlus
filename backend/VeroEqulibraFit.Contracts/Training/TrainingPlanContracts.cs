@@ -15,6 +15,12 @@ public sealed record CreateTrainingPlanRequest(
     IReadOnlyList<TrainingPlanExerciseRequest>? Exercises,
     Guid? ClientId = null);
 
+public sealed record UpdateTrainingPlanRequest(
+    int BaseRevision,
+    string Name,
+    string Objective,
+    IReadOnlyList<TrainingPlanExerciseRequest>? Exercises);
+
 public sealed record TrainingPlanResponse(
     Guid Id,
     string Name,
