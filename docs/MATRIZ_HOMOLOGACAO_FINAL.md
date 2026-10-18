@@ -17,3 +17,9 @@
 | APK atualizado/instalado | PARCIAL | APK debug atualizado foi compilado e instalado no emulador em 17/10/2026. Falta roteiro funcional completo no dispositivo. |
 | MVP | REPROVADO | Há bloqueios P0/P1/P2 acima. |
 
+## Atualização de aceite manual — 18/10/2026
+
+O responsável aprovou HML-01 a HML-08: autenticação/Brevo, AuthGate, Coach Gemini, foto de refeição com revisão, scanner e cadastro manual, alimentação/metas/relatórios, treinos/hábitos/medidas/missões e sincronização Neon isolado. A evidência e os limites estão em [HOMOLOGACAO_MANUAL_2026-10-18.md](HOMOLOGACAO_MANUAL_2026-10-18.md).
+
+Este registro substitui os estados anteriores desses fluxos, que passam a **APROVADO** por homologação manual. Os demais itens da matriz permanecem com seu estado próprio; em especial, a administração Blazor ainda está reprovada e a validação em dois dispositivos não foi incluída no aceite informado.
+

@@ -32,3 +32,7 @@ Estado geral: **PARCIAL — MVP permanece REPROVADO / NÃO HOMOLOGADO**
 | P3.6 Missões diárias | PARCIAL | `features/habits/presentation/missions_page.dart` | Sem histórico, pontos, medalhas ou sincronização remota. |
 | P3.7 Perfil | PARCIAL | `features/profile/presentation/profile_page.dart` | Preferências e ações sensíveis ainda não homologadas. |
 | P3.8 Administração | REPROVADO | `admin/.../Components/Pages/Home.razor` | Painel ainda é um shell sem autenticação e operações reais. |
+
+## Aceite complementar — 18/10/2026
+
+O responsável homologou manualmente foto/revisão de refeições, scanner com cadastro manual, alimentação/metas/relatórios, treinos/hábitos/medidas/missões e sincronização Neon isolado. Esses itens têm estado **APROVADO** no escopo registrado em [HOMOLOGACAO_MANUAL_2026-10-18.md](HOMOLOGACAO_MANUAL_2026-10-18.md). As pendências de P3.6, P3.7 e P3.8 da tabela imediatamente anterior continuam inalteradas quando não cobertas por aquele roteiro.
