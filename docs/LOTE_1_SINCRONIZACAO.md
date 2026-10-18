@@ -97,3 +97,9 @@ Permanece **PARCIAL — NÃO HOMOLOGADO**: o Flutter ainda não aplica o pull, a
 O aplicativo agora chama o `pull` autenticado após o `push` da sessão validada. O cursor opaco fica no armazenamento seguro por conta e cada página é aplicada ao repositório de treino e alimentação. Uma alteração só substitui a cópia local quando a revisão remota for igual ou superior; tombstones de fichas permanecem persistidos para impedir reaparecimento. Refeições removidas deixam de ser apresentadas localmente.
 
 Após uma sincronização, os providers de fichas e refeições são invalidados para recarregar o conteúdo cifrado. A análise estática dos arquivos alterados passou sem erros. Ainda faltam atualização versionada, filas transacionais, hábitos/medidas, testes de API contra Neon e homologação em dois dispositivos. O lote segue **PARCIAL — NÃO HOMOLOGADO**.
+
+## Atualizações condicionais no push — 18/10/2026
+
+O `push` agora reconhece `training-plan.update` e `meal.update`. Ambos exigem `baseRevision`; se a cópia remota tiver outra revisão, a resposta é `revision_conflict` e a operação fica marcada como conflito local. A edição de refeição com revisão conhecida é enfileirada com payload sanitizado. O backend compilou sem avisos ou erros.
+
+Fichas ainda não enfileiram alterações de exercícios, e hábitos, medidas, exercícios personalizados, sessões e planos alimentares continuam fora do contrato. Este incremento não demonstra resolução de conflito na interface ou validação em Neon.

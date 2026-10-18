@@ -95,8 +95,10 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
             result = operation.OperationType switch
             {
                 "training-plan.create" when operation.EntityType == "training-plan" => await CreateTrainingPlan(ownerId, operation.EntityId, rawPayload, cancellationToken),
+                "training-plan.update" when operation.EntityType == "training-plan" => await UpdateTrainingPlan(ownerId, operation.EntityId, rawPayload, cancellationToken),
                 "training-plan.delete" when operation.EntityType == "training-plan" => await DeleteTrainingPlan(ownerId, operation.EntityId, cancellationToken),
                 "meal.create" when operation.EntityType == "meal" => await CreateMeal(ownerId, operation.EntityId, rawPayload, cancellationToken),
+                "meal.update" when operation.EntityType == "meal" => await UpdateMeal(ownerId, operation.EntityId, rawPayload, cancellationToken),
                 "meal.delete" when operation.EntityType == "meal" => await DeleteMeal(ownerId, operation.EntityId, cancellationToken),
                 _ => new(string.Empty, "rejected", "unsupported_operation"),
             };
@@ -167,6 +169,28 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
             EstimatedCalories = request.EstimatedCalories, ProteinGrams = request.ProteinGrams, CarbohydrateGrams = request.CarbohydrateGrams,
             FatGrams = request.FatGrams, RequiresUserReview = true,
         });
+        return new(string.Empty, "accepted");
+    }
+
+    private async Task<SyncPushOperationResponse> UpdateTrainingPlan(Guid ownerId, Guid entityId, string payload, CancellationToken cancellationToken)
+    {
+        var request = JsonSerializer.Deserialize<UpdateTrainingPlanRequest>(payload, JsonOptions);
+        if (request is null || request.BaseRevision < 1 || string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Objective)) return new(string.Empty, "rejected", "invalid_training_plan");
+        var plan = await database.TrainingPlans.IgnoreQueryFilters().Include(item => item.Exercises).SingleOrDefaultAsync(item => item.Id == entityId && item.OwnerId == ownerId, cancellationToken);
+        if (plan is null || plan.DeletedAt is not null) return new(string.Empty, "conflict", "entity_not_found");
+        if (plan.Revision != request.BaseRevision) return new(string.Empty, "conflict", "revision_conflict");
+        plan.Name = request.Name.Trim(); plan.Objective = request.Objective.Trim(); plan.UpdatedAt = DateTimeOffset.UtcNow; plan.Revision++;
+        return new(string.Empty, "accepted");
+    }
+
+    private async Task<SyncPushOperationResponse> UpdateMeal(Guid ownerId, Guid entityId, string payload, CancellationToken cancellationToken)
+    {
+        var request = JsonSerializer.Deserialize<UpdateMealEntryRequest>(payload, JsonOptions);
+        if (request is null || request.BaseRevision < 1 || string.IsNullOrWhiteSpace(request.Description) || new[] { request.EstimatedCalories, request.ProteinGrams, request.CarbohydrateGrams, request.FatGrams }.Any(value => value is < 0)) return new(string.Empty, "rejected", "invalid_meal");
+        var meal = await database.MealEntries.IgnoreQueryFilters().SingleOrDefaultAsync(item => item.Id == entityId && item.OwnerId == ownerId, cancellationToken);
+        if (meal is null || meal.DeletedAt is not null) return new(string.Empty, "conflict", "entity_not_found");
+        if (meal.Revision != request.BaseRevision) return new(string.Empty, "conflict", "revision_conflict");
+        meal.Description = request.Description.Trim(); meal.ConsumedAt = request.ConsumedAt ?? meal.ConsumedAt; meal.EstimatedCalories = request.EstimatedCalories; meal.ProteinGrams = request.ProteinGrams; meal.CarbohydrateGrams = request.CarbohydrateGrams; meal.FatGrams = request.FatGrams; meal.UpdatedAt = DateTimeOffset.UtcNow; meal.Revision++;
         return new(string.Empty, "accepted");
     }
 

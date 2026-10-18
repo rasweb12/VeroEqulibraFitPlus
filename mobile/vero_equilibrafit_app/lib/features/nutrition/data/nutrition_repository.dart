@@ -60,6 +60,7 @@ class NutritionRepository {
     if (index < 0) return;
     _entries[index] = entry;
     unawaited(_save());
+    unawaited(_enqueueUpdate(entry));
   }
 
   Future<void> load() async {
@@ -192,6 +193,23 @@ class NutritionRepository {
       operationType: 'meal.delete',
       clientVersion: '1.0.0',
       payloadJson: '{}',
+    );
+  }
+
+  Future<void> _enqueueUpdate(MealEntry entry) async {
+    final queue = outbox;
+    if (queue == null || !_isUuid(entry.id) || entry.revision < 1) return;
+    await queue.enqueue(
+      ownerId: ownerId,
+      idempotencyKey: 'meal-update:${entry.id}:${entry.revision}',
+      entityType: 'meal', entityId: entry.id, operationType: 'meal.update',
+      clientVersion: '1.0.0',
+      payloadJson: jsonEncode({
+        'baseRevision': entry.revision, 'description': entry.name,
+        'consumedAt': entry.recordedAt.toUtc().toIso8601String(),
+        'estimatedCalories': entry.estimatedCalories, 'proteinGrams': entry.proteinGrams,
+        'carbohydrateGrams': entry.carbohydrateGrams, 'fatGrams': entry.fatGrams,
+      }),
     );
   }
 
