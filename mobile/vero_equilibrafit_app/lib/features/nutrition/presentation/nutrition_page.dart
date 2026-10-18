@@ -19,11 +19,25 @@ class NutritionPage extends ConsumerWidget {
     final meals = ref.watch(mealsProvider);
     final selectedDay = ref.watch(nutritionDiaryDateProvider);
     final goals = ref.watch(nutritionGoalsProvider);
-    final dayMeals = meals.where((meal) => _sameDay(meal.recordedAt, selectedDay)).toList(growable: false);
-    final calories = dayMeals.fold<double>(0, (sum, meal) => sum + (meal.estimatedCalories ?? 0));
-    final protein = dayMeals.fold<double>(0, (sum, meal) => sum + (meal.proteinGrams ?? 0));
-    final carbs = dayMeals.fold<double>(0, (sum, meal) => sum + (meal.carbohydrateGrams ?? 0));
-    final fat = dayMeals.fold<double>(0, (sum, meal) => sum + (meal.fatGrams ?? 0));
+    final dayMeals = meals
+        .where((meal) => _sameDay(meal.recordedAt, selectedDay))
+        .toList(growable: false);
+    final calories = dayMeals.fold<double>(
+      0,
+      (sum, meal) => sum + (meal.estimatedCalories ?? 0),
+    );
+    final protein = dayMeals.fold<double>(
+      0,
+      (sum, meal) => sum + (meal.proteinGrams ?? 0),
+    );
+    final carbs = dayMeals.fold<double>(
+      0,
+      (sum, meal) => sum + (meal.carbohydrateGrams ?? 0),
+    );
+    final fat = dayMeals.fold<double>(
+      0,
+      (sum, meal) => sum + (meal.fatGrams ?? 0),
+    );
     return Scaffold(
       appBar: AppBar(
         title: const Text('Alimentação'),
@@ -42,6 +56,11 @@ class NutritionPage extends ConsumerWidget {
             tooltip: 'Metas nutricionais',
             onPressed: () => context.go('/nutrition/goals'),
             icon: const Icon(Icons.track_changes_outlined),
+          ),
+          IconButton(
+            tooltip: 'Relatório nutricional',
+            onPressed: () => context.go('/nutrition/reports'),
+            icon: const Icon(Icons.insights_outlined),
           ),
           IconButton(
             tooltip: 'Ler código de barras',
@@ -68,68 +87,75 @@ class NutritionPage extends ConsumerWidget {
             proteinGoal: goals.proteinGrams,
             carbsGoal: goals.carbohydrateGrams,
             fatGoal: goals.fatGrams,
-            onPrevious: () => ref.read(nutritionDiaryDateProvider.notifier).state = selectedDay.subtract(const Duration(days: 1)),
+            onPrevious: () =>
+                ref.read(nutritionDiaryDateProvider.notifier).state =
+                    selectedDay.subtract(const Duration(days: 1)),
             onNext: selectedDay.isBefore(DateTime.now())
-                ? () => ref.read(nutritionDiaryDateProvider.notifier).state = selectedDay.add(const Duration(days: 1))
+                ? () => ref.read(nutritionDiaryDateProvider.notifier).state =
+                      selectedDay.add(const Duration(days: 1))
                 : null,
           ),
-          Expanded(child: dayMeals.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.restaurant_outlined, size: 48),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Nenhuma refeição neste dia',
-                      style: Theme.of(context).textTheme.titleLarge,
+          Expanded(
+            child: dayMeals.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.restaurant_outlined, size: 48),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Nenhuma refeição neste dia',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Registre uma refeição manualmente, por texto ou por foto. Estimativas sempre podem ser revisadas.',
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Registre uma refeição manualmente, por texto ou por foto. Estimativas sempre podem ser revisadas.',
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-              itemCount: dayMeals.length,
-              itemBuilder: (context, index) {
-                final meal = dayMeals[index];
-                return Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.restaurant_outlined),
-                    title: Text(meal.name),
-                    subtitle: Text(
-                      '${meal.mealType} · ${TimeOfDay.fromDateTime(meal.recordedAt).format(context)}${meal.estimatedCalories == null ? '' : '\n≈ ${meal.estimatedCalories!.round()} kcal · P ${meal.proteinGrams?.round() ?? 0} g · C ${meal.carbohydrateGrams?.round() ?? 0} g · G ${meal.fatGrams?.round() ?? 0} g'}${meal.notes.isEmpty ? '' : '\n${meal.notes}'}',
-                    ),
-                    isThreeLine:
-                        meal.notes.isNotEmpty || meal.estimatedCalories != null,
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          tooltip: 'Editar registro',
-                          icon: const Icon(Icons.edit_outlined),
-                          onPressed: () =>
-                              context.go('/nutrition/${meal.id}/edit'),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                    itemCount: dayMeals.length,
+                    itemBuilder: (context, index) {
+                      final meal = dayMeals[index];
+                      return Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.restaurant_outlined),
+                          title: Text(meal.name),
+                          subtitle: Text(
+                            '${meal.mealType} · ${TimeOfDay.fromDateTime(meal.recordedAt).format(context)}${meal.estimatedCalories == null ? '' : '\n≈ ${meal.estimatedCalories!.round()} kcal · P ${meal.proteinGrams?.round() ?? 0} g · C ${meal.carbohydrateGrams?.round() ?? 0} g · G ${meal.fatGrams?.round() ?? 0} g'}${meal.notes.isEmpty ? '' : '\n${meal.notes}'}',
+                          ),
+                          isThreeLine:
+                              meal.notes.isNotEmpty ||
+                              meal.estimatedCalories != null,
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                tooltip: 'Editar registro',
+                                icon: const Icon(Icons.edit_outlined),
+                                onPressed: () =>
+                                    context.go('/nutrition/${meal.id}/edit'),
+                              ),
+                              IconButton(
+                                tooltip: 'Excluir registro',
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () => ref
+                                    .read(mealsProvider.notifier)
+                                    .delete(meal.id),
+                              ),
+                            ],
+                          ),
                         ),
-                        IconButton(
-                          tooltip: 'Excluir registro',
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: () =>
-                              ref.read(mealsProvider.notifier).delete(meal.id),
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
-                );
-              },
-            )),
+          ),
         ],
       ),
     );
@@ -236,7 +262,19 @@ class NutritionPage extends ConsumerWidget {
 }
 
 class _DiarySummary extends StatelessWidget {
-  const _DiarySummary({required this.selectedDay, required this.calories, required this.protein, required this.carbs, required this.fat, required this.calorieGoal, required this.proteinGoal, required this.carbsGoal, required this.fatGoal, required this.onPrevious, required this.onNext});
+  const _DiarySummary({
+    required this.selectedDay,
+    required this.calories,
+    required this.protein,
+    required this.carbs,
+    required this.fat,
+    required this.calorieGoal,
+    required this.proteinGoal,
+    required this.carbsGoal,
+    required this.fatGoal,
+    required this.onPrevious,
+    required this.onNext,
+  });
   final DateTime selectedDay;
   final double calories, protein, carbs, fat;
   final int calorieGoal, proteinGoal, carbsGoal, fatGoal;
@@ -247,16 +285,43 @@ class _DiarySummary extends StatelessWidget {
     margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
     child: Padding(
       padding: const EdgeInsets.all(12),
-      child: Column(children: [
-        Row(children: [
-          IconButton(onPressed: onPrevious, icon: const Icon(Icons.chevron_left), tooltip: 'Dia anterior'),
-          Expanded(child: Text(MaterialLocalizations.of(context).formatMediumDate(selectedDay), textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium)),
-          IconButton(onPressed: onNext, icon: const Icon(Icons.chevron_right), tooltip: 'Próximo dia'),
-        ]),
-        Text(calorieGoal == 0 ? '≈ ${calories.round()} kcal registradas' : '≈ ${calories.round()} / $calorieGoal kcal', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 4),
-        Text('Proteínas ${protein.round()}${proteinGoal == 0 ? '' : ' / $proteinGoal'} g  ·  Carboidratos ${carbs.round()}${carbsGoal == 0 ? '' : ' / $carbsGoal'} g  ·  Gorduras ${fat.round()}${fatGoal == 0 ? '' : ' / $fatGoal'} g'),
-      ]),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              IconButton(
+                onPressed: onPrevious,
+                icon: const Icon(Icons.chevron_left),
+                tooltip: 'Dia anterior',
+              ),
+              Expanded(
+                child: Text(
+                  MaterialLocalizations.of(
+                    context,
+                  ).formatMediumDate(selectedDay),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              IconButton(
+                onPressed: onNext,
+                icon: const Icon(Icons.chevron_right),
+                tooltip: 'Próximo dia',
+              ),
+            ],
+          ),
+          Text(
+            calorieGoal == 0
+                ? '≈ ${calories.round()} kcal registradas'
+                : '≈ ${calories.round()} / $calorieGoal kcal',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Proteínas ${protein.round()}${proteinGoal == 0 ? '' : ' / $proteinGoal'} g  ·  Carboidratos ${carbs.round()}${carbsGoal == 0 ? '' : ' / $carbsGoal'} g  ·  Gorduras ${fat.round()}${fatGoal == 0 ? '' : ' / $fatGoal'} g',
+          ),
+        ],
+      ),
     ),
   );
 }
@@ -578,8 +643,12 @@ class _PhotoFoodDraft {
   double confidence;
 
   String get confidenceLabel {
-    if (confidence >= .8) return 'Confiança da identificação: alta. Ainda revise porção e preparo.';
-    if (confidence >= .5) return 'Confiança da identificação: moderada. Revise este alimento antes de salvar.';
+    if (confidence >= .8) {
+      return 'Confiança da identificação: alta. Ainda revise porção e preparo.';
+    }
+    if (confidence >= .5) {
+      return 'Confiança da identificação: moderada. Revise este alimento antes de salvar.';
+    }
     return 'Confiança da identificação: baixa. Confirme ou substitua este alimento antes de salvar.';
   }
 }
