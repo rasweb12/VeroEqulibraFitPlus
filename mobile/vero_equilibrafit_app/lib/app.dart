@@ -9,6 +9,7 @@ import 'features/training/domain/exercise.dart';
 import 'features/training/presentation/exercise_demo_player.dart';
 import 'features/dashboard/presentation/dashboard_page.dart';
 import 'features/habits/presentation/habits_page.dart';
+import 'features/habits/presentation/missions_page.dart';
 import 'features/nutrition/presentation/nutrition_page.dart';
 import 'features/coach/presentation/coach_page.dart';
 import 'features/measurements/presentation/measurements_page.dart';
@@ -153,14 +154,17 @@ class VeroEqulibraFitApp extends ConsumerWidget {
     ),
     GoRoute(path: '/habits', builder: (context, state) => const HabitsPage()),
     GoRoute(
+      path: '/missions',
+      builder: (context, state) => const MissionsPage(),
+    ),
+    GoRoute(
       path: '/nutrition',
       builder: (context, state) => const NutritionPage(),
     ),
     GoRoute(
       path: '/nutrition/new',
-      builder: (context, state) => NutritionMealFormPage(
-        barcode: state.uri.queryParameters['barcode'],
-      ),
+      builder: (context, state) =>
+          NutritionMealFormPage(barcode: state.uri.queryParameters['barcode']),
     ),
     GoRoute(
       path: '/nutrition/photo-review',
@@ -181,8 +185,14 @@ class VeroEqulibraFitApp extends ConsumerWidget {
       path: '/nutrition/plans',
       builder: (context, state) => const NutritionPlansPage(),
     ),
-    GoRoute(path: '/nutrition/goals', builder: (context, state) => const NutritionGoalsPage()),
-    GoRoute(path: '/nutrition/barcode', builder: (context, state) => const BarcodeScannerPage()),
+    GoRoute(
+      path: '/nutrition/goals',
+      builder: (context, state) => const NutritionGoalsPage(),
+    ),
+    GoRoute(
+      path: '/nutrition/barcode',
+      builder: (context, state) => const BarcodeScannerPage(),
+    ),
     GoRoute(path: '/coach', builder: (context, state) => const CoachPage()),
     GoRoute(path: '/profile', builder: (context, state) => const ProfilePage()),
     GoRoute(
@@ -697,7 +707,9 @@ class ExerciseLibraryPage extends ConsumerWidget {
                           tooltip: 'Excluir exercício personalizado',
                           icon: const Icon(Icons.delete_outline),
                           onPressed: () {
-                            ref.read(trainingRepositoryProvider).deleteCustom(exercise.id);
+                            ref
+                                .read(trainingRepositoryProvider)
+                                .deleteCustom(exercise.id);
                             ref.read(catalogRevisionProvider.notifier).state++;
                           },
                         ),
@@ -854,15 +866,62 @@ class ExerciseLibraryPage extends ConsumerWidget {
     equipment.dispose();
   }
 
-  Future<void> _editCustomExercise(BuildContext context, WidgetRef ref, Exercise exercise) async {
+  Future<void> _editCustomExercise(
+    BuildContext context,
+    WidgetRef ref,
+    Exercise exercise,
+  ) async {
     final name = TextEditingController(text: exercise.name);
     final muscle = TextEditingController(text: exercise.primaryMuscle);
     final equipment = TextEditingController(text: exercise.equipment);
-    final save = await showDialog<bool>(context: context, builder: (dialogContext) => AlertDialog(title: const Text('Editar exercício personalizado'), content: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: name, decoration: const InputDecoration(labelText: 'Nome')), TextField(controller: muscle, decoration: const InputDecoration(labelText: 'Grupo muscular')), TextField(controller: equipment, decoration: const InputDecoration(labelText: 'Equipamento'))]), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancelar')), FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Salvar'))]));
+    final save = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Editar exercício personalizado'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: name,
+              decoration: const InputDecoration(labelText: 'Nome'),
+            ),
+            TextField(
+              controller: muscle,
+              decoration: const InputDecoration(labelText: 'Grupo muscular'),
+            ),
+            TextField(
+              controller: equipment,
+              decoration: const InputDecoration(labelText: 'Equipamento'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
     if (save == true && name.text.trim().isNotEmpty) {
-      ref.read(trainingRepositoryProvider).updateCustom(id: exercise.id, name: name.text, primaryMuscle: muscle.text.isEmpty ? 'Não informado' : muscle.text, equipment: equipment.text.isEmpty ? 'Não informado' : equipment.text);
+      ref
+          .read(trainingRepositoryProvider)
+          .updateCustom(
+            id: exercise.id,
+            name: name.text,
+            primaryMuscle: muscle.text.isEmpty ? 'Não informado' : muscle.text,
+            equipment: equipment.text.isEmpty
+                ? 'Não informado'
+                : equipment.text,
+          );
       ref.read(catalogRevisionProvider.notifier).state++;
     }
-    name.dispose(); muscle.dispose(); equipment.dispose();
+    name.dispose();
+    muscle.dispose();
+    equipment.dispose();
   }
 }

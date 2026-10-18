@@ -25,3 +25,10 @@ Estado geral: **PARCIAL — MVP permanece REPROVADO / NÃO HOMOLOGADO**
 - Nenhuma sugestão de IA é salva sem revisão do usuário.
 - Nenhum dado nutricional desconhecido receberá valor inventado.
 - A aprovação exige persistência, recuperação, autorização e evidência de teste.
+# Atualização de 18/10/2026
+
+| Módulo | Estado | Evidência | Limitação |
+|---|---|---|---|
+| P3.6 Missões diárias | PARCIAL | `features/habits/presentation/missions_page.dart` | Sem histórico, pontos, medalhas ou sincronização remota. |
+| P3.7 Perfil | PARCIAL | `features/profile/presentation/profile_page.dart` | Preferências e ações sensíveis ainda não homologadas. |
+| P3.8 Administração | REPROVADO | `admin/.../Components/Pages/Home.razor` | Painel ainda é um shell sem autenticação e operações reais. |

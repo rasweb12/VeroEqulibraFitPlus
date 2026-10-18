@@ -15,8 +15,13 @@ class DashboardPage extends ConsumerWidget {
     final plans = ref.watch(plansProvider);
     final meals = ref.watch(mealsProvider);
     final measurements = ref.watch(measurementsProvider);
-    final calories = meals.fold<double>(0, (sum, meal) => sum + (meal.estimatedCalories ?? 0));
-    final latestWeight = measurements.isEmpty ? null : measurements.first.weightKg;
+    final calories = meals.fold<double>(
+      0,
+      (sum, meal) => sum + (meal.estimatedCalories ?? 0),
+    );
+    final latestWeight = measurements.isEmpty
+        ? null
+        : measurements.first.weightKg;
     return Scaffold(
       appBar: AppBar(title: const Text('VeroEqulibraFit+')),
       drawer: const AppDrawer(),
@@ -46,8 +51,8 @@ class DashboardPage extends ConsumerWidget {
             meals.isEmpty
                 ? 'Nenhuma refeição registrada.'
                 : meals.length == 1
-                    ? '1 refeição registrada${calories == 0 ? '.' : ' · ≈ ${calories.round()} kcal.'}'
-                    : '${meals.length} refeições registradas${calories == 0 ? '.' : ' · ≈ ${calories.round()} kcal.'}',
+                ? '1 refeição registrada${calories == 0 ? '.' : ' · ≈ ${calories.round()} kcal.'}'
+                : '${meals.length} refeições registradas${calories == 0 ? '.' : ' · ≈ ${calories.round()} kcal.'}',
             '/nutrition',
           ),
           _section(
@@ -72,6 +77,13 @@ class DashboardPage extends ConsumerWidget {
             'Coach Gemini',
             'Disponível após configurar a API segura.',
             '/coach',
+          ),
+          _section(
+            context,
+            Icons.emoji_events_outlined,
+            'Missões',
+            'Acompanhe metas opcionais baseadas em seus registros de hoje.',
+            '/missions',
           ),
         ],
       ),
