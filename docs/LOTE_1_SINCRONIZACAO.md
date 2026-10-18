@@ -109,3 +109,9 @@ Fichas ainda não enfileiram alterações de exercícios, e hábitos, medidas, e
 Adicionar, remover ou reconfigurar um exercício em uma ficha que já tenha revisão remota passa a gerar `training-plan.update` com a lista ordenada completa de exercícios. O servidor valida e substitui a composição dentro da mesma transação do recibo idempotente. A edição de uma refeição sincronizada também tem teste automatizado: o item remoto de revisão 2 gera `meal.update` com essa revisão ao ser alterado localmente.
 
 Evidência: `flutter test test/secure_operation_queue_test.dart` aprovou 5 testes. Resta criar interface de resolução de conflitos, confirmar atualização do cursor após push, validar no Neon e ampliar a sincronização para os demais módulos.
+
+## Cursor confirmado e conflitos visíveis — 18/10/2026
+
+O contrato de `pull` passou a devolver cursor também na última página, acompanhado de `hasMore`. Assim o dispositivo grava a posição confirmada depois de receber a revisão gerada pelo servidor no `push`, evitando aplicar repetidamente a mesma alteração. A página de Perfil consulta a outbox cifrada e informa conflitos pendentes; a alteração local não é removida nem enviada novamente de forma silenciosa.
+
+Ainda não há tela para comparar campo a campo ou escolher manualmente uma versão. Hábitos, medidas, exercícios personalizados, sessões e planos alimentares ainda não integram `pull/push`. A compilação .NET desta rodada excedeu o limite local antes de concluir e não é considerada evidência de aprovação.

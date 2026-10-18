@@ -62,7 +62,10 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
             .Where(change => parsedCursor is null || IsAfter(change, parsedCursor))
             .Take(limit)
             .ToList();
-        return Ok(new SyncPullResponse(changes, changes.Count == limit ? WriteCursor(changes[^1]) : null));
+        return Ok(new SyncPullResponse(
+            changes,
+            changes.Count == 0 ? cursor : WriteCursor(changes[^1]),
+            changes.Count == limit));
     }
 
     private async Task<SyncPushOperationResponse> Apply(Guid ownerId, SyncPushOperationRequest operation, CancellationToken cancellationToken)

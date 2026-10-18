@@ -11,6 +11,7 @@ abstract interface class SyncOperationQueue {
     required String clientVersion,
   });
   Future<List<PendingOperation>> due({required String ownerId, int limit = 50});
+  Future<List<PendingOperation>> conflicts({required String ownerId});
   Future<void> markProcessing(int id);
   Future<void> markCompleted(int id);
   Future<void> markConflict(int id);

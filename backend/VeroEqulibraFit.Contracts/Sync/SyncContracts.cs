@@ -23,7 +23,8 @@ public sealed record SyncPushResponse(IReadOnlyList<SyncPushOperationResponse> O
 
 public sealed record SyncPullResponse(
     IReadOnlyList<SyncPullChangeResponse> Changes,
-    string? NextCursor);
+    string? NextCursor,
+    bool HasMore);
 
 public sealed record SyncPullChangeResponse(
     string EntityType,

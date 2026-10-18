@@ -29,10 +29,21 @@ class SecureOperationQueue implements SyncOperationQueue {
   }) async {
     _verifyOwner(ownerId);
     await _load();
-    if (_operations.any((item) => item.idempotencyKey == idempotencyKey)) {
+    final now = DateTime.now().toUtc();
+    final existing = _operations.where((item) => item.idempotencyKey == idempotencyKey).firstOrNull;
+    // Several offline edits can share the same server revision. Before a
+    // request starts, retain only the newest complete representation instead
+    // of creating conflicting operations for that same base revision.
+    if (existing != null) {
+      if (existing.status == OfflineOperationStatus.pending.name) {
+        existing.payloadJson = payloadJson;
+        existing.updatedAt = now;
+        existing.nextRetryAt = null;
+        existing.lastErrorCode = null;
+        await _save();
+      }
       return;
     }
-    final now = DateTime.now().toUtc();
     _operations.add(
       PendingOperation()
         ..id = now.microsecondsSinceEpoch
@@ -66,6 +77,13 @@ class SecureOperationQueue implements SyncOperationQueue {
         )
         .take(limit)
         .toList(growable: false);
+  }
+
+  @override
+  Future<List<PendingOperation>> conflicts({required String ownerId}) async {
+    _verifyOwner(ownerId);
+    await _load();
+    return _operations.where((item) => item.status == OfflineOperationStatus.conflict.name).toList(growable: false);
   }
 
   @override

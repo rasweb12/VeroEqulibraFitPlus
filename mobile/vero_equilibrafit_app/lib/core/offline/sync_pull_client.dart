@@ -43,6 +43,7 @@ class SyncPullClient {
       return SyncPullPage(
         changes: rawChanges.whereType<Map<String, dynamic>>().toList(),
         nextCursor: body['nextCursor'] as String?,
+        hasMore: body['hasMore'] as bool? ?? false,
       );
     } on Object {
       return const SyncPullPage.failed('network_unavailable');
@@ -51,12 +52,13 @@ class SyncPullClient {
 }
 
 class SyncPullPage {
-  const SyncPullPage({this.changes = const [], this.nextCursor, this.reason});
+  const SyncPullPage({this.changes = const [], this.nextCursor, this.hasMore = false, this.reason});
   const SyncPullPage.skipped(String reason) : this(reason: reason);
   const SyncPullPage.failed(String reason) : this(reason: reason);
 
   final List<Map<String, dynamic>> changes;
   final String? nextCursor;
+  final bool hasMore;
   final String? reason;
   bool get isSuccess => reason == null;
 }

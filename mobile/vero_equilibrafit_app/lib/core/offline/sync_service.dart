@@ -50,9 +50,12 @@ class SyncService {
         applied++;
       }
       final next = page.nextCursor;
-      if (next == null || next.isEmpty) return SyncPullResult(applied: applied);
-      cursor = next;
-      await store.write(cursorKey, next);
+      if (next != null && next.isNotEmpty) {
+        cursor = next;
+        await store.write(cursorKey, next);
+      }
+      if (!page.hasMore) return SyncPullResult(applied: applied);
+      if (next == null || next.isEmpty) return SyncPullResult(applied: applied, reason: 'invalid_sync_response');
     }
     return SyncPullResult(applied: applied, reason: 'pagination_limit');
   }
