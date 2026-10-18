@@ -35,14 +35,60 @@ class MeasurementsPage extends ConsumerWidget {
                 padding: EdgeInsets.all(32),
                 child: Text(
                   'Registre peso ou medidas quando fizer sentido para você.',
+                  textAlign: TextAlign.center,
                 ),
               ),
             )
           : ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-              itemCount: entries.length,
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 96),
+              itemCount: entries.length + 1,
               itemBuilder: (context, index) {
-                final entry = entries[index];
+                if (index == 0) {
+                  final current = entries.first.weightKg;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: VeroColors.primary.withValues(alpha: .08),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.monitor_weight_outlined,
+                            color: VeroColors.primary,
+                            size: 32,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Evolução corporal',
+                                  style: TextStyle(
+                                    fontSize: 19,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                Text(
+                                  current == null
+                                      ? '${entries.length} registros'
+                                      : 'Peso mais recente: ${current.toStringAsFixed(1)} kg',
+                                  style: const TextStyle(
+                                    color: VeroColors.muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                final entry = entries[index - 1];
                 final values = <String>[
                   if (entry.weightKg != null)
                     '${entry.weightKg!.toStringAsFixed(1)} kg',

@@ -447,9 +447,39 @@ class TrainingPlanPage extends ConsumerWidget {
         label: const Text('Adicionar exercício'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 96),
         children: [
-          Text(plan.objective, style: Theme.of(context).textTheme.titleMedium),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: VeroColors.primary.withValues(alpha: .08),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.track_changes_outlined,
+                  color: VeroColors.primary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Objetivo da ficha',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      Text(
+                        plan.objective,
+                        style: const TextStyle(color: VeroColors.muted),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 16),
           if (plan.exercises.isEmpty)
             const Padding(
@@ -483,7 +513,10 @@ class _PlanExerciseTile extends ConsumerWidget {
     if (exercise == null) return const SizedBox.shrink();
     return Card(
       child: ListTile(
-        leading: const CircleAvatar(child: Icon(Icons.fitness_center)),
+        leading: const CircleAvatar(
+          backgroundColor: Color(0xffE8F8F0),
+          child: Icon(Icons.fitness_center, color: VeroColors.primary),
+        ),
         title: Text(exercise.name),
         subtitle: Text(
           '${exercise.primaryMuscle} · ${plannedExercise.sets} séries × ${plannedExercise.repetitions} · descanso ${plannedExercise.restSeconds}s${plannedExercise.targetLoadKg == null ? '' : ' · ${plannedExercise.targetLoadKg!.toStringAsFixed(1)} kg'}',
@@ -578,11 +611,16 @@ class _TrainingExerciseConfigPageState
         title: const Text('Configurar exercício'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
         children: [
-          Text(
+          const Text(
             'Ajuste séries, repetições, carga e descanso.',
-            style: Theme.of(context).textTheme.titleMedium,
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'As alterações são aplicadas apenas após salvar.',
+            style: TextStyle(color: VeroColors.muted),
           ),
           const SizedBox(height: 12),
           _field(_sets, 'Séries', number: true),
@@ -681,14 +719,16 @@ class ExerciseLibraryPage extends ConsumerWidget {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
             child: TextField(
               onChanged: (value) =>
                   ref.read(exerciseSearchProvider.notifier).state = value,
               decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.search),
                 labelText: 'Buscar no catálogo',
-                border: OutlineInputBorder(),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(16)),
+                ),
               ),
             ),
           ),
