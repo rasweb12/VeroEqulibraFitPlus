@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using VeroEqulibraFit.Domain.Training;
 using VeroEqulibraFit.Domain.Nutrition;
+using VeroEqulibraFit.Domain.Journal;
 
 namespace VeroEqulibraFit.Infrastructure.Data;
 
@@ -17,6 +18,7 @@ public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbC
     public DbSet<MealEntry> MealEntries => Set<MealEntry>();
     public DbSet<NutritionPlan> NutritionPlans => Set<NutritionPlan>();
     public DbSet<FoodProduct> FoodProducts => Set<FoodProduct>();
+    public DbSet<JournalRecord> JournalRecords => Set<JournalRecord>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -116,6 +118,17 @@ public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbC
             entity.Property(product => product.Source).HasMaxLength(160).IsRequired();
             entity.HasIndex(product => new { product.Gtin, product.IsApprovedCatalogItem });
             entity.HasIndex(product => new { product.OwnerId, product.Gtin }).IsUnique();
+        });
+        modelBuilder.Entity<JournalRecord>(entity =>
+        {
+            entity.ToTable("journal_records");
+            entity.Property(record => record.Kind).HasMaxLength(32).IsRequired();
+            entity.Property(record => record.PayloadJson).HasColumnType("jsonb").IsRequired();
+            entity.Property(record => record.Revision).HasDefaultValue(1);
+            entity.Property(record => record.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.HasIndex(record => new { record.OwnerId, record.UpdatedAt });
+            entity.HasIndex(record => new { record.OwnerId, record.Kind, record.OccurredAt });
+            entity.HasQueryFilter(record => record.DeletedAt == null);
         });
     }
 }

@@ -10,6 +10,7 @@ using VeroEqulibraFit.Contracts.Sync;
 using VeroEqulibraFit.Contracts.Training;
 using VeroEqulibraFit.Domain.Nutrition;
 using VeroEqulibraFit.Domain.Training;
+using VeroEqulibraFit.Domain.Journal;
 using VeroEqulibraFit.Infrastructure.Data;
 
 namespace VeroEqulibraFit.Api.Controllers;
@@ -57,9 +58,13 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
         var customExercises = await database.CustomExercises.IgnoreQueryFilters().AsNoTracking()
             .Where(item => item.OwnerId == ownerId && item.UpdatedAt >= from)
             .ToListAsync(cancellationToken);
+        var journalRecords = await database.JournalRecords.IgnoreQueryFilters().AsNoTracking()
+            .Where(item => item.OwnerId == ownerId && item.UpdatedAt >= from)
+            .ToListAsync(cancellationToken);
         var changes = plans.Select(item => ToPlanChange(item.Plan))
             .Concat(meals.Select(item => ToMealChange(item.Meal)))
             .Concat(customExercises.Select(ToCustomExerciseChange))
+            .Concat(journalRecords.Select(ToJournalChange))
             .OrderBy(change => change.ChangedAt)
             .ThenBy(change => change.EntityType, StringComparer.Ordinal)
             .ThenBy(change => change.EntityId)
@@ -110,6 +115,9 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
                 "meal.create" when operation.EntityType == "meal" => await CreateMeal(ownerId, operation.EntityId, rawPayload, cancellationToken),
                 "meal.update" when operation.EntityType == "meal" => await UpdateMeal(ownerId, operation.EntityId, rawPayload, cancellationToken),
                 "meal.delete" when operation.EntityType == "meal" => await DeleteMeal(ownerId, operation.EntityId, cancellationToken),
+                "journal.create" when operation.EntityType == "journal" => await CreateJournalRecord(ownerId, operation.EntityId, rawPayload, cancellationToken),
+                "journal.update" when operation.EntityType == "journal" => await UpdateJournalRecord(ownerId, operation.EntityId, rawPayload, cancellationToken),
+                "journal.delete" when operation.EntityType == "journal" => await DeleteJournalRecord(ownerId, operation.EntityId, cancellationToken),
                 _ => new(string.Empty, "rejected", "unsupported_operation"),
             };
         }
@@ -264,6 +272,37 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
         return new(string.Empty, "accepted");
     }
 
+    private async Task<SyncPushOperationResponse> CreateJournalRecord(Guid ownerId, Guid entityId, string payload, CancellationToken cancellationToken)
+    {
+        var request = JsonSerializer.Deserialize<JournalRecordCreatePayload>(payload, JsonOptions);
+        if (request is null || !IsJournalKind(request.Kind) || string.IsNullOrWhiteSpace(request.PayloadJson) || Encoding.UTF8.GetByteCount(request.PayloadJson) > MaxPayloadBytes)
+            return new(string.Empty, "rejected", "invalid_journal_record");
+        if (!IsJsonObject(request.PayloadJson) || await database.JournalRecords.IgnoreQueryFilters().AnyAsync(item => item.Id == entityId, cancellationToken))
+            return new(string.Empty, "conflict", "entity_already_exists");
+        database.JournalRecords.Add(new JournalRecord { Id = entityId, OwnerId = ownerId, Kind = request.Kind, OccurredAt = request.OccurredAt ?? DateTimeOffset.UtcNow, PayloadJson = request.PayloadJson });
+        return new(string.Empty, "accepted");
+    }
+
+    private async Task<SyncPushOperationResponse> UpdateJournalRecord(Guid ownerId, Guid entityId, string payload, CancellationToken cancellationToken)
+    {
+        var request = JsonSerializer.Deserialize<JournalRecordUpdatePayload>(payload, JsonOptions);
+        if (request is null || request.BaseRevision < 1 || !IsJournalKind(request.Kind) || string.IsNullOrWhiteSpace(request.PayloadJson) || !IsJsonObject(request.PayloadJson))
+            return new(string.Empty, "rejected", "invalid_journal_record");
+        var record = await database.JournalRecords.IgnoreQueryFilters().SingleOrDefaultAsync(item => item.Id == entityId && item.OwnerId == ownerId, cancellationToken);
+        if (record is null || record.DeletedAt is not null) return new(string.Empty, "conflict", "entity_not_found");
+        if (record.Revision != request.BaseRevision) return new(string.Empty, "conflict", "revision_conflict");
+        record.Kind = request.Kind; record.PayloadJson = request.PayloadJson; record.OccurredAt = request.OccurredAt ?? record.OccurredAt; record.UpdatedAt = DateTimeOffset.UtcNow; record.Revision++;
+        return new(string.Empty, "accepted");
+    }
+
+    private async Task<SyncPushOperationResponse> DeleteJournalRecord(Guid ownerId, Guid entityId, CancellationToken cancellationToken)
+    {
+        var record = await database.JournalRecords.IgnoreQueryFilters().SingleOrDefaultAsync(item => item.Id == entityId && item.OwnerId == ownerId, cancellationToken);
+        if (record is null) return new(string.Empty, "conflict", "entity_not_found");
+        if (record.DeletedAt is null) { record.DeletedAt = DateTimeOffset.UtcNow; record.UpdatedAt = record.DeletedAt.Value; record.Revision++; }
+        return new(string.Empty, "accepted");
+    }
+
     private Guid? GetOwnerId() => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub"), out var ownerId) ? ownerId : null;
     private static SyncPullChangeResponse ToPlanChange(TrainingPlan plan) => new(
         "training-plan", plan.Id, plan.DeletedAt is null ? "upsert" : "delete", plan.Revision, plan.UpdatedAt,
@@ -283,6 +322,16 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
     private static SyncPullChangeResponse ToCustomExerciseChange(CustomExercise exercise) => new(
         "custom-exercise", exercise.Id, exercise.DeletedAt is null ? "upsert" : "delete", exercise.Revision, exercise.UpdatedAt,
         JsonSerializer.SerializeToElement(new { id = exercise.Id, name = exercise.Name, primaryMuscle = exercise.PrimaryMuscle, equipment = exercise.Equipment, revision = exercise.Revision }, JsonOptions));
+    private static SyncPullChangeResponse ToJournalChange(JournalRecord record) => new(
+        "journal", record.Id, record.DeletedAt is null ? "upsert" : "delete", record.Revision, record.UpdatedAt,
+        JsonSerializer.SerializeToElement(new { id = record.Id, kind = record.Kind, occurredAt = record.OccurredAt, payload = JsonSerializer.Deserialize<JsonElement>(record.PayloadJson), revision = record.Revision }, JsonOptions));
+
+    private static bool IsJournalKind(string? kind) => kind is "habit" or "note" or "mission";
+    private static bool IsJsonObject(string raw)
+    {
+        try { using var document = JsonDocument.Parse(raw); return document.RootElement.ValueKind == JsonValueKind.Object; }
+        catch (JsonException) { return false; }
+    }
 
     private static bool TryReadCursor(string? cursor, out SyncCursor? result)
     {
@@ -314,5 +363,7 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
     private sealed record SyncCursor(DateTimeOffset ChangedAt, string EntityType, Guid EntityId);
     private sealed record CustomExercisePayload(string Name, string PrimaryMuscle, string Equipment);
     private sealed record CustomExerciseUpdatePayload(string Name, string PrimaryMuscle, string Equipment, int BaseRevision);
+    private sealed record JournalRecordCreatePayload(string Kind, DateTimeOffset? OccurredAt, string PayloadJson);
+    private sealed record JournalRecordUpdatePayload(string Kind, DateTimeOffset? OccurredAt, string PayloadJson, int BaseRevision);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 }
