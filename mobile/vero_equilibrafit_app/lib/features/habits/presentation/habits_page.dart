@@ -11,12 +11,13 @@ import '../../../shared/presentation/app_drawer.dart';
 
 @immutable
 class HabitsState {
-  const HabitsState({this.waterMl = 0, this.waterGoalMl = 2000, this.mobilityDone = false});
-  final int waterMl;
+  const HabitsState({this.waterRecords = const [], this.waterGoalMl = 2000, this.mobilityDone = false});
+  final List<int> waterRecords;
+  int get waterMl => waterRecords.fold(0, (sum, item) => sum + item);
   final int waterGoalMl;
   final bool mobilityDone;
-  HabitsState copyWith({int? waterMl, int? waterGoalMl, bool? mobilityDone}) => HabitsState(
-    waterMl: waterMl ?? this.waterMl,
+  HabitsState copyWith({List<int>? waterRecords, int? waterGoalMl, bool? mobilityDone}) => HabitsState(
+    waterRecords: waterRecords ?? this.waterRecords,
     waterGoalMl: waterGoalMl ?? this.waterGoalMl,
     mobilityDone: mobilityDone ?? this.mobilityDone,
   );
@@ -38,7 +39,7 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
       final saved = jsonDecode(encoded) as Map<String, dynamic>;
       if (mounted) {
         state = HabitsState(
-          waterMl: saved['waterMl'] as int? ?? 0,
+          waterRecords: (saved['waterRecords'] as List<dynamic>?)?.whereType<int>().toList(growable: false) ?? [if ((saved['waterMl'] as int? ?? 0) > 0) saved['waterMl'] as int],
           waterGoalMl: saved['waterGoalMl'] as int? ?? 2000,
           mobilityDone: saved['mobilityDone'] as bool? ?? false,
         );
@@ -50,7 +51,13 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
 
   void addWater([int volumeMl = 250]) {
     if (volumeMl <= 0 || volumeMl > 2000) return;
-    state = state.copyWith(waterMl: state.waterMl + volumeMl);
+    state = state.copyWith(waterRecords: [...state.waterRecords, volumeMl]);
+    unawaited(_save());
+  }
+
+  void removeLastWater() {
+    if (state.waterRecords.isEmpty) return;
+    state = state.copyWith(waterRecords: state.waterRecords.sublist(0, state.waterRecords.length - 1));
     unawaited(_save());
   }
 
@@ -67,7 +74,7 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
 
   Future<void> _save() => _store.write(
     _storageKey,
-    jsonEncode({'waterMl': state.waterMl, 'waterGoalMl': state.waterGoalMl, 'mobilityDone': state.mobilityDone}),
+    jsonEncode({'waterRecords': state.waterRecords, 'waterGoalMl': state.waterGoalMl, 'mobilityDone': state.mobilityDone}),
   );
 }
 
@@ -116,6 +123,15 @@ class HabitsPage extends ConsumerWidget {
                 ))
                 .toList(growable: false),
           ),
+          if (habits.waterRecords.isNotEmpty)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => ref.read(habitsProvider.notifier).removeLastWater(),
+                icon: const Icon(Icons.undo_outlined),
+                label: Text('Desfazer +${habits.waterRecords.last} ml'),
+              ),
+            ),
           Card(
             child: SwitchListTile(
               secondary: const Icon(Icons.self_improvement_outlined),
