@@ -24,6 +24,11 @@ final mealsProvider =
       (ref) => MealsController(ref.read(nutritionRepositoryProvider)),
     );
 
+/// Dia exibido no diário. O registro continua usando seu horário original.
+final nutritionDiaryDateProvider = StateProvider<DateTime>(
+  (_) => DateTime.now(),
+);
+
 final mealPhotoAnalysisRepositoryProvider =
     Provider.autoDispose<MealPhotoAnalysisRepository>((ref) {
       final session = ref.watch(authSessionProvider).valueOrNull;

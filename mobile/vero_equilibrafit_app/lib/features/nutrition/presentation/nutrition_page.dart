@@ -16,6 +16,12 @@ class NutritionPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final meals = ref.watch(mealsProvider);
+    final selectedDay = ref.watch(nutritionDiaryDateProvider);
+    final dayMeals = meals.where((meal) => _sameDay(meal.recordedAt, selectedDay)).toList(growable: false);
+    final calories = dayMeals.fold<double>(0, (sum, meal) => sum + (meal.estimatedCalories ?? 0));
+    final protein = dayMeals.fold<double>(0, (sum, meal) => sum + (meal.proteinGrams ?? 0));
+    final carbs = dayMeals.fold<double>(0, (sum, meal) => sum + (meal.carbohydrateGrams ?? 0));
+    final fat = dayMeals.fold<double>(0, (sum, meal) => sum + (meal.fatGrams ?? 0));
     return Scaffold(
       appBar: AppBar(
         title: const Text('Alimentação'),
@@ -38,7 +44,20 @@ class NutritionPage extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: const Text('Registrar refeição'),
       ),
-      body: meals.isEmpty
+      body: Column(
+        children: [
+          _DiarySummary(
+            selectedDay: selectedDay,
+            calories: calories,
+            protein: protein,
+            carbs: carbs,
+            fat: fat,
+            onPrevious: () => ref.read(nutritionDiaryDateProvider.notifier).state = selectedDay.subtract(const Duration(days: 1)),
+            onNext: selectedDay.isBefore(DateTime.now())
+                ? () => ref.read(nutritionDiaryDateProvider.notifier).state = selectedDay.add(const Duration(days: 1))
+                : null,
+          ),
+          Expanded(child: dayMeals.isEmpty
           ? Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
@@ -48,12 +67,12 @@ class NutritionPage extends ConsumerWidget {
                     const Icon(Icons.restaurant_outlined, size: 48),
                     const SizedBox(height: 16),
                     Text(
-                      'Registre sua primeira refeição',
+                      'Nenhuma refeição neste dia',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Use um registro simples agora e complemente com análise pelo Coach quando o serviço estiver configurado.',
+                      'Registre uma refeição manualmente, por texto ou por foto. Estimativas sempre podem ser revisadas.',
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -62,9 +81,9 @@ class NutritionPage extends ConsumerWidget {
             )
           : ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-              itemCount: meals.length,
+              itemCount: dayMeals.length,
               itemBuilder: (context, index) {
-                final meal = meals[index];
+                final meal = dayMeals[index];
                 return Card(
                   child: ListTile(
                     leading: const Icon(Icons.restaurant_outlined),
@@ -94,9 +113,14 @@ class NutritionPage extends ConsumerWidget {
                   ),
                 );
               },
-            ),
+            )),
+        ],
+      ),
     );
   }
+
+  bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   Future<void> _pickAndAnalyzePhoto(BuildContext context, WidgetRef ref) async {
     final source = await showModalBottomSheet<ImageSource>(
@@ -193,6 +217,31 @@ class NutritionPage extends ConsumerWidget {
     if (lower.endsWith('.webp')) return 'image/webp';
     return 'image/jpeg';
   }
+}
+
+class _DiarySummary extends StatelessWidget {
+  const _DiarySummary({required this.selectedDay, required this.calories, required this.protein, required this.carbs, required this.fat, required this.onPrevious, required this.onNext});
+  final DateTime selectedDay;
+  final double calories, protein, carbs, fat;
+  final VoidCallback onPrevious;
+  final VoidCallback? onNext;
+  @override
+  Widget build(BuildContext context) => Card(
+    margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(children: [
+        Row(children: [
+          IconButton(onPressed: onPrevious, icon: const Icon(Icons.chevron_left), tooltip: 'Dia anterior'),
+          Expanded(child: Text(MaterialLocalizations.of(context).formatMediumDate(selectedDay), textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium)),
+          IconButton(onPressed: onNext, icon: const Icon(Icons.chevron_right), tooltip: 'Próximo dia'),
+        ]),
+        Text('≈ ${calories.round()} kcal registradas', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 4),
+        Text('Proteínas ${protein.round()} g  ·  Carboidratos ${carbs.round()} g  ·  Gorduras ${fat.round()} g'),
+      ]),
+    ),
+  );
 }
 
 /// Dados efêmeros da análise: a imagem não é persistida neste objeto.
