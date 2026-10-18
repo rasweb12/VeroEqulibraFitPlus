@@ -19,6 +19,7 @@ class MealPhotoItem {
     required this.proteinGrams,
     required this.carbohydrateGrams,
     required this.fatGrams,
+    required this.confidence,
   });
   final String name;
   final num portion;
@@ -27,6 +28,8 @@ class MealPhotoItem {
   final num proteinGrams;
   final num carbohydrateGrams;
   final num fatGrams;
+  /// Confidence supplied by Gemini or the server normalization, from 0 to 1.
+  final num confidence;
 }
 
 class MealPhotoAnalysisRepository {
@@ -74,6 +77,7 @@ class MealPhotoAnalysisRepository {
             proteinGrams: item['proteinGrams'] as num? ?? 0,
             carbohydrateGrams: item['carbohydrateGrams'] as num? ?? 0,
             fatGrams: item['fatGrams'] as num? ?? 0,
+            confidence: item['confidence'] as num? ?? 0,
           ),
         )
         .toList(growable: false);
@@ -122,6 +126,7 @@ class MealPhotoAnalysisRepository {
             proteinGrams: item['proteinGrams'] as num? ?? 0,
             carbohydrateGrams: item['carbohydrateGrams'] as num? ?? 0,
             fatGrams: item['fatGrams'] as num? ?? 0,
+            confidence: item['confidence'] as num? ?? 0,
           ),
         )
         .toList(growable: false);

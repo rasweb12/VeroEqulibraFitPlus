@@ -370,6 +370,16 @@ class _NutritionPhotoReviewPageState
               decoration: const InputDecoration(labelText: 'Nome do alimento'),
               onChanged: (value) => item.name = value,
             ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  item.confidenceLabel,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+            ),
             Row(
               children: [
                 Expanded(
@@ -513,6 +523,7 @@ class _PhotoFoodDraft {
     required this.protein,
     required this.carbs,
     required this.fat,
+    required this.confidence,
   });
 
   factory _PhotoFoodDraft.fromAnalysis(MealPhotoItem item) => _PhotoFoodDraft(
@@ -524,6 +535,7 @@ class _PhotoFoodDraft {
     protein: item.proteinGrams.toDouble(),
     carbs: item.carbohydrateGrams.toDouble(),
     fat: item.fatGrams.toDouble(),
+    confidence: item.confidence.toDouble(),
   );
 
   factory _PhotoFoodDraft.empty() => _PhotoFoodDraft(
@@ -535,6 +547,7 @@ class _PhotoFoodDraft {
     protein: 0,
     carbs: 0,
     fat: 0,
+    confidence: 0,
   );
 
   final Object key;
@@ -545,6 +558,13 @@ class _PhotoFoodDraft {
   double protein;
   double carbs;
   double fat;
+  double confidence;
+
+  String get confidenceLabel {
+    if (confidence >= .8) return 'Confiança da identificação: alta. Ainda revise porção e preparo.';
+    if (confidence >= .5) return 'Confiança da identificação: moderada. Revise este alimento antes de salvar.';
+    return 'Confiança da identificação: baixa. Confirme ou substitua este alimento antes de salvar.';
+  }
 }
 
 class NutritionMealFormPage extends ConsumerStatefulWidget {
