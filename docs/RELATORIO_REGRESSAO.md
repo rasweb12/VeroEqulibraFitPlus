@@ -28,3 +28,5 @@ APK debug recompilado em 17/10/2026 às 17:51 BRT com SHA-256 `77C1C3D3F627304FC
 | Fotos de evolução | REPROVADO | Não há armazenamento de imagem com consentimento, retenção, exclusão e criptografia adequados. Não foi implementado um atalho inseguro. |
 
 O ambiente Python anterior apresentava binário incompatível do `pydantic_core`; foi preservado como ambiente local ignorado e substituído por `.venv` recriado. Isso não alterou código nem serviços remotos.
+
+Em 18/10/2026 foi atribuída uma conta administrativa existente no Render por um ciclo temporário de bootstrap, desativado imediatamente no deploy seguinte. O teste funcional de login e o bloqueio de conta comum continuam NÃO TESTADOS porque exigem credenciais de duas contas.
