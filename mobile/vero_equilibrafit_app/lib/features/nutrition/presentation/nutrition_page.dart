@@ -36,6 +36,11 @@ class NutritionPage extends ConsumerWidget {
             onPressed: () => context.go('/nutrition/plans'),
             icon: const Icon(Icons.menu_book_outlined),
           ),
+          IconButton(
+            tooltip: 'Metas nutricionais',
+            onPressed: () => context.go('/nutrition/goals'),
+            icon: const Icon(Icons.track_changes_outlined),
+          ),
         ],
       ),
       drawer: const AppDrawer(),
