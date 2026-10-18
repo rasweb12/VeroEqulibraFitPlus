@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../core/persistence/owner_scope.dart';
 import '../../../core/persistence/preferences_provider.dart';
 import '../../../core/persistence/secure_owner_store.dart';
@@ -10,14 +11,70 @@ import '../../auth/presentation/current_owner_provider.dart';
 import '../../../shared/presentation/app_drawer.dart';
 
 @immutable
+class HabitEntry {
+  const HabitEntry({
+    required this.kind,
+    required this.value,
+    required this.at,
+    this.detail = '',
+  });
+  final String kind;
+  final int value;
+  final DateTime at;
+  final String detail;
+  Map<String, dynamic> toJson() => {
+    'kind': kind,
+    'value': value,
+    'at': at.toUtc().toIso8601String(),
+    'detail': detail,
+  };
+  static HabitEntry? fromJson(Object? raw) {
+    if (raw is! Map<String, dynamic>) return null;
+    final kind = raw['kind'] as String?;
+    final value = raw['value'] as int?;
+    final at = DateTime.tryParse(raw['at'] as String? ?? '');
+    if (kind == null || value == null || at == null) return null;
+    return HabitEntry(
+      kind: kind,
+      value: value,
+      at: at.toLocal(),
+      detail: raw['detail'] as String? ?? '',
+    );
+  }
+}
+
+bool sameDay(DateTime left, DateTime right) =>
+    left.year == right.year &&
+    left.month == right.month &&
+    left.day == right.day;
+
+@immutable
 class HabitsState {
-  const HabitsState({this.waterRecords = const [], this.waterGoalMl = 2000, this.mobilityDone = false});
-  final List<int> waterRecords;
-  int get waterMl => waterRecords.fold(0, (sum, item) => sum + item);
+  const HabitsState({
+    this.entries = const [],
+    this.waterGoalMl = 2000,
+    this.mobilityDone = false,
+  });
+  final List<HabitEntry> entries;
   final int waterGoalMl;
   final bool mobilityDone;
-  HabitsState copyWith({List<int>? waterRecords, int? waterGoalMl, bool? mobilityDone}) => HabitsState(
-    waterRecords: waterRecords ?? this.waterRecords,
+  int get waterMl => entries
+      .where(
+        (entry) => entry.kind == 'water' && sameDay(entry.at, DateTime.now()),
+      )
+      .fold(0, (sum, entry) => sum + entry.value);
+  bool get hasActivityToday => entries.any(
+    (entry) => entry.kind == 'activity' && sameDay(entry.at, DateTime.now()),
+  );
+  bool get hasNoteToday => entries.any(
+    (entry) => entry.kind == 'note' && sameDay(entry.at, DateTime.now()),
+  );
+  HabitsState copyWith({
+    List<HabitEntry>? entries,
+    int? waterGoalMl,
+    bool? mobilityDone,
+  }) => HabitsState(
+    entries: entries ?? this.entries,
     waterGoalMl: waterGoalMl ?? this.waterGoalMl,
     mobilityDone: mobilityDone ?? this.mobilityDone,
   );
@@ -25,45 +82,77 @@ class HabitsState {
 
 class HabitsNotifier extends StateNotifier<HabitsState> {
   HabitsNotifier(this._store, {required String ownerId})
-    : _storageKey = ownerScopedKey(ownerId, 'habits_v3_secure'),
+    : _key = ownerScopedKey(ownerId, 'habits_v4_secure'),
       super(const HabitsState()) {
     _restore();
   }
   final SecureOwnerStore _store;
-  final String _storageKey;
-
+  final String _key;
   Future<void> _restore() async {
-    final encoded = await _store.read(_storageKey);
-    if (encoded == null || encoded.isEmpty) return;
+    final raw =
+        await _store.read(_key) ??
+        await _store.read(_key.replaceFirst('v4', 'v3'));
+    if (raw == null || raw.isEmpty) return;
     try {
-      final saved = jsonDecode(encoded) as Map<String, dynamic>;
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      final entries = (map['entries'] as List<dynamic>? ?? const [])
+          .map(HabitEntry.fromJson)
+          .whereType<HabitEntry>()
+          .toList();
+      if (entries.isEmpty) {
+        for (final milliliters
+            in map['waterRecords'] as List<dynamic>? ?? const []) {
+          if (milliliters is int && milliliters > 0) {
+            entries.add(
+              HabitEntry(kind: 'water', value: milliliters, at: DateTime.now()),
+            );
+          }
+        }
+      }
       if (mounted) {
         state = HabitsState(
-          waterRecords: (saved['waterRecords'] as List<dynamic>?)?.whereType<int>().toList(growable: false) ?? [if ((saved['waterMl'] as int? ?? 0) > 0) saved['waterMl'] as int],
-          waterGoalMl: saved['waterGoalMl'] as int? ?? 2000,
-          mobilityDone: saved['mobilityDone'] as bool? ?? false,
+          entries: entries,
+          waterGoalMl: map['waterGoalMl'] as int? ?? 2000,
+          mobilityDone: map['mobilityDone'] as bool? ?? false,
         );
       }
     } on FormatException {
-      // Ignore only corrupt local cache; never infer an owner for old data.
+      /* Leave unreadable owner-scoped cache untouched. */
     }
   }
 
-  void addWater([int volumeMl = 250]) {
-    if (volumeMl <= 0 || volumeMl > 2000) return;
-    state = state.copyWith(waterRecords: [...state.waterRecords, volumeMl]);
-    unawaited(_save());
+  void addWater([int ml = 250]) {
+    if (ml < 1 || ml > 2000) return;
+    _append(HabitEntry(kind: 'water', value: ml, at: DateTime.now()));
   }
 
-  void removeLastWater() {
-    if (state.waterRecords.isEmpty) return;
-    state = state.copyWith(waterRecords: state.waterRecords.sublist(0, state.waterRecords.length - 1));
-    unawaited(_save());
+  void addActivity(String name, int minutes, String notes) {
+    if (name.trim().isEmpty || minutes < 1 || minutes > 1440) return;
+    _append(
+      HabitEntry(
+        kind: 'activity',
+        value: minutes,
+        at: DateTime.now(),
+        detail: '${name.trim()}\n${notes.trim()}',
+      ),
+    );
   }
 
-  void setWaterGoal(int volumeMl) {
-    if (volumeMl < 250 || volumeMl > 10000) return;
-    state = state.copyWith(waterGoalMl: volumeMl);
+  void addNote(String note) {
+    if (note.trim().isEmpty || note.trim().length > 2000) return;
+    _append(
+      HabitEntry(
+        kind: 'note',
+        value: 1,
+        at: DateTime.now(),
+        detail: note.trim(),
+      ),
+    );
+  }
+
+  void setWaterGoal(int ml) {
+    if (ml < 250 || ml > 10000) return;
+    state = state.copyWith(waterGoalMl: ml);
     unawaited(_save());
   }
 
@@ -72,9 +161,18 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
     unawaited(_save());
   }
 
+  void _append(HabitEntry item) {
+    state = state.copyWith(entries: [...state.entries, item]);
+    unawaited(_save());
+  }
+
   Future<void> _save() => _store.write(
-    _storageKey,
-    jsonEncode({'waterRecords': state.waterRecords, 'waterGoalMl': state.waterGoalMl, 'mobilityDone': state.mobilityDone}),
+    _key,
+    jsonEncode({
+      'entries': state.entries.map((entry) => entry.toJson()).toList(),
+      'waterGoalMl': state.waterGoalMl,
+      'mobilityDone': state.mobilityDone,
+    }),
   );
 }
 
@@ -90,7 +188,7 @@ class HabitsPage extends ConsumerWidget {
   const HabitsPage({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final habits = ref.watch(habitsProvider);
+    final state = ref.watch(habitsProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Hábitos e hidratação')),
       drawer: const AppDrawer(),
@@ -101,50 +199,72 @@ class HabitsPage extends ConsumerWidget {
             'Registre o que fez hoje, no seu ritmo.',
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Card(
             child: ListTile(
               leading: const Icon(Icons.water_drop_outlined),
               title: const Text('Hidratação'),
-              subtitle: Text('${habits.waterMl} ml de ${habits.waterGoalMl} ml hoje'),
+              subtitle: Text(
+                '${state.waterMl} ml de ${state.waterGoalMl} ml hoje',
+              ),
               trailing: IconButton(
-                tooltip: 'Ajustar meta',
-                onPressed: () => _changeWaterGoal(context, ref, habits.waterGoalMl),
                 icon: const Icon(Icons.tune_outlined),
+                tooltip: 'Ajustar meta',
+                onPressed: () => _waterGoal(context, ref, state.waterGoalMl),
               ),
             ),
           ),
           Wrap(
             spacing: 8,
             children: [150, 200, 250, 300, 500]
-                .map((amount) => OutlinedButton(
-                  onPressed: () => ref.read(habitsProvider.notifier).addWater(amount),
-                  child: Text('+$amount ml'),
-                ))
-                .toList(growable: false),
+                .map(
+                  (ml) => OutlinedButton(
+                    onPressed: () =>
+                        ref.read(habitsProvider.notifier).addWater(ml),
+                    child: Text('+$ml ml'),
+                  ),
+                )
+                .toList(),
           ),
-          if (habits.waterRecords.isNotEmpty)
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () => ref.read(habitsProvider.notifier).removeLastWater(),
-                icon: const Icon(Icons.undo_outlined),
-                label: Text('Desfazer +${habits.waterRecords.last} ml'),
-              ),
-            ),
           Card(
             child: SwitchListTile(
               secondary: const Icon(Icons.self_improvement_outlined),
               title: const Text('Mobilidade'),
               subtitle: const Text('Marque quando concluir sua prática.'),
-              value: habits.mobilityDone,
+              value: state.mobilityDone,
               onChanged: ref.read(habitsProvider.notifier).setMobility,
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.directions_run_outlined),
+              title: const Text('Atividade'),
+              subtitle: Text(
+                state.hasActivityToday
+                    ? 'Atividade registrada hoje'
+                    : 'Registre duração e observações.',
+              ),
+              trailing: const Icon(Icons.add),
+              onTap: () => _activity(context, ref),
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.note_alt_outlined),
+              title: const Text('Anotação do dia'),
+              subtitle: Text(
+                state.hasNoteToday
+                    ? 'Anotação registrada hoje'
+                    : 'Registre algo que queira lembrar.',
+              ),
+              trailing: const Icon(Icons.add),
+              onTap: () => _note(context, ref),
             ),
           ),
           const Padding(
             padding: EdgeInsets.only(top: 12),
             child: Text(
-              'Registros locais são preservados neste aparelho. A sincronização segura será disponibilizada depois da configuração da conta.',
+              'Atividades e anotações ficam protegidas neste aparelho. Elas não são enviadas ao Coach automaticamente.',
             ),
           ),
         ],
@@ -152,25 +272,94 @@ class HabitsPage extends ConsumerWidget {
     );
   }
 
-  Future<void> _changeWaterGoal(BuildContext context, WidgetRef ref, int goal) async {
-    final controller = TextEditingController(text: goal.toString());
-    final result = await showDialog<int>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Meta diária de água'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Volume em ml'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(dialogContext, int.tryParse(controller.text)), child: const Text('Salvar')),
-        ],
+  Future<void> _waterGoal(
+    BuildContext context,
+    WidgetRef ref,
+    int value,
+  ) async {
+    final text = TextEditingController(text: '$value');
+    final result = await _dialog(context, 'Meta diária de água', [
+      TextField(
+        controller: text,
+        keyboardType: TextInputType.number,
+        decoration: const InputDecoration(labelText: 'Volume em ml'),
       ),
-    );
-    controller.dispose();
-    if (result == null || result < 250 || result > 10000) return;
-    ref.read(habitsProvider.notifier).setWaterGoal(result);
+    ]);
+    if (result) {
+      ref
+          .read(habitsProvider.notifier)
+          .setWaterGoal(int.tryParse(text.text) ?? 0);
+    }
+    text.dispose();
   }
+
+  Future<void> _activity(BuildContext context, WidgetRef ref) async {
+    final name = TextEditingController(text: 'Caminhada');
+    final minutes = TextEditingController();
+    final note = TextEditingController();
+    final result = await _dialog(context, 'Registrar atividade', [
+      TextField(
+        controller: name,
+        decoration: const InputDecoration(labelText: 'Atividade'),
+      ),
+      TextField(
+        controller: minutes,
+        keyboardType: TextInputType.number,
+        decoration: const InputDecoration(labelText: 'Duração em minutos'),
+      ),
+      TextField(
+        controller: note,
+        maxLines: 2,
+        decoration: const InputDecoration(labelText: 'Observação opcional'),
+      ),
+    ]);
+    if (result) {
+      ref
+          .read(habitsProvider.notifier)
+          .addActivity(name.text, int.tryParse(minutes.text) ?? 0, note.text);
+    }
+    name.dispose();
+    minutes.dispose();
+    note.dispose();
+  }
+
+  Future<void> _note(BuildContext context, WidgetRef ref) async {
+    final text = TextEditingController();
+    final result = await _dialog(context, 'Anotação do dia', [
+      TextField(
+        controller: text,
+        maxLines: 4,
+        maxLength: 2000,
+        decoration: const InputDecoration(labelText: 'Texto privado'),
+      ),
+    ]);
+    if (result) {
+      ref.read(habitsProvider.notifier).addNote(text.text);
+    }
+    text.dispose();
+  }
+
+  Future<bool> _dialog(
+    BuildContext context,
+    String title,
+    List<Widget> fields,
+  ) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          title: Text(title),
+          content: Column(mainAxisSize: MainAxisSize.min, children: fields),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialog, true),
+              child: const Text('Salvar'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
 }
