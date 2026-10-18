@@ -14,3 +14,17 @@ A regressão de rotas privadas e dados por conta permanece pendente de testes au
 Evidência executada: `dotnet build backend/VeroEqulibraFit.Api/VeroEqulibraFit.Api.csproj --no-restore -m:1 -v:minimal` passou com 0 avisos/0 erros; análise Dart direcionada passou sem problemas; 8 testes Flutter locais passaram. Nenhuma dessas evidências substitui a homologação com Render/Gemini/SMTP.
 
 APK debug recompilado em 17/10/2026 às 17:51 BRT com SHA-256 `77C1C3D3F627304FC8129D8E65EF016FCED60D2B3E7CE636EF18C6DB3B57A816` e instalado com êxito em `emulator-5554`. A inspeção do APK confirmou que os vídeos são empacotados sob `assets/flutter_assets/assets/videos/`; a reprodução no emulador ainda requer reteste após a instalação e diagnóstico de codec se falhar novamente.
+
+## Regressão local — 18/10/2026
+
+| Verificação | Resultado | Evidência |
+| --- | --- | --- |
+| Blazor Admin | APROVADO localmente | `dotnet build admin/VeroEqulibraFit.Admin/VeroEqulibraFit.Admin.csproj --no-restore -m:1 -v:minimal`: 0 avisos e 0 erros. |
+| API .NET | APROVADO localmente | `dotnet test tests/VeroEqulibraFit.Api.Tests/VeroEqulibraFit.Api.Tests.csproj --no-restore -m:1 -v:minimal`: 9/9 testes aprovados. |
+| Flutter | APROVADO localmente | `flutter test`: 16/16 testes aprovados. Inclui isolamento por conta, outbox cifrada, tombstones, refeição e scanner. |
+| FastAPI/Gemini | APROVADO localmente | Ambiente virtual recriado a partir de `pyproject.toml`; `pytest -q`: 9/9 aprovados; `ruff check .`: sem achados. Há um aviso externo de depreciação do Starlette/AnyIO. |
+| Login administrativo integrado | NÃO TESTADO | Requer uma conta com papel `Administrator` no ambiente isolado e teste contra a API publicada. |
+| Dois dispositivos independentes | NÃO TESTADO | Roteiro em `docs/TESTE_DOIS_DISPOSITIVOS.md`; não foi executado nesta estação. |
+| Fotos de evolução | REPROVADO | Não há armazenamento de imagem com consentimento, retenção, exclusão e criptografia adequados. Não foi implementado um atalho inseguro. |
+
+O ambiente Python anterior apresentava binário incompatível do `pydantic_core`; foi preservado como ambiente local ignorado e substituído por `.venv` recriado. Isso não alterou código nem serviços remotos.

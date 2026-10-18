@@ -15,7 +15,7 @@
 | Administração Blazor | REPROVADO | Shell sem autenticação e sem operações previstas. |
 | Neon | PARCIAL | Health/migrations relatados; a API não possui sincronização push/pull e os fluxos funcionais não foram testados. |
 | APK atualizado/instalado | PARCIAL | APK debug atualizado foi compilado e instalado no emulador em 17/10/2026. Falta roteiro funcional completo no dispositivo. |
-| MVP | REPROVADO | Há bloqueios P0/P1/P2 acima. |
+| MVP | REPROVADO | Há pendências de Blazor operacional completo, fotos de evolução e validação em dois dispositivos. |
 
 ## Atualização de aceite manual — 18/10/2026
 
