@@ -42,6 +42,28 @@ class OfflineOperationQueue implements SyncOperationQueue {
   }
 
   @override
+  Future<void> replacePayload({
+    required String idempotencyKey,
+    required String payloadJson,
+  }) async {
+    await _isar.writeTxn(() async {
+      final operation = await _isar.pendingOperations
+          .filter()
+          .idempotencyKeyEqualTo(idempotencyKey)
+          .findFirst();
+      if (operation == null ||
+          operation.status != OfflineOperationStatus.pending.name) {
+        return;
+      }
+      operation.payloadJson = payloadJson;
+      operation.updatedAt = DateTime.now().toUtc();
+      operation.nextRetryAt = null;
+      operation.lastErrorCode = null;
+      await _isar.pendingOperations.put(operation);
+    });
+  }
+
+  @override
   Future<List<PendingOperation>> due({
     required String ownerId,
     int limit = 50,
@@ -63,6 +85,16 @@ class OfflineOperationQueue implements SyncOperationQueue {
         .take(limit)
         .toList(growable: false);
   }
+
+  @override
+  Future<List<PendingOperation>> conflicts({required String ownerId}) => _isar
+      .pendingOperations
+      .filter()
+      .ownerIdEqualTo(ownerId)
+      .and()
+      .statusEqualTo(OfflineOperationStatus.conflict.name)
+      .sortByUpdatedAtDesc()
+      .findAll();
 
   @override
   Future<void> markProcessing(int id) =>

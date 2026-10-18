@@ -115,3 +115,11 @@ Evidência: `flutter test test/secure_operation_queue_test.dart` aprovou 5 teste
 O contrato de `pull` passou a devolver cursor também na última página, acompanhado de `hasMore`. Assim o dispositivo grava a posição confirmada depois de receber a revisão gerada pelo servidor no `push`, evitando aplicar repetidamente a mesma alteração. A página de Perfil consulta a outbox cifrada e informa conflitos pendentes; a alteração local não é removida nem enviada novamente de forma silenciosa.
 
 Ainda não há tela para comparar campo a campo ou escolher manualmente uma versão. Hábitos, medidas, exercícios personalizados, sessões e planos alimentares ainda não integram `pull/push`. A compilação .NET desta rodada excedeu o limite local antes de concluir e não é considerada evidência de aprovação.
+
+## Exercícios personalizados e Neon isolado — 18/10/2026
+
+Exercícios personalizados agora possuem UUID estável, proprietário, revisão, data de alteração e tombstone. Criar, editar e excluir gera operações cifradas `custom-exercise.create`, `custom-exercise.update` e `custom-exercise.delete`; o `pull` aplica alterações remotas no catálogo local sem substituir uma revisão mais recente. A edição está disponível por pressão longa no exercício personalizado na biblioteca.
+
+Foi criada a branch Neon isolada `homologation-sync-20261018` (`br-shiny-cell-b6l5vebk`), derivada de `production`. Nela, e somente nela, foram aplicadas as migrations `20261018030504_AddSyncRecordVersions` e `20261018033335_AddCustomExerciseSync` em uma transação. A verificação posterior confirmou duas entradas no histórico de migrations, as colunas de revisão em `training_plans` e `meal_entries`, e a tabela `custom_exercises`.
+
+Esta é evidência de schema em ambiente isolado, não de sincronização ponta a ponta: o Render continua configurado para o banco de produção e não existe uma instância de API de homologação apontada à branch isolada. Também não há ADB instalado/disponível nesta estação, portanto o ensaio com dois emuladores ou dispositivos não foi executado. Sessões, hábitos, medidas, planos alimentares e a comparação manual de conflitos continuam pendentes. Estado do lote: **PARCIAL — NÃO HOMOLOGADO**.

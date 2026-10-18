@@ -7,11 +7,8 @@ import '../../../core/persistence/secure_owner_store.dart';
 import '../domain/body_measurement.dart';
 
 class MeasurementsRepository {
-  MeasurementsRepository({
-    required String ownerId,
-    required SecureOwnerStore store,
-  }) : _store = store,
-       _storageKey = ownerScopedKey(ownerId, 'body_measurements_v2_secure');
+  MeasurementsRepository({required String ownerId, required this._store})
+    : _storageKey = ownerScopedKey(ownerId, 'body_measurements_v2_secure');
   final String _storageKey;
   final SecureOwnerStore _store;
   final List<BodyMeasurement> _items = [];
