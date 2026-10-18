@@ -144,6 +144,73 @@ namespace VeroEqulibraFit.Infrastructure.Data.Migrations
                     b.ToTable("user_tokens", (string)null);
                 });
 
+            modelBuilder.Entity("VeroEqulibraFit.Domain.Nutrition.FoodProduct", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Brand")
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
+
+                    b.Property<decimal?>("Calories")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("CarbohydrateGrams")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("FatGrams")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("FiberGrams")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("Gtin")
+                        .IsRequired()
+                        .HasMaxLength(14)
+                        .HasColumnType("character varying(14)");
+
+                    b.Property<bool>("IsApprovedCatalogItem")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(240)
+                        .HasColumnType("character varying(240)");
+
+                    b.Property<Guid?>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("ProteinGrams")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("ReferenceQuantity")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("ReferenceUnit")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Gtin", "IsApprovedCatalogItem");
+
+                    b.HasIndex("OwnerId", "Gtin")
+                        .IsUnique();
+
+                    b.ToTable("food_products", (string)null);
+                });
+
             modelBuilder.Entity("VeroEqulibraFit.Domain.Nutrition.MealEntry", b =>
                 {
                     b.Property<Guid>("Id")

@@ -28,3 +28,23 @@ public sealed class NutritionPlan
     public DateTimeOffset? ArchivedAt { get; set; }
     public DateTimeOffset? DeletedAt { get; set; }
 }
+
+/// <summary>Nutrition data supplied by an authorized catalog source or its owner.</summary>
+public sealed class FoodProduct
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid? OwnerId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Brand { get; set; }
+    public string Gtin { get; set; } = string.Empty;
+    public decimal ReferenceQuantity { get; set; }
+    public string ReferenceUnit { get; set; } = "g";
+    public decimal? Calories { get; set; }
+    public decimal? ProteinGrams { get; set; }
+    public decimal? CarbohydrateGrams { get; set; }
+    public decimal? FatGrams { get; set; }
+    public decimal? FiberGrams { get; set; }
+    public string Source { get; set; } = string.Empty;
+    public bool IsApprovedCatalogItem { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+}

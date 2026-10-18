@@ -16,6 +16,7 @@ public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbC
     public DbSet<SyncOperation> SyncOperations => Set<SyncOperation>();
     public DbSet<MealEntry> MealEntries => Set<MealEntry>();
     public DbSet<NutritionPlan> NutritionPlans => Set<NutritionPlan>();
+    public DbSet<FoodProduct> FoodProducts => Set<FoodProduct>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -104,6 +105,17 @@ public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbC
             entity.Property(plan => plan.ContentJson).HasColumnType("jsonb").IsRequired();
             entity.HasIndex(plan => new { plan.OwnerId, plan.DeletedAt });
             entity.HasQueryFilter(plan => plan.DeletedAt == null);
+        });
+        modelBuilder.Entity<FoodProduct>(entity =>
+        {
+            entity.ToTable("food_products");
+            entity.Property(product => product.Name).HasMaxLength(240).IsRequired();
+            entity.Property(product => product.Brand).HasMaxLength(160);
+            entity.Property(product => product.Gtin).HasMaxLength(14).IsRequired();
+            entity.Property(product => product.ReferenceUnit).HasMaxLength(24).IsRequired();
+            entity.Property(product => product.Source).HasMaxLength(160).IsRequired();
+            entity.HasIndex(product => new { product.Gtin, product.IsApprovedCatalogItem });
+            entity.HasIndex(product => new { product.OwnerId, product.Gtin }).IsUnique();
         });
     }
 }
