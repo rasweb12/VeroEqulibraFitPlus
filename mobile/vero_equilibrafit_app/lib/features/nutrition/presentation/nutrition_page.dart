@@ -41,6 +41,11 @@ class NutritionPage extends ConsumerWidget {
             onPressed: () => context.go('/nutrition/goals'),
             icon: const Icon(Icons.track_changes_outlined),
           ),
+          IconButton(
+            tooltip: 'Ler código de barras',
+            onPressed: () => context.go('/nutrition/barcode'),
+            icon: const Icon(Icons.qr_code_scanner_outlined),
+          ),
         ],
       ),
       drawer: const AppDrawer(),

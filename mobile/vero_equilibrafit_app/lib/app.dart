@@ -22,6 +22,7 @@ import 'features/auth/presentation/confirm_email_page.dart';
 import 'features/nutrition/presentation/nutrition_plans_page.dart';
 import 'features/nutrition/presentation/nutrition_providers.dart';
 import 'features/nutrition/presentation/nutrition_goals_page.dart';
+import 'features/nutrition/presentation/barcode_scanner_page.dart';
 import 'features/profile/presentation/profile_page.dart';
 import 'core/offline/sync_providers.dart';
 
@@ -179,6 +180,7 @@ class VeroEqulibraFitApp extends ConsumerWidget {
       builder: (context, state) => const NutritionPlansPage(),
     ),
     GoRoute(path: '/nutrition/goals', builder: (context, state) => const NutritionGoalsPage()),
+    GoRoute(path: '/nutrition/barcode', builder: (context, state) => const BarcodeScannerPage()),
     GoRoute(path: '/coach', builder: (context, state) => const CoachPage()),
     GoRoute(path: '/profile', builder: (context, state) => const ProfilePage()),
     GoRoute(

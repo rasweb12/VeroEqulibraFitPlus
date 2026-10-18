@@ -42,6 +42,7 @@ dependencies:
   video_player: ^2.10.0
   flutter_secure_storage: ^10.0.0
   image_picker: ^1.2.4
+  mobile_scanner: ^7.4.2
 
 dependency_overrides:
   # Vendored only to add the Android namespace required by AGP 9.
