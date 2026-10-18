@@ -36,6 +36,18 @@ public sealed class TrainingSession
     public string SnapshotJson { get; set; } = "{}";
 }
 
+public sealed class CustomExercise
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid OwnerId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string PrimaryMuscle { get; set; } = string.Empty;
+    public string Equipment { get; set; } = string.Empty;
+    public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public int Revision { get; set; } = 1;
+    public DateTimeOffset? DeletedAt { get; set; }
+}
+
 public sealed class SyncOperation
 {
     public Guid Id { get; set; } = Guid.NewGuid();

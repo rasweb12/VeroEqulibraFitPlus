@@ -12,6 +12,7 @@ public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbC
     public DbSet<TrainingPlan> TrainingPlans => Set<TrainingPlan>();
     public DbSet<TrainingPlanExercise> TrainingPlanExercises => Set<TrainingPlanExercise>();
     public DbSet<TrainingSession> TrainingSessions => Set<TrainingSession>();
+    public DbSet<CustomExercise> CustomExercises => Set<CustomExercise>();
     public DbSet<SyncOperation> SyncOperations => Set<SyncOperation>();
     public DbSet<MealEntry> MealEntries => Set<MealEntry>();
     public DbSet<NutritionPlan> NutritionPlans => Set<NutritionPlan>();
@@ -66,6 +67,17 @@ public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbC
             entity.ToTable("training_sessions");
             entity.Property(session => session.SnapshotJson).HasColumnType("jsonb").IsRequired();
             entity.HasIndex(session => new { session.OwnerId, session.FinishedAt });
+        });
+        modelBuilder.Entity<CustomExercise>(entity =>
+        {
+            entity.ToTable("custom_exercises");
+            entity.Property(exercise => exercise.Name).HasMaxLength(160).IsRequired();
+            entity.Property(exercise => exercise.PrimaryMuscle).HasMaxLength(80).IsRequired();
+            entity.Property(exercise => exercise.Equipment).HasMaxLength(80).IsRequired();
+            entity.Property(exercise => exercise.Revision).HasDefaultValue(1);
+            entity.Property(exercise => exercise.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.HasIndex(exercise => new { exercise.OwnerId, exercise.UpdatedAt });
+            entity.HasQueryFilter(exercise => exercise.DeletedAt == null);
         });
         modelBuilder.Entity<SyncOperation>(entity =>
         {

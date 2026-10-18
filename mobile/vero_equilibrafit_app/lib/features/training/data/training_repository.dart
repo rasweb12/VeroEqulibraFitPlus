@@ -268,7 +268,7 @@ class TrainingRepository {
     required String equipment,
   }) {
     final exercise = Exercise(
-      id: 'custom-${DateTime.now().microsecondsSinceEpoch}',
+      id: newStableId(),
       name: name.trim(),
       primaryMuscle: primaryMuscle,
       equipment: equipment,
@@ -276,6 +276,7 @@ class TrainingRepository {
     );
     _customExercises.add(exercise);
     unawaited(_save());
+    unawaited(_enqueueCustomExercise(exercise));
     return exercise;
   }
 
@@ -514,6 +515,17 @@ class TrainingRepository {
                 })
             .toList(growable: false),
       }),
+    );
+  }
+
+  Future<void> _enqueueCustomExercise(Exercise exercise) async {
+    final queue = outbox;
+    if (queue == null || !_isUuid(exercise.id)) return;
+    await queue.enqueue(
+      ownerId: ownerId, idempotencyKey: 'custom-exercise-create:${exercise.id}',
+      entityType: 'custom-exercise', entityId: exercise.id,
+      operationType: 'custom-exercise.create', clientVersion: '1.0.0',
+      payloadJson: jsonEncode({'name': exercise.name, 'primaryMuscle': exercise.primaryMuscle, 'equipment': exercise.equipment}),
     );
   }
 

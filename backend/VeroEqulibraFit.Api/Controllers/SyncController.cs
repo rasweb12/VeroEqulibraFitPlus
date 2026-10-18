@@ -100,6 +100,8 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
                 "training-plan.create" when operation.EntityType == "training-plan" => await CreateTrainingPlan(ownerId, operation.EntityId, rawPayload, cancellationToken),
                 "training-plan.update" when operation.EntityType == "training-plan" => await UpdateTrainingPlan(ownerId, operation.EntityId, rawPayload, cancellationToken),
                 "training-plan.delete" when operation.EntityType == "training-plan" => await DeleteTrainingPlan(ownerId, operation.EntityId, cancellationToken),
+                "custom-exercise.create" when operation.EntityType == "custom-exercise" => await CreateCustomExercise(ownerId, operation.EntityId, rawPayload, cancellationToken),
+                "custom-exercise.delete" when operation.EntityType == "custom-exercise" => await DeleteCustomExercise(ownerId, operation.EntityId, cancellationToken),
                 "meal.create" when operation.EntityType == "meal" => await CreateMeal(ownerId, operation.EntityId, rawPayload, cancellationToken),
                 "meal.update" when operation.EntityType == "meal" => await UpdateMeal(ownerId, operation.EntityId, rawPayload, cancellationToken),
                 "meal.delete" when operation.EntityType == "meal" => await DeleteMeal(ownerId, operation.EntityId, cancellationToken),
@@ -201,6 +203,23 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
         return new(string.Empty, "accepted");
     }
 
+    private async Task<SyncPushOperationResponse> CreateCustomExercise(Guid ownerId, Guid entityId, string payload, CancellationToken cancellationToken)
+    {
+        var request = JsonSerializer.Deserialize<CustomExercisePayload>(payload, JsonOptions);
+        if (request is null || string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.PrimaryMuscle) || string.IsNullOrWhiteSpace(request.Equipment)) return new(string.Empty, "rejected", "invalid_custom_exercise");
+        if (await database.CustomExercises.IgnoreQueryFilters().AnyAsync(item => item.Id == entityId, cancellationToken)) return new(string.Empty, "conflict", "entity_already_exists");
+        database.CustomExercises.Add(new CustomExercise { Id = entityId, OwnerId = ownerId, Name = request.Name.Trim(), PrimaryMuscle = request.PrimaryMuscle.Trim(), Equipment = request.Equipment.Trim() });
+        return new(string.Empty, "accepted");
+    }
+
+    private async Task<SyncPushOperationResponse> DeleteCustomExercise(Guid ownerId, Guid entityId, CancellationToken cancellationToken)
+    {
+        var exercise = await database.CustomExercises.IgnoreQueryFilters().SingleOrDefaultAsync(item => item.Id == entityId && item.OwnerId == ownerId, cancellationToken);
+        if (exercise is null) return new(string.Empty, "conflict", "entity_not_found");
+        if (exercise.DeletedAt is null) { exercise.DeletedAt = DateTimeOffset.UtcNow; exercise.UpdatedAt = exercise.DeletedAt.Value; exercise.Revision++; }
+        return new(string.Empty, "accepted");
+    }
+
     private async Task<SyncPushOperationResponse> DeleteTrainingPlan(Guid ownerId, Guid entityId, CancellationToken cancellationToken)
     {
         var plan = await database.TrainingPlans.IgnoreQueryFilters()
@@ -274,5 +293,6 @@ public sealed class SyncController(VeroEqulibraFitDbContext database) : Controll
     }
 
     private sealed record SyncCursor(DateTimeOffset ChangedAt, string EntityType, Guid EntityId);
+    private sealed record CustomExercisePayload(string Name, string PrimaryMuscle, string Equipment);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 }
