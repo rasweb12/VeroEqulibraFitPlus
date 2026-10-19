@@ -480,71 +480,119 @@ class PlansPage extends ConsumerWidget {
   }
 
   Future<void> _createPlan(BuildContext context, WidgetRef ref) async {
-    final name = TextEditingController();
-    final objective = TextEditingController();
+    String name = '';
+    String objective = '';
     final weekdays = <int>{};
-    final create = await showDialog<bool>(
+
+    final result = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Nova ficha de treino'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: name,
-                decoration: const InputDecoration(labelText: 'Nome'),
-              ),
-              TextField(
-                controller: objective,
-                decoration: const InputDecoration(labelText: 'Objetivo'),
-              ),
-              const SizedBox(height: 12),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Dias da semana (opcional)'),
-              ),
-              Wrap(
-                spacing: 6,
-                children: List.generate(
-                  7,
-                  (day) => FilterChip(
-                    label: Text(_weekdayLabel(day)),
-                    selected: weekdays.contains(day),
-                    onSelected: (selected) => setState(
-                      () => selected ? weekdays.add(day) : weekdays.remove(day),
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Nova ficha de treino'),
+
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextFormField(
+                      autofocus: false,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(
+                        labelText: 'Nome da ficha',
+                      ),
+                      onChanged: (value) {
+                        name = value;
+                      },
                     ),
-                  ),
+
+                    const SizedBox(height: 12),
+
+                    TextFormField(
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(labelText: 'Objetivo'),
+                      onChanged: (value) {
+                        objective = value;
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    const Text(
+                      'Dias da semana',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: List.generate(7, (day) {
+                        return FilterChip(
+                          label: Text(_weekdayLabel(day)),
+                          selected: weekdays.contains(day),
+                          onSelected: (selected) {
+                            setDialogState(() {
+                              if (selected) {
+                                weekdays.add(day);
+                              } else {
+                                weekdays.remove(day);
+                              }
+                            });
+                          },
+                        );
+                      }),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Criar'),
-            ),
-          ],
-        ),
-      ),
+
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop(false);
+                  },
+                  child: const Text('Cancelar'),
+                ),
+
+                FilledButton(
+                  onPressed: () {
+                    if (name.trim().isEmpty) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        const SnackBar(
+                          content: Text('Informe o nome da ficha.'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    Navigator.of(dialogContext).pop(true);
+                  },
+                  child: const Text('Criar ficha'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
-    if (create == true && name.text.trim().isNotEmpty && context.mounted) {
-      ref
-          .read(plansProvider.notifier)
-          .create(
-            name: name.text,
-            objective: objective.text.trim().isEmpty
-                ? 'Objetivo a definir'
-                : objective.text,
-            weekdays: weekdays.toList()..sort(),
-          );
+
+    if (result != true || !context.mounted) {
+      return;
     }
-    name.dispose();
-    objective.dispose();
+
+    ref
+        .read(plansProvider.notifier)
+        .create(
+          name: name.trim(),
+          objective: objective.trim().isEmpty
+              ? 'Objetivo a definir'
+              : objective.trim(),
+          weekdays: weekdays.toList()..sort(),
+        );
   }
 
   static String _weekdayLabel(int day) =>
