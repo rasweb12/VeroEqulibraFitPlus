@@ -28,4 +28,4 @@ leitura e não foi importada para o aplicativo.
 
 ## Evidência técnica
 
-`dart analyze` executado em 18/10/2026 após a alteração: sem problemas de análise. O ambiente local ainda informa, após a análise, falha ao atualizar o arquivo de telemetria do Dart fora do repositório; isso não altera o resultado da análise nem o código do projeto.
+`dart analyze` executado em 18/10/2026 após a alteração: sem problemas de análise. `flutter test --reporter compact` executado na mesma data: 16 testes aprovados. O APK Debug atualizado foi instalado no AVD Pixel 7 API 36 e o fluxo Splash → AuthGate → Login foi capturado em `evidence/android-authgate-ready.png`. O ambiente local ainda informa, após a análise, falha ao atualizar o arquivo de telemetria do Dart fora do repositório; isso não altera o resultado da análise nem o código do projeto.
