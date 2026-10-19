@@ -126,6 +126,16 @@ class VeroEqulibraFitApp extends ConsumerWidget {
     GoRoute(path: '/', builder: (context, state) => const DashboardPage()),
     GoRoute(path: '/training', builder: (context, state) => const PlansPage()),
     GoRoute(
+      path: '/training/history',
+      builder: (context, state) => const WorkoutHistoryPage(),
+    ),
+    GoRoute(
+      path: '/training/history/:sessionId',
+      builder: (context, state) => WorkoutHistoryDetailPage(
+        sessionId: state.pathParameters['sessionId']!,
+      ),
+    ),
+    GoRoute(
       path: '/training/:planId/start',
       builder: (context, state) =>
           WorkoutSessionPage(planId: state.pathParameters['planId']!),
@@ -140,16 +150,6 @@ class VeroEqulibraFitApp extends ConsumerWidget {
       builder: (context, state) => TrainingExerciseConfigPage(
         planId: state.pathParameters['planId']!,
         exerciseId: state.pathParameters['exerciseId']!,
-      ),
-    ),
-    GoRoute(
-      path: '/training/history',
-      builder: (context, state) => const WorkoutHistoryPage(),
-    ),
-    GoRoute(
-      path: '/training/history/:sessionId',
-      builder: (context, state) => WorkoutHistoryDetailPage(
-        sessionId: state.pathParameters['sessionId']!,
       ),
     ),
     GoRoute(
@@ -256,11 +256,6 @@ class PlansPage extends ConsumerWidget {
             onPressed: () => context.go('/exercises'),
             icon: const Icon(Icons.fitness_center),
           ),
-          IconButton(
-            tooltip: 'Histórico de treinos',
-            icon: const Icon(Icons.history_rounded),
-            onPressed: () => context.go('/training/history'),
-          ),
         ],
       ),
       floatingActionButton: showingArchived
@@ -286,6 +281,15 @@ class PlansPage extends ConsumerWidget {
               style: TextStyle(color: VeroColors.muted),
             ),
             const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => context.go('/training/history'),
+                icon: const Icon(Icons.history_rounded),
+                label: const Text('Histórico de treinos'),
+              ),
+            ),
+            const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
