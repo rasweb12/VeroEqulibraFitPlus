@@ -26,6 +26,7 @@ import 'features/nutrition/presentation/nutrition_providers.dart';
 import 'features/nutrition/presentation/nutrition_goals_page.dart';
 import 'features/nutrition/presentation/barcode_scanner_page.dart';
 import 'features/profile/presentation/profile_page.dart';
+import 'features/training/domain/training_plan.dart';
 import 'core/offline/sync_providers.dart';
 import 'shared/presentation/vero_design.dart';
 
@@ -358,6 +359,16 @@ class PlansPage extends ConsumerWidget {
                                         value: 'delete',
                                         child: Text('Excluir ficha'),
                                       ),
+                                      const PopupMenuItem(
+                                        value: 'edit',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.edit_outlined, size: 20),
+                                            SizedBox(width: 10),
+                                            Text('Editar ficha'),
+                                          ],
+                                        ),
+                                      ),
                                     ] else
                                       const PopupMenuItem(
                                         value: 'unarchive',
@@ -429,6 +440,17 @@ class PlansPage extends ConsumerWidget {
     String action,
   ) async {
     final controller = ref.read(plansProvider.notifier);
+    if (action == 'edit') {
+      final plan = ref
+          .read(plansProvider)
+          .where((item) => item.id == id)
+          .firstOrNull;
+
+      if (plan != null) {
+        await _editPlan(context, ref, plan);
+      }
+      return;
+    }
     if (action == 'duplicate') {
       controller.duplicate(id);
       return;
@@ -477,6 +499,149 @@ class PlansPage extends ConsumerWidget {
           ),
         );
     }
+  }
+
+  Future<void> _editPlan(
+    BuildContext context,
+    WidgetRef ref,
+    TrainingPlan plan,
+  ) async {
+    String name = plan.name;
+    String objective = plan.objective;
+    final weekdays = plan.weekdays.toSet();
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Editar ficha de treino'),
+
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextFormField(
+                      initialValue: plan.name,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(
+                        labelText: 'Nome da ficha',
+                      ),
+                      onChanged: (value) {
+                        name = value;
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    TextFormField(
+                      initialValue: plan.objective,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(labelText: 'Objetivo'),
+                      onChanged: (value) {
+                        objective = value;
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    const Text(
+                      'Dias da semana',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: List.generate(7, (day) {
+                        return FilterChip(
+                          label: Text(_weekdayLabel(day)),
+                          selected: weekdays.contains(day),
+                          onSelected: (selected) {
+                            setDialogState(() {
+                              if (selected) {
+                                weekdays.add(day);
+                              } else {
+                                weekdays.remove(day);
+                              }
+                            });
+                          },
+                        );
+                      }),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    Text(
+                      '${plan.exercises.length} exercícios '
+                      'serão preservados.',
+                      style: const TextStyle(
+                        color: VeroColors.muted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop(false);
+                  },
+                  child: const Text('Cancelar'),
+                ),
+
+                FilledButton.icon(
+                  onPressed: () {
+                    if (name.trim().isEmpty) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        const SnackBar(
+                          content: Text('Informe o nome da ficha.'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    Navigator.of(dialogContext).pop(true);
+                  },
+                  icon: const Icon(Icons.save_outlined),
+                  label: const Text('Salvar alterações'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result != true || !context.mounted) {
+      return;
+    }
+
+    ref
+        .read(plansProvider.notifier)
+        .updatePlanDetails(
+          id: plan.id,
+          name: name,
+          objective: objective,
+          weekdays: weekdays.toList()..sort(),
+        );
+
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Ficha atualizada com sucesso.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
   }
 
   Future<void> _createPlan(BuildContext context, WidgetRef ref) async {

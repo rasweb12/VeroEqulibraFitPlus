@@ -252,6 +252,51 @@ class TrainingRepository {
     return plan;
   }
 
+  void updatePlanDetails({
+    required String id,
+    required String name,
+    required String objective,
+    required List<int> weekdays,
+  }) {
+    final index = _plans.indexWhere(
+      (plan) => plan.id == id && !plan.isDeleted && !plan.isArchived,
+    );
+
+    if (index < 0) {
+      developer.log(
+        'UPDATE FAILED: ficha não encontrada ou inativa: $id',
+        name: 'TrainingRepository',
+      );
+      return;
+    }
+
+    final sanitizedName = name.trim();
+    if (sanitizedName.isEmpty) {
+      return;
+    }
+
+    final sanitizedWeekdays =
+        weekdays.where((day) => day >= 0 && day <= 6).toSet().toList()..sort();
+
+    final current = _plans[index];
+
+    final updated = current.copyWith(
+      name: sanitizedName,
+      objective: objective.trim().isEmpty
+          ? 'Objetivo a definir'
+          : objective.trim(),
+      weekdays: sanitizedWeekdays,
+      updatedAt: DateTime.now().toUtc(),
+    );
+
+    _plans[index] = updated;
+
+    unawaited(_save());
+    unawaited(_enqueueUpdate(updated));
+
+    developer.log('UPDATE OK: ficha=$id', name: 'TrainingRepository');
+  }
+
   TrainingPlan? planById(String id) {
     for (final plan in _plans) {
       if (plan.id == id && !plan.isDeleted) return plan;

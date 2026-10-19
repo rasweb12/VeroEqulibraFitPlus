@@ -86,6 +86,22 @@ class PlansController extends StateNotifier<List<TrainingPlan>> {
     _repository.updatePlannedExercise(planId, exercise);
     state = _repository.activePlans();
   }
+
+  void updatePlanDetails({
+    required String id,
+    required String name,
+    required String objective,
+    required List<int> weekdays,
+  }) {
+    _repository.updatePlanDetails(
+      id: id,
+      name: name,
+      objective: objective,
+      weekdays: weekdays,
+    );
+
+    state = List<TrainingPlan>.of(_repository.activePlans());
+  }
 }
 
 final exerciseSearchProvider = StateProvider<String>((ref) => '');
