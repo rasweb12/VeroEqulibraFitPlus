@@ -28,6 +28,8 @@ import 'features/nutrition/presentation/barcode_scanner_page.dart';
 import 'features/profile/presentation/profile_page.dart';
 import 'features/training/domain/training_plan.dart';
 import 'features/training/presentation/workout_session_page.dart';
+import 'features/training/presentation/workout_history_page.dart';
+import 'features/training/presentation/workout_history_detail_page.dart';
 import 'core/offline/sync_providers.dart';
 import 'shared/presentation/vero_design.dart';
 
@@ -141,6 +143,16 @@ class VeroEqulibraFitApp extends ConsumerWidget {
       ),
     ),
     GoRoute(
+      path: '/training/history',
+      builder: (context, state) => const WorkoutHistoryPage(),
+    ),
+    GoRoute(
+      path: '/training/history/:sessionId',
+      builder: (context, state) => WorkoutHistoryDetailPage(
+        sessionId: state.pathParameters['sessionId']!,
+      ),
+    ),
+    GoRoute(
       path: '/exercises',
       builder: (context, state) => const ExerciseLibraryPage(),
     ),
@@ -243,6 +255,11 @@ class PlansPage extends ConsumerWidget {
             tooltip: 'Biblioteca de exercícios',
             onPressed: () => context.go('/exercises'),
             icon: const Icon(Icons.fitness_center),
+          ),
+          IconButton(
+            tooltip: 'Histórico de treinos',
+            icon: const Icon(Icons.history_rounded),
+            onPressed: () => context.go('/training/history'),
           ),
         ],
       ),
