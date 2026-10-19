@@ -38,7 +38,22 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
     Future.microtask(_initialize);
   }
 
+  // Vero 7.6.5D.3A - recuperacao de abertura
+  Future<void> _retryOpen() async {
+    if (_session != null || _busy) return;
+    // A tentativa anterior pode ter deixado um Future de load com erro
+    // em cache. Recrear os repositories somente antes de abrir a sessao.
+    ref.invalidate(trainingRepositoryProvider);
+    ref.invalidate(workoutSessionRepositoryProvider);
+    await _initialize();
+  }
+
   Future<void> _initialize() async {
+    if (!mounted || _session != null || _busy) return;
+    setState(() {
+      _error = null;
+      _busy = true;
+    });
     try {
       final training = ref.read(trainingRepositoryProvider);
       await training.load();
@@ -60,6 +75,8 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
       setState(() => _session = session);
     } catch (error) {
       if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -248,9 +265,33 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
         ),
         body: _error != null
             ? Center(
-                child: Padding(
+                child: SingleChildScrollView(
                   padding: const EdgeInsets.all(24),
-                  child: Text(_error!, textAlign: TextAlign.center),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.error_outline, size: 42),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Nao foi possivel abrir o treino',
+                        style: Theme.of(context).textTheme.titleLarge,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(_error!, textAlign: TextAlign.center),
+                      const SizedBox(height: 18),
+                      FilledButton.icon(
+                        onPressed: _busy ? null : _retryOpen,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Tentar novamente'),
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: _busy ? null : () => context.go('/training'),
+                        child: const Text('Voltar aos treinos'),
+                      ),
+                    ],
+                  ),
                 ),
               )
             : session == null

@@ -24,7 +24,17 @@ class WorkoutSessionRepository {
   Future<void>? _loadFuture;
   Future<void> _pendingSave = Future<void>.value();
 
-  Future<void> load() => _loadFuture ??= _loadFromStore();
+  // Uma falha transitoria permite nova leitura sem apagar as sessoes.
+  Future<void> load() => _loadFuture ??= _loadRecoverable();
+
+  Future<void> _loadRecoverable() async {
+    try {
+      await _loadFromStore();
+    } catch (_) {
+      _loadFuture = null;
+      rethrow;
+    }
+  }
 
   Future<void> _loadFromStore() async {
     final encoded = await store.read(_storageKey);

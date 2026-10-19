@@ -22,6 +22,13 @@ class _WorkoutHistoryPageState extends ConsumerState<WorkoutHistoryPage> {
     _load = ref.read(workoutSessionRepositoryProvider).load();
   }
 
+  // VERO_765D3B_RECOVERY — estado de leitura e recuperação.
+  void _retryLoad() {
+    setState(() {
+      _load = ref.read(workoutSessionRepositoryProvider).load();
+    });
+  }
+
   String _date(BuildContext context, DateTime value) {
     final local = value.toLocal();
     return MaterialLocalizations.of(context).formatMediumDate(local);
@@ -58,8 +65,32 @@ class _WorkoutHistoryPageState extends ConsumerState<WorkoutHistoryPage> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text(
-                  'Não foi possível carregar o histórico: ${snapshot.error}',
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline, size: 44),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Não foi possível carregar o histórico.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Seus registros não foram alterados. Tente novamente.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: _retryLoad,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Tentar novamente'),
+                    ),
+                    TextButton(
+                      onPressed: () => context.go('/training'),
+                      child: const Text('Voltar aos treinos'),
+                    ),
+                  ],
                 ),
               ),
             );
@@ -132,17 +163,42 @@ class _WorkoutHistoryPageState extends ConsumerState<WorkoutHistoryPage> {
               ),
               const SizedBox(height: 12),
               if (filtered.isEmpty)
-                const Card(
+                Card(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 32,
+                      horizontal: 20,
+                    ),
                     child: Column(
                       children: [
-                        Icon(Icons.event_note_outlined, size: 42),
-                        SizedBox(height: 12),
+                        const Icon(Icons.event_note_outlined, size: 42),
+                        const SizedBox(height: 12),
                         Text(
-                          'Nenhum treino finalizado neste período.',
+                          sessions.isEmpty
+                              ? 'Você ainda não finalizou nenhum treino.'
+                              : 'Nenhum treino encontrado neste período.',
                           textAlign: TextAlign.center,
                         ),
+                        const SizedBox(height: 8),
+                        Text(
+                          sessions.isEmpty
+                              ? 'Comece uma ficha e finalize uma sessão para acompanhar seus resultados.'
+                              : 'Altere o período para consultar suas sessões anteriores.',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        if (sessions.isEmpty)
+                          FilledButton.icon(
+                            onPressed: () => context.go('/training'),
+                            icon: const Icon(Icons.fitness_center),
+                            label: const Text('Ver meus treinos'),
+                          )
+                        else
+                          OutlinedButton.icon(
+                            onPressed: () => setState(() => _periodDays = 0),
+                            icon: const Icon(Icons.filter_alt_off_outlined),
+                            label: const Text('Ver todo o histórico'),
+                          ),
                       ],
                     ),
                   ),
