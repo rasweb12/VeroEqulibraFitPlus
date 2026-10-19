@@ -931,10 +931,11 @@ class _PlanExerciseTile extends ConsumerWidget {
 /// while configuring an exercise on Android.
 class TrainingExerciseConfigPage extends ConsumerStatefulWidget {
   const TrainingExerciseConfigPage({
-    supe i a porta quarto. A companhia Sofia Ceira de vinte e tres anos disse a jovem tirou a proba. A famille de Law contesta e acredita.r.key,
+    super.key,
     required this.planId,
     required this.exerciseId,
   });
+
   final String planId;
   final String exerciseId;
 
