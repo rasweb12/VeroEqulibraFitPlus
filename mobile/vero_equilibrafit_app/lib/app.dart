@@ -29,6 +29,7 @@ import 'features/profile/presentation/profile_page.dart';
 import 'features/training/domain/training_plan.dart';
 import 'features/training/presentation/workout_session_page.dart';
 import 'features/training/presentation/workout_history_page.dart';
+import 'features/training/presentation/training_progress_page.dart';
 import 'features/training/presentation/workout_history_detail_page.dart';
 import 'core/offline/sync_providers.dart';
 import 'shared/presentation/vero_design.dart';
@@ -125,6 +126,10 @@ class VeroEqulibraFitApp extends ConsumerWidget {
   static final _privateRoutes = <RouteBase>[
     GoRoute(path: '/', builder: (context, state) => const DashboardPage()),
     GoRoute(path: '/training', builder: (context, state) => const PlansPage()),
+    GoRoute(
+      path: '/training/progress',
+      builder: (context, state) => const TrainingProgressPage(),
+    ),
     GoRoute(
       path: '/training/history',
       builder: (context, state) => const WorkoutHistoryPage(),
@@ -290,6 +295,15 @@ class PlansPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => context.go('/training/progress'),
+                icon: const Icon(Icons.insights_outlined),
+                label: const Text('Minha evolução'),
+              ),
+            ),
+            const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
