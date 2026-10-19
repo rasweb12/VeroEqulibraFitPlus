@@ -36,7 +36,7 @@ class PlansController extends StateNotifier<List<TrainingPlan>> {
 
   void archive(String id) {
     _repository.archive(id);
-    state = _repository.activePlans();
+    state = List<TrainingPlan>.of(_repository.activePlans());
   }
 
   void unarchive(String id) {

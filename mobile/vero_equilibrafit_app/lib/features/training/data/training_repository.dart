@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 
 import '../../../core/persistence/owner_scope.dart';
 import '../../../core/persistence/secure_owner_store.dart';
@@ -21,6 +22,9 @@ class TrainingRepository {
   final List<TrainingPlan> _plans = [];
   final List<Exercise> _customExercises = [];
   final Map<String, int> _customRevisions = {};
+  Future<void> _pendingSave = Future<void>.value();
+  Future<void>? _loadFuture;
+
   static const catalog = <Exercise>[
     Exercise(
       id: 'incline-dumbbell',
@@ -137,9 +141,33 @@ class TrainingRepository {
   void archive(String id) {
     final index = _plans.indexWhere((plan) => plan.id == id && !plan.isDeleted);
 
-    if (index < 0) return;
+    if (index < 0) {
+      developer.log(
+        'ARCHIVE FAILED: id=$id; '
+        'idsDisponiveis=${_plans.map((p) => p.id).join(",")}',
+        name: 'TrainingRepository',
+      );
+      return;
+    }
 
-    _plans[index] = _plans[index].copyWith(archivedAt: DateTime.now().toUtc());
+    final plan = _plans[index];
+
+    if (plan.isArchived) {
+      developer.log(
+        'ARCHIVE SKIPPED: id=$id; já arquivada',
+        name: 'TrainingRepository',
+      );
+      return;
+    }
+
+    _plans[index] = plan.copyWith(archivedAt: DateTime.now().toUtc());
+
+    developer.log(
+      'ARCHIVE OK: id=$id; '
+      'ativas=${activePlans().length}; '
+      'arquivadas=${archivedPlans().length}',
+      name: 'TrainingRepository',
+    );
 
     unawaited(_save());
   }
@@ -362,7 +390,11 @@ class TrainingRepository {
     await _save();
   }
 
-  Future<void> load() async {
+  Future<void> load() {
+    return _loadFuture ??= _loadFromStore();
+  }
+
+  Future<void> _loadFromStore() async {
     final encoded = await store.read(_storageKey);
     if (encoded == null || encoded.isEmpty) return;
     try {
@@ -533,7 +565,22 @@ class TrainingRepository {
           )
           .toList(growable: false),
     };
-    await store.write(_storageKey, jsonEncode(payload));
+    final snapshot = jsonEncode(payload);
+
+    final operation = _pendingSave
+        .catchError((Object error, StackTrace stack) {
+          developer.log(
+            'Falha na gravação anterior',
+            name: 'TrainingRepository',
+            error: error,
+            stackTrace: stack,
+          );
+        })
+        .then((_) => store.write(_storageKey, snapshot));
+
+    _pendingSave = operation;
+
+    await operation;
   }
 
   Future<void> _enqueuePlan(TrainingPlan plan) async {
