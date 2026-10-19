@@ -206,11 +206,18 @@ class VeroEqulibraFitApp extends ConsumerWidget {
   ];
 }
 
+final trainingArchiveTabProvider = StateProvider<bool>((ref) => false);
+
 class PlansPage extends ConsumerWidget {
   const PlansPage({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final plans = ref.watch(plansProvider);
+    final activePlans = ref.watch(plansProvider);
+    final archivedPlans = ref.read(plansProvider.notifier).archivedPlans;
+    final showingArchived = ref.watch(trainingArchiveTabProvider);
+    final plans = showingArchived ? archivedPlans : activePlans;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('VeroEqulibraFit+'),
@@ -232,11 +239,13 @@ class PlansPage extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _createPlan(context, ref),
-        icon: const Icon(Icons.add),
-        label: const Text('Nova ficha'),
-      ),
+      floatingActionButton: showingArchived
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => _createPlan(context, ref),
+              icon: const Icon(Icons.add),
+              label: const Text('Nova ficha'),
+            ),
       bottomNavigationBar: const VeroBottomNavigation(location: '/training'),
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -249,15 +258,39 @@ class PlansPage extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             const Text(
-              'Planeje, inicie e acompanhe suas fichas.',
+              'Planeje e acompanhe suas fichas.',
               style: TextStyle(color: VeroColors.muted),
             ),
             const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ChoiceChip(
+                  label: Text('Ativas (${activePlans.length})'),
+                  selected: !showingArchived,
+                  onSelected: (_) =>
+                      ref.read(trainingArchiveTabProvider.notifier).state =
+                          false,
+                ),
+                ChoiceChip(
+                  label: Text('Arquivadas (${archivedPlans.length})'),
+                  selected: showingArchived,
+                  onSelected: (_) =>
+                      ref.read(trainingArchiveTabProvider.notifier).state =
+                          true,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             if (plans.isEmpty)
-              const Expanded(
+              Expanded(
                 child: Center(
                   child: Text(
-                    'Nenhuma ficha ativa. Crie ou recupere uma ficha quando desejar.',
+                    showingArchived
+                        ? 'Nenhuma ficha arquivada.'
+                        : 'Nenhuma ficha ativa. Crie uma ficha para começar.',
+                    textAlign: TextAlign.center,
                   ),
                 ),
               )
@@ -268,24 +301,114 @@ class PlansPage extends ConsumerWidget {
                   itemBuilder: (context, index) {
                     final plan = plans[index];
                     return Card(
-                      child: ListTile(
-                        title: Text(plan.name),
-                        subtitle: Text(
-                          '${plan.objective} · ${plan.exercises.length} exercícios${plan.weekdays.isEmpty ? '' : ' · ${plan.weekdays.map(_weekdayLabel).join(', ')}'}',
+                      margin: const EdgeInsets.only(bottom: 14),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant,
                         ),
-                        onTap: () => context.go('/training/${plan.id}'),
-                        trailing: PopupMenuButton<String>(
-                          onSelected: (action) =>
-                              _action(context, ref, plan.id, action),
-                          itemBuilder: (_) => const [
-                            PopupMenuItem(
-                              value: 'duplicate',
-                              child: Text('Duplicar plano'),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 46,
+                                  height: 46,
+                                  decoration: BoxDecoration(
+                                    color: VeroColors.primary.withValues(
+                                      alpha: 0.10,
+                                    ),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: const Icon(
+                                    Icons.fitness_center,
+                                    color: VeroColors.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    plan.name,
+                                    style: const TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                                PopupMenuButton<String>(
+                                  tooltip: 'Opções da ficha',
+                                  onSelected: (action) =>
+                                      _action(context, ref, plan.id, action),
+                                  itemBuilder: (_) => [
+                                    if (!showingArchived) ...[
+                                      const PopupMenuItem(
+                                        value: 'duplicate',
+                                        child: Text('Duplicar ficha'),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'archive',
+                                        child: Text('Arquivar ficha'),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'delete',
+                                        child: Text('Excluir ficha'),
+                                      ),
+                                    ] else
+                                      const PopupMenuItem(
+                                        value: 'unarchive',
+                                        child: Text('Restaurar ficha'),
+                                      ),
+                                  ],
+                                ),
+                              ],
                             ),
-                            PopupMenuItem(
-                              value: 'delete',
-                              child: Text('Excluir plano'),
+                            const SizedBox(height: 14),
+                            Text(
+                              plan.objective,
+                              style: const TextStyle(color: VeroColors.muted),
                             ),
+                            const SizedBox(height: 14),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                Chip(
+                                  avatar: const Icon(Icons.list_alt, size: 16),
+                                  label: Text(
+                                    '${plan.exercises.length} exercícios',
+                                  ),
+                                ),
+                                if (plan.weekdays.isNotEmpty)
+                                  Chip(
+                                    avatar: const Icon(
+                                      Icons.calendar_today,
+                                      size: 16,
+                                    ),
+                                    label: Text(
+                                      plan.weekdays
+                                          .map(_weekdayLabel)
+                                          .join(', '),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            if (!showingArchived) ...[
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: FilledButton.icon(
+                                  onPressed: () =>
+                                      context.go('/training/${plan.id}'),
+                                  icon: const Icon(Icons.arrow_forward),
+                                  label: const Text('Abrir ficha'),
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -305,18 +428,31 @@ class PlansPage extends ConsumerWidget {
     String id,
     String action,
   ) async {
+    final controller = ref.read(plansProvider.notifier);
     if (action == 'duplicate') {
-      ref.read(plansProvider.notifier).duplicate(id);
+      controller.duplicate(id);
       return;
     }
-    final plan = ref.read(plansProvider).firstWhere((item) => item.id == id);
+    if (action == 'archive') {
+      controller.archive(id);
+      return;
+    }
+    if (action == 'unarchive') {
+      controller.unarchive(id);
+      return;
+    }
+    if (action != 'delete') return;
+
+    final plan = ref
+        .read(plansProvider)
+        .where((item) => item.id == id)
+        .firstOrNull;
+    if (plan == null) return;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Excluir plano?'),
-        content: Text(
-          '“${plan.name}” será removido da lista. Seu histórico de treinos será preservado.',
-        ),
+        title: const Text('Excluir ficha?'),
+        content: Text('“${plan.name}” será removida da lista.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -324,22 +460,22 @@ class PlansPage extends ConsumerWidget {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Excluir plano'),
+            child: const Text('Excluir ficha'),
           ),
         ],
       ),
     );
     if (confirm == true && context.mounted) {
-      ref.read(plansProvider.notifier).delete(id);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Plano excluído. O histórico permanece.'),
-          action: SnackBarAction(
-            label: 'DESFAZER',
-            onPressed: () => ref.read(plansProvider.notifier).restore(id),
+      controller.delete(id);
+      ScaffoldMessenger.of(context)
+        ..removeCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            duration: Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
+            content: Text('Ficha excluída.'),
           ),
-        ),
-      );
+        );
     }
   }
 

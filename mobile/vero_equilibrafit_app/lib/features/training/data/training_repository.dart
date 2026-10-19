@@ -126,8 +126,34 @@ class TrainingRepository {
       aliases: ['Panturrilha em pé'],
     ),
   ];
-  List<TrainingPlan> activePlans() =>
-      _plans.where((plan) => !plan.isDeleted).toList(growable: false);
+  List<TrainingPlan> activePlans() => _plans
+      .where((plan) => !plan.isDeleted && !plan.isArchived)
+      .toList(growable: false);
+
+  List<TrainingPlan> archivedPlans() => _plans
+      .where((plan) => !plan.isDeleted && plan.isArchived)
+      .toList(growable: false);
+
+  void archive(String id) {
+    final index = _plans.indexWhere((plan) => plan.id == id && !plan.isDeleted);
+
+    if (index < 0) return;
+
+    _plans[index] = _plans[index].copyWith(archivedAt: DateTime.now().toUtc());
+
+    unawaited(_save());
+  }
+
+  void unarchive(String id) {
+    final index = _plans.indexWhere((plan) => plan.id == id && !plan.isDeleted);
+
+    if (index < 0) return;
+
+    _plans[index] = _plans[index].copyWith(archivedAt: null);
+
+    unawaited(_save());
+  }
+
   List<Exercise> search(String query) {
     final normalized = _normalize(query);
     if (normalized.isEmpty) return [...catalog, ..._customExercises];
@@ -152,14 +178,11 @@ class TrainingRepository {
 
   void restore(String id) {
     final index = _plans.indexWhere((plan) => plan.id == id);
-    if (index < 0) return;
-    final plan = _plans[index];
-    _plans[index] = TrainingPlan(
-      id: plan.id,
-      name: plan.name,
-      objective: plan.objective,
-      exercises: plan.exercises,
-    );
+
+    if (index < 0 || !_plans[index].isDeleted) return;
+
+    _plans[index] = _plans[index].copyWith(deletedAt: null);
+
     unawaited(_save());
   }
 
@@ -167,13 +190,19 @@ class TrainingRepository {
     final source = _plans.firstWhere(
       (plan) => plan.id == id && !plan.isDeleted,
     );
-    final copy = source.copyWith(
+
+    final copy = TrainingPlan(
       id: newStableId(),
       name: '${source.name} (cópia)',
+      objective: source.objective,
+      exercises: List<PlannedExercise>.from(source.exercises),
+      weekdays: List<int>.from(source.weekdays),
     );
+
     _plans.add(copy);
     unawaited(_save());
     unawaited(_enqueuePlan(copy));
+
     return copy;
   }
 
@@ -289,10 +318,21 @@ class TrainingRepository {
     unawaited(_enqueueCustomDelete(id));
   }
 
-  void updateCustom({required String id, required String name, required String primaryMuscle, required String equipment}) {
+  void updateCustom({
+    required String id,
+    required String name,
+    required String primaryMuscle,
+    required String equipment,
+  }) {
     final index = _customExercises.indexWhere((item) => item.id == id);
     if (index < 0) return;
-    final updated = Exercise(id: id, name: name.trim(), primaryMuscle: primaryMuscle.trim(), equipment: equipment.trim(), isCustom: true);
+    final updated = Exercise(
+      id: id,
+      name: name.trim(),
+      primaryMuscle: primaryMuscle.trim(),
+      equipment: equipment.trim(),
+      isCustom: true,
+    );
     _customExercises[index] = updated;
     unawaited(_save());
     final revision = _customRevisions[id] ?? 0;
@@ -307,7 +347,15 @@ class TrainingRepository {
     if (change['action'] == 'upsert') {
       final payload = change['payload'];
       if (payload is Map<String, dynamic>) {
-        _customExercises.add(Exercise(id: id, name: payload['name'] as String? ?? '', primaryMuscle: payload['primaryMuscle'] as String? ?? '', equipment: payload['equipment'] as String? ?? '', isCustom: true));
+        _customExercises.add(
+          Exercise(
+            id: id,
+            name: payload['name'] as String? ?? '',
+            primaryMuscle: payload['primaryMuscle'] as String? ?? '',
+            equipment: payload['equipment'] as String? ?? '',
+            isCustom: true,
+          ),
+        );
         _customRevisions[id] = change['revision'] as int? ?? 0;
       }
     }
@@ -344,6 +392,9 @@ class TrainingRepository {
             weekdays: List<int>.from(
               plan['weekdays'] as List<dynamic>? ?? const [],
             ),
+            archivedAt: plan['archivedAt'] == null
+                ? null
+                : DateTime.tryParse(plan['archivedAt'] as String),
             deletedAt: plan['deletedAt'] == null
                 ? null
                 : DateTime.tryParse(plan['deletedAt'] as String),
@@ -369,7 +420,8 @@ class TrainingRepository {
             isCustom: true,
           ),
         );
-        _customRevisions[exercise['id'] as String] = exercise['revision'] as int? ?? 0;
+        _customRevisions[exercise['id'] as String] =
+            exercise['revision'] as int? ?? 0;
       }
     } on FormatException {
       // A corrupt cache is ignored; no remote or historical data is removed.
@@ -386,6 +438,9 @@ class TrainingRepository {
     if (id == null || revision == null || changedAt == null) return;
     final index = _plans.indexWhere((plan) => plan.id == id);
     if (index >= 0 && _plans[index].revision > revision) return;
+    if (index >= 0 && _plans[index].isDeleted && change['action'] != 'delete') {
+      return;
+    }
     if (change['action'] == 'delete') {
       final existing = index < 0
           ? TrainingPlan(id: id, name: '', objective: '', exercises: const [])
@@ -407,14 +462,16 @@ class TrainingRepository {
     if (payload is! Map<String, dynamic>) return;
     final exercises = (payload['exercises'] as List<dynamic>? ?? const [])
         .whereType<Map<String, dynamic>>()
-        .map((item) => PlannedExercise(
-              exerciseId: item['exerciseId'] as String? ?? '',
-              sets: item['sets'] as int? ?? 3,
-              repetitions: item['repetitions'] as String? ?? '10',
-              targetLoadKg: (item['targetLoadKg'] as num?)?.toDouble(),
-              restSeconds: item['restSeconds'] as int? ?? 60,
-              notes: item['notes'] as String? ?? '',
-            ))
+        .map(
+          (item) => PlannedExercise(
+            exerciseId: item['exerciseId'] as String? ?? '',
+            sets: item['sets'] as int? ?? 3,
+            repetitions: item['repetitions'] as String? ?? '10',
+            targetLoadKg: (item['targetLoadKg'] as num?)?.toDouble(),
+            restSeconds: item['restSeconds'] as int? ?? 60,
+            notes: item['notes'] as String? ?? '',
+          ),
+        )
         .where((item) => item.exerciseId.isNotEmpty)
         .toList(growable: false);
     final remote = TrainingPlan(
@@ -422,6 +479,8 @@ class TrainingRepository {
       name: payload['name'] as String? ?? '',
       objective: payload['objective'] as String? ?? '',
       exercises: exercises,
+      weekdays: index >= 0 ? _plans[index].weekdays : const [],
+      archivedAt: index >= 0 ? _plans[index].archivedAt : null,
       revision: revision,
       updatedAt: changedAt.toUtc(),
     );
@@ -455,6 +514,7 @@ class TrainingRepository {
                   )
                   .toList(growable: false),
               'deletedAt': plan.deletedAt?.toIso8601String(),
+              'archivedAt': plan.archivedAt?.toIso8601String(),
               'revision': plan.revision,
               'updatedAt': plan.updatedAt?.toIso8601String(),
             },
@@ -540,15 +600,17 @@ class TrainingRepository {
         'exercises': plan.exercises
             .asMap()
             .entries
-            .map((entry) => {
-                  'exerciseId': entry.value.exerciseId,
-                  'position': entry.key,
-                  'sets': entry.value.sets,
-                  'repetitions': entry.value.repetitions,
-                  'targetLoadKg': entry.value.targetLoadKg,
-                  'restSeconds': entry.value.restSeconds,
-                  'notes': entry.value.notes,
-                })
+            .map(
+              (entry) => {
+                'exerciseId': entry.value.exerciseId,
+                'position': entry.key,
+                'sets': entry.value.sets,
+                'repetitions': entry.value.repetitions,
+                'targetLoadKg': entry.value.targetLoadKg,
+                'restSeconds': entry.value.restSeconds,
+                'notes': entry.value.notes,
+              },
+            )
             .toList(growable: false),
       }),
     );
@@ -558,28 +620,59 @@ class TrainingRepository {
     final queue = outbox;
     if (queue == null || !_isUuid(exercise.id)) return;
     await queue.enqueue(
-      ownerId: ownerId, idempotencyKey: 'custom-exercise-create:${exercise.id}',
-      entityType: 'custom-exercise', entityId: exercise.id,
-      operationType: 'custom-exercise.create', clientVersion: '1.0.0',
-      payloadJson: jsonEncode({'name': exercise.name, 'primaryMuscle': exercise.primaryMuscle, 'equipment': exercise.equipment}),
+      ownerId: ownerId,
+      idempotencyKey: 'custom-exercise-create:${exercise.id}',
+      entityType: 'custom-exercise',
+      entityId: exercise.id,
+      operationType: 'custom-exercise.create',
+      clientVersion: '1.0.0',
+      payloadJson: jsonEncode({
+        'name': exercise.name,
+        'primaryMuscle': exercise.primaryMuscle,
+        'equipment': exercise.equipment,
+      }),
     );
   }
 
   Future<void> _enqueueCustomDelete(String id) async {
     final queue = outbox;
     if (queue == null || !_isUuid(id)) return;
-    await queue.enqueue(ownerId: ownerId, idempotencyKey: 'custom-exercise-delete:$id', entityType: 'custom-exercise', entityId: id, operationType: 'custom-exercise.delete', clientVersion: '1.0.0', payloadJson: '{}');
+    await queue.enqueue(
+      ownerId: ownerId,
+      idempotencyKey: 'custom-exercise-delete:$id',
+      entityType: 'custom-exercise',
+      entityId: id,
+      operationType: 'custom-exercise.delete',
+      clientVersion: '1.0.0',
+      payloadJson: '{}',
+    );
   }
 
   Future<void> _enqueueCustomUpdate(Exercise exercise, int revision) async {
     final queue = outbox;
     if (queue == null || !_isUuid(exercise.id)) return;
-    final payload = jsonEncode({'name': exercise.name, 'primaryMuscle': exercise.primaryMuscle, 'equipment': exercise.equipment, 'baseRevision': revision});
+    final payload = jsonEncode({
+      'name': exercise.name,
+      'primaryMuscle': exercise.primaryMuscle,
+      'equipment': exercise.equipment,
+      'baseRevision': revision,
+    });
     if (revision < 1) {
-      await queue.replacePayload(idempotencyKey: 'custom-exercise-create:${exercise.id}', payloadJson: payload);
+      await queue.replacePayload(
+        idempotencyKey: 'custom-exercise-create:${exercise.id}',
+        payloadJson: payload,
+      );
       return;
     }
-    await queue.enqueue(ownerId: ownerId, idempotencyKey: 'custom-exercise-update:${exercise.id}:$revision', entityType: 'custom-exercise', entityId: exercise.id, operationType: 'custom-exercise.update', clientVersion: '1.0.0', payloadJson: payload);
+    await queue.enqueue(
+      ownerId: ownerId,
+      idempotencyKey: 'custom-exercise-update:${exercise.id}:$revision',
+      entityType: 'custom-exercise',
+      entityId: exercise.id,
+      operationType: 'custom-exercise.update',
+      clientVersion: '1.0.0',
+      payloadJson: payload,
+    );
   }
 
   bool _isUuid(String value) => RegExp(

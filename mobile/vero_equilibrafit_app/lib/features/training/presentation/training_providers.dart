@@ -32,6 +32,18 @@ class PlansController extends StateNotifier<List<TrainingPlan>> {
     if (mounted) state = _repository.activePlans();
   }
 
+  List<TrainingPlan> get archivedPlans => _repository.archivedPlans();
+
+  void archive(String id) {
+    _repository.archive(id);
+    state = _repository.activePlans();
+  }
+
+  void unarchive(String id) {
+    _repository.unarchive(id);
+    state = _repository.activePlans();
+  }
+
   void delete(String id) {
     _repository.softDelete(id);
     state = _repository.activePlans();
@@ -83,4 +95,9 @@ final exercisesProvider = Provider.autoDispose<List<Exercise>>((ref) {
   return ref
       .read(trainingRepositoryProvider)
       .search(ref.watch(exerciseSearchProvider));
+});
+final archivedPlansProvider = Provider<List<TrainingPlan>>((ref) {
+  ref.watch(plansProvider);
+
+  return ref.read(trainingRepositoryProvider).archivedPlans();
 });
