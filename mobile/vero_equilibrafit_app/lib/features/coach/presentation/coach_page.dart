@@ -16,7 +16,7 @@ class CoachPage extends ConsumerStatefulWidget {
 
 class _CoachPageState extends ConsumerState<CoachPage> {
   final _message = TextEditingController();
-  CoachReply? _reply;
+  final List<_CoachTurn> _turns = [];
   String? _error;
   var _sending = false;
 
@@ -99,28 +99,58 @@ class _CoachPageState extends ConsumerState<CoachPage> {
             ),
           ),
         ],
-        if (_reply != null) ...[
+        if (_turns.isNotEmpty) ...[
           const SizedBox(height: 16),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Resposta do Coach',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(_reply!.content),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Modelo: ${_reply!.model}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+          Text('Nesta sessão', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          for (final turn in _turns) ...[
+            Align(
+              alignment: Alignment.centerRight,
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 8, left: 40),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Text(turn.question),
               ),
             ),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(
+                          Icons.auto_awesome_rounded,
+                          color: VeroColors.gemini,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Resposta do Coach',
+                          style: TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(turn.reply.content),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Modelo: ${turn.reply.model}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          Text(
+            'As mensagens não são gravadas como histórico permanente nesta tela.',
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
         const SizedBox(height: 8),
@@ -149,7 +179,7 @@ class _CoachPageState extends ConsumerState<CoachPage> {
       final reply = await ref.read(coachRepositoryProvider).sendMessage(text);
       if (!mounted) return;
       setState(() {
-        _reply = reply;
+        _turns.add(_CoachTurn(question: text, reply: reply));
         _message.clear();
       });
     } on CoachUnavailable catch (error) {
@@ -166,4 +196,11 @@ class _CoachPageState extends ConsumerState<CoachPage> {
       }
     }
   }
+}
+
+class _CoachTurn {
+  const _CoachTurn({required this.question, required this.reply});
+
+  final String question;
+  final CoachReply reply;
 }
