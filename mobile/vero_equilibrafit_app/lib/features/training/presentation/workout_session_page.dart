@@ -7,6 +7,7 @@ import '../domain/workout_exercise_result.dart';
 import '../domain/workout_set_result.dart';
 import 'training_providers.dart';
 import 'workout_session_providers.dart';
+import 'workout_rest_timer_widget.dart';
 
 class WorkoutSessionPage extends ConsumerStatefulWidget {
   const WorkoutSessionPage({super.key, required this.planId});
@@ -19,6 +20,7 @@ class WorkoutSessionPage extends ConsumerStatefulWidget {
 
 class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
   WorkoutSession? _session;
+  final _restTimerKey = GlobalKey<WorkoutRestTimerState>();
   bool _busy = false;
   String? _error;
 
@@ -210,7 +212,10 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
     setState(() => _busy = true);
     try {
       await ref.read(workoutSessionRepositoryProvider).finish(current.id);
-      if (mounted) context.go('/training');
+      if (mounted) {
+        await _restTimerKey.currentState?.clear();
+        if (mounted) context.go('/training');
+      }
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -268,6 +273,7 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   const SizedBox(height: 12),
+                  WorkoutRestTimer(key: _restTimerKey, sessionId: session.id),
                   if (session.status == WorkoutSessionStatus.paused)
                     const Card(
                       child: ListTile(
@@ -398,11 +404,30 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
           Checkbox(
             value: result.completed,
             onChanged: canEdit
-                ? (value) => _saveDraft(
-                    exerciseIndex: exerciseIndex,
-                    setIndex: setIndex,
-                    completed: value ?? false,
-                  )
+                ? (value) async {
+                    final markingComplete = value == true;
+                    final saved = await _saveDraft(
+                      exerciseIndex: exerciseIndex,
+                      setIndex: setIndex,
+                      completed: markingComplete,
+                    );
+                    if (!saved || !markingComplete || !mounted) return;
+                    final session = _session;
+                    if (session == null) return;
+                    final exercise = session.exercises[exerciseIndex];
+                    final plan = ref
+                        .read(trainingRepositoryProvider)
+                        .planById(widget.planId);
+                    if (plan == null) return;
+                    final matching = plan.exercises.where(
+                      (entry) => entry.exerciseId == exercise.exerciseId,
+                    );
+                    if (matching.isEmpty) return;
+                    await _restTimerKey.currentState?.start(
+                      exerciseName: exercise.exerciseName,
+                      seconds: matching.first.restSeconds,
+                    );
+                  }
                 : null,
           ),
         ],
