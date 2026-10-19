@@ -737,59 +737,87 @@ class ExerciseLibraryPage extends ConsumerWidget {
               itemCount: exercises.length,
               itemBuilder: (_, index) {
                 final exercise = exercises[index];
-                return ListTile(
-                  title: Text(exercise.name),
-                  subtitle: Text(
-                    '${exercise.primaryMuscle} · ${exercise.equipment}${exercise.isCustom ? ' · Personalizado' : ''}',
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (exercise.demoVideoAsset != null)
-                        IconButton(
-                          tooltip: 'Ver demonstração',
-                          icon: const Icon(Icons.play_circle_outline),
-                          onPressed: () =>
-                              _showExerciseDetails(context, exercise),
-                        ),
-                      if (exercise.isCustom && planId == null)
-                        IconButton(
-                          tooltip: 'Excluir exercício personalizado',
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: () {
-                            ref
-                                .read(trainingRepositoryProvider)
-                                .deleteCustom(exercise.id);
-                            ref.read(catalogRevisionProvider.notifier).state++;
-                          },
-                        ),
-                      Icon(
-                        planId == null
-                            ? Icons.info_outline
-                            : Icons.add_circle_outline,
+                return Card(
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
+                    leading: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: VeroColors.primary.withValues(alpha: .11),
+                        borderRadius: BorderRadius.circular(13),
                       ),
-                    ],
-                  ),
-                  onTap: planId == null
-                      ? () => _showExerciseDetails(context, exercise)
-                      : () async {
-                          ref
-                              .read(plansProvider.notifier)
-                              .addExercise(planId!, exercise.id);
-                          await Future<void>.delayed(Duration.zero);
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '${exercise.name} adicionado à ficha.',
+                      child: const Icon(
+                        Icons.fitness_center_rounded,
+                        color: VeroColors.primary,
+                      ),
+                    ),
+                    title: Text(
+                      exercise.name,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        '${exercise.primaryMuscle} · ${exercise.equipment}${exercise.isCustom ? ' · Personalizado' : ''}',
+                      ),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (exercise.demoVideoAsset != null)
+                          IconButton(
+                            tooltip: 'Ver demonstração',
+                            icon: const Icon(Icons.play_circle_outline),
+                            onPressed: () =>
+                                _showExerciseDetails(context, exercise),
+                          ),
+                        if (exercise.isCustom && planId == null)
+                          IconButton(
+                            tooltip: 'Excluir exercício personalizado',
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () {
+                              ref
+                                  .read(trainingRepositoryProvider)
+                                  .deleteCustom(exercise.id);
+                              ref
+                                  .read(catalogRevisionProvider.notifier)
+                                  .state++;
+                            },
+                          ),
+                        Icon(
+                          planId == null
+                              ? Icons.arrow_forward_ios_rounded
+                              : Icons.add_circle_outline,
+                          size: planId == null ? 18 : 24,
+                        ),
+                      ],
+                    ),
+                    onTap: planId == null
+                        ? () => _showExerciseDetails(context, exercise)
+                        : () async {
+                            ref
+                                .read(plansProvider.notifier)
+                                .addExercise(planId!, exercise.id);
+                            await Future<void>.delayed(Duration.zero);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '${exercise.name} adicionado à ficha.',
+                                ),
                               ),
-                            ),
-                          );
-                          context.go('/training/$planId');
-                        },
-                  onLongPress: exercise.isCustom && planId == null
-                      ? () => _editCustomExercise(context, ref, exercise)
-                      : null,
+                            );
+                            context.go('/training/$planId');
+                          },
+                    onLongPress: exercise.isCustom && planId == null
+                        ? () => _editCustomExercise(context, ref, exercise)
+                        : null,
+                  ),
                 );
               },
             ),
