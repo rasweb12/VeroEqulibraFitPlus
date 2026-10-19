@@ -69,7 +69,7 @@ class _ExerciseDemoPlayerState extends State<ExerciseDemoPlayer> {
       });
     }
     if (previous != null) await previous.dispose();
-    final next = VideoPlayerController.asset(path);
+    final next = VideoPlayerController.asset(Uri.encodeFull(path));
     try {
       await next.initialize();
       await next.setLooping(true);
