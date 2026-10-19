@@ -1193,7 +1193,37 @@ class ExerciseLibraryPage extends ConsumerWidget {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+            child: Card(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.fitness_center_rounded,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Explore exercícios',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const Text('Encontre movimentos e monte sua ficha.'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
             child: TextField(
               key: ValueKey(ref.watch(exerciseSearchResetProvider)),
               onChanged: (value) =>
@@ -1296,6 +1326,13 @@ class ExerciseLibraryPage extends ConsumerWidget {
                   final exercise = exercises[index];
                   return Card(
                     margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                    clipBehavior: Clip.antiAlias,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                    ),
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -1318,9 +1355,22 @@ class ExerciseLibraryPage extends ConsumerWidget {
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                       subtitle: Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          '${exercise.primaryMuscle} · ${exercise.equipment}${exercise.isCustom ? ' · Personalizado' : ''}',
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${exercise.primaryMuscle} · ${exercise.equipment}',
+                            ),
+                            if (exercise.isCustom ||
+                                exercise.demoVideoAsset != null)
+                              Text(
+                                exercise.isCustom
+                                    ? 'Personalizado'
+                                    : 'Demonstração disponível',
+                                style: Theme.of(context).textTheme.labelSmall,
+                              ),
+                          ],
                         ),
                       ),
                       trailing: Row(
@@ -1337,13 +1387,62 @@ class ExerciseLibraryPage extends ConsumerWidget {
                             IconButton(
                               tooltip: 'Excluir exercício personalizado',
                               icon: const Icon(Icons.delete_outline),
-                              onPressed: () {
-                                ref
-                                    .read(trainingRepositoryProvider)
-                                    .deleteCustom(exercise.id);
-                                ref
-                                    .read(catalogRevisionProvider.notifier)
-                                    .state++;
+                              onPressed: () async {
+                                final repository = ref.read(
+                                  trainingRepositoryProvider,
+                                );
+                                if (repository.isCustomExerciseInUse(
+                                  exercise.id,
+                                )) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Este exercício está em uma ficha. Remova-o da ficha antes de excluir.',
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (dialogContext) => AlertDialog(
+                                    title: const Text('Excluir exercício?'),
+                                    content: Text(
+                                      'Excluir "${exercise.name}"? Esta ação não pode ser desfeita.',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(dialogContext, false),
+                                        child: const Text('Cancelar'),
+                                      ),
+                                      FilledButton(
+                                        onPressed: () =>
+                                            Navigator.pop(dialogContext, true),
+                                        child: const Text('Excluir'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirmed != true || !context.mounted) {
+                                  return;
+                                }
+                                final removed = repository.deleteCustom(
+                                  exercise.id,
+                                );
+                                if (removed) {
+                                  ref
+                                      .read(catalogRevisionProvider.notifier)
+                                      .state++;
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Não foi possível excluir: exercício utilizado ou indisponível.',
+                                      ),
+                                    ),
+                                  );
+                                }
                               },
                             ),
                           Icon(

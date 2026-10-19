@@ -383,12 +383,19 @@ class TrainingRepository {
     return exercise;
   }
 
-  void deleteCustom(String id) {
+  bool isCustomExerciseInUse(String id) => _plans.any(
+    (plan) =>
+        !plan.isDeleted &&
+        plan.exercises.any((entry) => entry.exerciseId == id),
+  );
+
+  bool deleteCustom(String id) {
     final index = _customExercises.indexWhere((item) => item.id == id);
-    if (index < 0) return;
+    if (index < 0 || isCustomExerciseInUse(id)) return false;
     _customExercises.removeAt(index);
     unawaited(_save());
     unawaited(_enqueueCustomDelete(id));
+    return true;
   }
 
   void updateCustom({
