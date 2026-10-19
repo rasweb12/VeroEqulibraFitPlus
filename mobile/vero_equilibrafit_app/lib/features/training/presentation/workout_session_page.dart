@@ -237,6 +237,7 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
       },
       child: Scaffold(
         appBar: AppBar(
+          // Vero 7.6.5B - refinamento visual da execucao
           title: Text(session?.planName ?? 'Iniciar treino'),
           leading: IconButton(
             tooltip: 'Voltar aos treinos',
@@ -254,23 +255,61 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
             : session == null
             ? const Center(child: CircularProgressIndicator())
             : ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
                 children: [
-                  Text(
-                    'Sessão iniciada em ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(session.startedAt.toLocal()))}',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    '${session.completedSets}/${session.totalSets} séries concluídas',
-                  ),
-                  const SizedBox(height: 6),
-                  LinearProgressIndicator(
-                    value: session.totalSets == 0
-                        ? 0
-                        : session.completedSets / session.totalSets,
-                    minHeight: 8,
-                    borderRadius: BorderRadius.circular(8),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                session.status == WorkoutSessionStatus.paused
+                                    ? Icons.pause_circle_outline
+                                    : Icons.directions_run_rounded,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  session.status == WorkoutSessionStatus.paused
+                                      ? 'Treino pausado'
+                                      : 'Treino em andamento',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
+                                ),
+                              ),
+                              Text(
+                                session.totalSets == 0
+                                    ? '0%'
+                                    : '${(100 * session.completedSets / session.totalSets).round()}%',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Iniciado às ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(session.startedAt.toLocal()))}',
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${session.completedSets} de ${session.totalSets} séries concluídas',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 10),
+                          LinearProgressIndicator(
+                            value: session.totalSets == 0
+                                ? 0
+                                : session.completedSets / session.totalSets,
+                            minHeight: 9,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   WorkoutRestTimer(key: _restTimerKey, sessionId: session.id),
@@ -289,7 +328,7 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
         bottomNavigationBar: session == null || _error != null
             ? null
             : SafeArea(
-                minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                minimum: const EdgeInsets.fromLTRB(16, 10, 16, 12),
                 child: Row(
                   children: [
                     Expanded(
@@ -332,11 +371,42 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              exercise.exerciseName,
-              style: Theme.of(context).textTheme.titleMedium,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.primaryContainer,
+                  foregroundColor: Theme.of(
+                    context,
+                  ).colorScheme.onPrimaryContainer,
+                  child: const Icon(Icons.fitness_center, size: 20),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    exercise.exerciseName,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                Text(
+                  '${exercise.sets.where((set) => set.completed).length}/${exercise.sets.length}',
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+            const Padding(
+              padding: EdgeInsets.only(bottom: 4),
+              child: Text(
+                'SÉRIES  ·  REPETIÇÕES  ·  CARGA',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+              ),
+            ),
             for (var j = 0; j < exercise.sets.length; j++)
               _setRow(exerciseIndex, j, exercise.sets[j], canEdit),
             const SizedBox(height: 8),
@@ -365,10 +435,23 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
   ) {
     final key = _setKey(exerciseIndex, setIndex);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
         children: [
-          SizedBox(width: 50, child: Text('Série ${result.setNumber}')),
+          SizedBox(
+            width: 49,
+            child: Text(
+              'Série ${result.setNumber}',
+              style: TextStyle(
+                fontWeight: result.completed
+                    ? FontWeight.w700
+                    : FontWeight.w500,
+                color: result.completed
+                    ? Theme.of(context).colorScheme.primary
+                    : null,
+              ),
+            ),
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: TextFormField(
@@ -378,6 +461,7 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'Reps',
+                hintText: '0',
                 isDense: true,
                 border: OutlineInputBorder(),
               ),
@@ -395,6 +479,7 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
               ),
               decoration: const InputDecoration(
                 labelText: 'Kg',
+                hintText: '0,0',
                 isDense: true,
                 border: OutlineInputBorder(),
               ),

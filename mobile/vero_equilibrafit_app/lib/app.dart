@@ -242,14 +242,15 @@ class PlansPage extends ConsumerWidget {
     final showingArchived = ref.watch(trainingArchiveTabProvider);
     final plans = showingArchived ? archivedPlans : activePlans;
 
+    // VERO_765A_START — Somente interface; ações existentes preservadas.
     return Scaffold(
       appBar: AppBar(
-        title: const Text('VeroEqulibraFit+'),
+        title: const Text('Meus treinos'),
         actions: [
           IconButton(
-            tooltip: 'Conta',
-            onPressed: () => context.go('/auth'),
-            icon: const Icon(Icons.account_circle_outlined),
+            tooltip: 'Biblioteca de exercícios',
+            onPressed: () => context.go('/exercises'),
+            icon: const Icon(Icons.fitness_center_outlined),
           ),
           IconButton(
             tooltip: 'Dashboard',
@@ -257,9 +258,9 @@ class PlansPage extends ConsumerWidget {
             icon: const Icon(Icons.dashboard_outlined),
           ),
           IconButton(
-            tooltip: 'Biblioteca de exercícios',
-            onPressed: () => context.go('/exercises'),
-            icon: const Icon(Icons.fitness_center),
+            tooltip: 'Conta',
+            onPressed: () => context.go('/auth'),
+            icon: const Icon(Icons.account_circle_outlined),
           ),
         ],
       ),
@@ -271,222 +272,275 @@ class PlansPage extends ConsumerWidget {
               label: const Text('Nova ficha'),
             ),
       bottomNavigationBar: const VeroBottomNavigation(location: '/training'),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Treinos da semana',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Planeje e acompanhe suas fichas.',
-              style: TextStyle(color: VeroColors.muted),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => context.go('/training/history'),
-                icon: const Icon(Icons.history_rounded),
-                label: const Text('Histórico de treinos'),
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => context.go('/training/progress'),
-                icon: const Icon(Icons.insights_outlined),
-                label: const Text('Minha evolução'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                ChoiceChip(
-                  label: Text('Ativas (${activePlans.length})'),
-                  selected: !showingArchived,
-                  onSelected: (_) =>
-                      ref.read(trainingArchiveTabProvider.notifier).state =
-                          false,
-                ),
-                ChoiceChip(
-                  label: Text('Arquivadas (${archivedPlans.length})'),
-                  selected: showingArchived,
-                  onSelected: (_) =>
-                      ref.read(trainingArchiveTabProvider.notifier).state =
-                          true,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            if (plans.isEmpty)
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
+        children: [
+          Text(
+            'Seu planejamento',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Organize suas fichas e acompanhe os resultados.',
+            style: TextStyle(color: VeroColors.muted),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
               Expanded(
-                child: Center(
-                  child: Text(
-                    showingArchived
-                        ? 'Nenhuma ficha arquivada.'
-                        : 'Nenhuma ficha ativa. Crie uma ficha para começar.',
-                    textAlign: TextAlign.center,
-                  ),
+                child: _trainingShortcut(
+                  context,
+                  icon: Icons.history_rounded,
+                  title: 'Histórico',
+                  subtitle: 'Treinos concluídos',
+                  onTap: () => context.go('/training/history'),
                 ),
-              )
-            else
+              ),
+              const SizedBox(width: 10),
               Expanded(
-                child: ListView.builder(
-                  itemCount: plans.length,
-                  itemBuilder: (context, index) {
-                    final plan = plans[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 14),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        side: BorderSide(
-                          color: Theme.of(context).colorScheme.outlineVariant,
-                        ),
+                child: _trainingShortcut(
+                  context,
+                  icon: Icons.insights_outlined,
+                  title: 'Minha evolução',
+                  subtitle: 'Resultados e recordes',
+                  onTap: () => context.go('/training/progress'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Fichas de treino',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              Text(
+                '${activePlans.length} ativas',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ChoiceChip(
+                label: Text('Ativas (${activePlans.length})'),
+                selected: !showingArchived,
+                onSelected: (_) =>
+                    ref.read(trainingArchiveTabProvider.notifier).state = false,
+              ),
+              ChoiceChip(
+                label: Text('Arquivadas (${archivedPlans.length})'),
+                selected: showingArchived,
+                onSelected: (_) =>
+                    ref.read(trainingArchiveTabProvider.notifier).state = true,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (plans.isEmpty)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 36,
+                  horizontal: 24,
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      showingArchived
+                          ? Icons.archive_outlined
+                          : Icons.fitness_center_outlined,
+                      size: 40,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      showingArchived
+                          ? 'Nenhuma ficha arquivada.'
+                          : 'Nenhuma ficha ativa. Crie uma ficha para começar.',
+                      textAlign: TextAlign.center,
+                    ),
+                    if (!showingArchived) ...[
+                      const SizedBox(height: 14),
+                      OutlinedButton.icon(
+                        onPressed: () => _createPlan(context, ref),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Criar primeira ficha'),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 46,
-                                  height: 46,
-                                  decoration: BoxDecoration(
-                                    color: VeroColors.primary.withValues(
-                                      alpha: 0.10,
-                                    ),
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: const Icon(
-                                    Icons.fitness_center,
-                                    color: VeroColors.primary,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    plan.name,
-                                    style: const TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                                PopupMenuButton<String>(
-                                  tooltip: 'Opções da ficha',
-                                  onSelected: (action) =>
-                                      _action(context, ref, plan.id, action),
-                                  itemBuilder: (_) => [
-                                    if (!showingArchived) ...[
-                                      const PopupMenuItem(
-                                        value: 'duplicate',
-                                        child: Text('Duplicar ficha'),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'archive',
-                                        child: Text('Arquivar ficha'),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'delete',
-                                        child: Text('Excluir ficha'),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'edit',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.edit_outlined, size: 20),
-                                            SizedBox(width: 10),
-                                            Text('Editar ficha'),
-                                          ],
-                                        ),
-                                      ),
-                                    ] else
-                                      const PopupMenuItem(
-                                        value: 'unarchive',
-                                        child: Text('Restaurar ficha'),
-                                      ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 14),
-                            Text(
-                              plan.objective,
-                              style: const TextStyle(color: VeroColors.muted),
-                            ),
-                            const SizedBox(height: 14),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                Chip(
-                                  avatar: const Icon(Icons.list_alt, size: 16),
-                                  label: Text(
-                                    '${plan.exercises.length} exercícios',
-                                  ),
-                                ),
-                                if (plan.weekdays.isNotEmpty)
-                                  Chip(
-                                    avatar: const Icon(
-                                      Icons.calendar_today,
-                                      size: 16,
-                                    ),
-                                    label: Text(
-                                      plan.weekdays
-                                          .map(_weekdayLabel)
-                                          .join(', '),
-                                    ),
-                                  ),
-                              ],
-                            ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          for (final plan in plans)
+            Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+                side: BorderSide(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: .12),
+                          child: Icon(
+                            Icons.fitness_center,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            plan.name,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                        PopupMenuButton<String>(
+                          tooltip: 'Opções da ficha',
+                          onSelected: (action) =>
+                              _action(context, ref, plan.id, action),
+                          itemBuilder: (_) => [
                             if (!showingArchived) ...[
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                width: double.infinity,
-                                child: FilledButton.icon(
-                                  onPressed: () =>
-                                      context.go('/training/${plan.id}'),
-                                  icon: const Icon(Icons.arrow_forward),
-                                  label: const Text('Abrir ficha'),
-                                ),
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Text('Editar ficha'),
                               ),
-                              const SizedBox(height: 8),
-
-                              SizedBox(
-                                width: double.infinity,
-                                child: FilledButton.icon(
-                                  onPressed: plan.exercises.isEmpty
-                                      ? null
-                                      : () => context.go(
-                                          '/training/${plan.id}/start',
-                                        ),
-                                  icon: const Icon(Icons.play_arrow_rounded),
-                                  label: const Text('Iniciar treino'),
-                                ),
+                              const PopupMenuItem(
+                                value: 'duplicate',
+                                child: Text('Duplicar ficha'),
                               ),
-                            ],
+                              const PopupMenuItem(
+                                value: 'archive',
+                                child: Text('Arquivar ficha'),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Text('Excluir ficha'),
+                              ),
+                            ] else
+                              const PopupMenuItem(
+                                value: 'unarchive',
+                                child: Text('Restaurar ficha'),
+                              ),
                           ],
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      plan.objective,
+                      style: const TextStyle(color: VeroColors.muted),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 7,
+                      runSpacing: 7,
+                      children: [
+                        Chip(
+                          avatar: const Icon(Icons.list_alt, size: 16),
+                          label: Text('${plan.exercises.length} exercícios'),
+                        ),
+                        if (plan.weekdays.isNotEmpty)
+                          Chip(
+                            avatar: const Icon(
+                              Icons.calendar_today_outlined,
+                              size: 16,
+                            ),
+                            label: Text(
+                              plan.weekdays.map(_weekdayLabel).join(', '),
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (!showingArchived) ...[
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: plan.exercises.isEmpty
+                              ? null
+                              : () => context.go('/training/${plan.id}/start'),
+                          icon: const Icon(Icons.play_arrow_rounded),
+                          label: const Text('Iniciar treino'),
+                        ),
                       ),
-                    );
-                  },
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => context.go('/training/${plan.id}'),
+                          icon: const Icon(Icons.tune_outlined),
+                          label: const Text('Abrir / configurar ficha'),
+                        ),
+                      ),
+                    ] else
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: Text('Ficha arquivada — restaure para iniciar.'),
+                      ),
+                  ],
                 ),
               ),
-          ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _trainingShortcut(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                icon,
+                size: 26,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 12),
+              Text(title, style: Theme.of(context).textTheme.titleSmall),
+              const SizedBox(height: 3),
+              Text(
+                subtitle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+  // VERO_765A_END
 
   Future<void> _action(
     BuildContext context,

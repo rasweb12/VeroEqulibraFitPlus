@@ -63,13 +63,37 @@ class _TrainingProgressPageState extends ConsumerState<TrainingProgressPage> {
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
-              Text(
-                'Seu desempenho',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Indicadores locais calculados a partir de séries concluídas.',
+              // VERO_765C_VISUAL — cabeçalho da evolução
+              Card(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.insights_rounded,
+                        size: 34,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Seu desempenho',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Indicadores locais de séries concluídas.',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 14),
               Wrap(
@@ -91,8 +115,15 @@ class _TrainingProgressPageState extends ConsumerState<TrainingProgressPage> {
                 const Card(
                   child: Padding(
                     padding: EdgeInsets.all(24),
-                    child: Text(
-                      'Nenhum treino concluído neste período. Finalize uma sessão para acompanhar sua evolução.',
+                    child: Column(
+                      children: [
+                        Icon(Icons.show_chart_outlined, size: 40),
+                        SizedBox(height: 12),
+                        Text(
+                          'Nenhum treino concluído neste período. Finalize uma sessão para acompanhar sua evolução.',
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
                   ),
                 )
@@ -176,6 +207,12 @@ class _TrainingProgressPageState extends ConsumerState<TrainingProgressPage> {
                 ),
                 if (selected != null)
                   Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -220,6 +257,10 @@ class _TrainingProgressPageState extends ConsumerState<TrainingProgressPage> {
     String value,
     IconData icon,
   ) => Card(
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(18),
+      side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+    ),
     child: Padding(
       padding: const EdgeInsets.all(12),
       child: Column(

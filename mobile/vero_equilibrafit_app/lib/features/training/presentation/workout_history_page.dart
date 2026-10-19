@@ -77,12 +77,38 @@ class _WorkoutHistoryPageState extends ConsumerState<WorkoutHistoryPage> {
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
-              Text(
-                'Seus resultados',
-                style: Theme.of(context).textTheme.headlineSmall,
+              // VERO_765C_VISUAL — cabeçalho do histórico
+              Card(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.history_rounded,
+                        size: 34,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Seus resultados',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Sessões finalizadas e salvas neste dispositivo.',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 4),
-              const Text('Sessões finalizadas e salvas neste dispositivo.'),
               const SizedBox(height: 16),
               Wrap(
                 spacing: 8,
@@ -106,15 +132,31 @@ class _WorkoutHistoryPageState extends ConsumerState<WorkoutHistoryPage> {
               ),
               const SizedBox(height: 12),
               if (filtered.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 50),
-                  child: Center(
-                    child: Text('Nenhum treino finalizado neste período.'),
+                const Card(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+                    child: Column(
+                      children: [
+                        Icon(Icons.event_note_outlined, size: 42),
+                        SizedBox(height: 12),
+                        Text(
+                          'Nenhum treino finalizado neste período.',
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               for (final session in filtered)
                 Card(
                   margin: const EdgeInsets.only(bottom: 12),
+                  clipBehavior: Clip.antiAlias,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                  ),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
                     onTap: () => context.go(
@@ -127,9 +169,9 @@ class _WorkoutHistoryPageState extends ConsumerState<WorkoutHistoryPage> {
                         children: [
                           Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.check_circle_outline,
-                                color: Colors.green,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                               const SizedBox(width: 8),
                               Expanded(

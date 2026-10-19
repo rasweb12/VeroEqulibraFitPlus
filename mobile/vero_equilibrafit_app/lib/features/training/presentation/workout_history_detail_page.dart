@@ -67,23 +67,56 @@ class _WorkoutHistoryDetailPageState
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
-              Text(
-                session.planName,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 6),
-              Text('Concluído • $date'),
-              const SizedBox(height: 6),
-              Text(
-                'Duração: ${minutes == null ? "Não registrada" : "$minutes min"}',
-              ),
-              Text(
-                'Séries: ${session.completedSets}/${session.totalSets} concluídas',
+              // VERO_765C_VISUAL — resumo da sessão
+              Card(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        session.planName,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.check_circle_outline,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text('Concluído • $date')),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 8,
+                        children: [
+                          Text(
+                            'Duração: ${minutes == null ? "Não registrada" : "$minutes min"}',
+                          ),
+                          Text(
+                            'Séries: ${session.completedSets}/${session.totalSets} concluídas',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 14),
               for (final exercise in session.exercises)
                 Card(
                   margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(14),
                     child: Column(
@@ -91,7 +124,8 @@ class _WorkoutHistoryDetailPageState
                       children: [
                         Text(
                           exercise.exerciseName,
-                          style: Theme.of(context).textTheme.titleMedium,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 8),
                         for (final set in exercise.sets)
@@ -103,17 +137,29 @@ class _WorkoutHistoryDetailPageState
                                   set.completed
                                       ? Icons.check_circle
                                       : Icons.radio_button_unchecked,
-                                  color: set.completed ? Colors.green : null,
+                                  color: set.completed
+                                      ? Theme.of(context).colorScheme.primary
+                                      : null,
                                   size: 20,
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(child: Text('Série ${set.setNumber}')),
-                                Text('${set.repetitions} reps'),
-                                const SizedBox(width: 12),
-                                Text(
-                                  set.loadKg == null
-                                      ? 'Sem carga'
-                                      : '${set.loadKg} kg',
+                                Flexible(
+                                  child: Text(
+                                    '${set.repetitions} reps',
+                                    textAlign: TextAlign.end,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    set.loadKg == null
+                                        ? 'Sem carga'
+                                        : '${set.loadKg} kg',
+                                    textAlign: TextAlign.end,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ],
                             ),
