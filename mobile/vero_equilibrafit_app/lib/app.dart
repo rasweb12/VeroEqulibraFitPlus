@@ -27,6 +27,7 @@ import 'features/nutrition/presentation/nutrition_goals_page.dart';
 import 'features/nutrition/presentation/barcode_scanner_page.dart';
 import 'features/profile/presentation/profile_page.dart';
 import 'features/training/domain/training_plan.dart';
+import 'features/training/presentation/workout_session_page.dart';
 import 'core/offline/sync_providers.dart';
 import 'shared/presentation/vero_design.dart';
 
@@ -122,6 +123,11 @@ class VeroEqulibraFitApp extends ConsumerWidget {
   static final _privateRoutes = <RouteBase>[
     GoRoute(path: '/', builder: (context, state) => const DashboardPage()),
     GoRoute(path: '/training', builder: (context, state) => const PlansPage()),
+    GoRoute(
+      path: '/training/:planId/start',
+      builder: (context, state) =>
+          WorkoutSessionPage(planId: state.pathParameters['planId']!),
+    ),
     GoRoute(
       path: '/training/:planId',
       builder: (context, state) =>
@@ -417,6 +423,20 @@ class PlansPage extends ConsumerWidget {
                                       context.go('/training/${plan.id}'),
                                   icon: const Icon(Icons.arrow_forward),
                                   label: const Text('Abrir ficha'),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+
+                              SizedBox(
+                                width: double.infinity,
+                                child: FilledButton.icon(
+                                  onPressed: plan.exercises.isEmpty
+                                      ? null
+                                      : () => context.go(
+                                          '/training/${plan.id}/start',
+                                        ),
+                                  icon: const Icon(Icons.play_arrow_rounded),
+                                  label: const Text('Iniciar treino'),
                                 ),
                               ),
                             ],
