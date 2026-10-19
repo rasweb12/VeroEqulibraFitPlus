@@ -4,6 +4,7 @@ import '../../../core/offline/secure_operation_queue.dart';
 import '../../auth/presentation/current_owner_provider.dart';
 import '../data/training_repository.dart';
 import '../domain/exercise.dart';
+import '../domain/exercise_catalog_filter.dart';
 import '../domain/training_plan.dart';
 import '../domain/planned_exercise.dart';
 
@@ -105,13 +106,24 @@ class PlansController extends StateNotifier<List<TrainingPlan>> {
 }
 
 final exerciseSearchProvider = StateProvider<String>((ref) => '');
+final exerciseMuscleFilterProvider = StateProvider<String>((ref) => '');
+final exerciseEquipmentFilterProvider = StateProvider<String>((ref) => '');
+final exerciseOriginFilterProvider = StateProvider<String>((ref) => '');
+final exerciseSearchResetProvider = StateProvider<int>((ref) => 0);
 final catalogRevisionProvider = StateProvider<int>((ref) => 0);
-final exercisesProvider = Provider.autoDispose<List<Exercise>>((ref) {
+final catalogExercisesProvider = Provider.autoDispose<List<Exercise>>((ref) {
   ref.watch(catalogRevisionProvider);
-  return ref
-      .read(trainingRepositoryProvider)
-      .search(ref.watch(exerciseSearchProvider));
+  return ref.read(trainingRepositoryProvider).search('');
 });
+final exercisesProvider = Provider.autoDispose<List<Exercise>>(
+  (ref) => filterExerciseCatalog(
+    ref.watch(catalogExercisesProvider),
+    query: ref.watch(exerciseSearchProvider),
+    muscle: ref.watch(exerciseMuscleFilterProvider),
+    equipment: ref.watch(exerciseEquipmentFilterProvider),
+    origin: ref.watch(exerciseOriginFilterProvider),
+  ),
+);
 final archivedPlansProvider = Provider<List<TrainingPlan>>((ref) {
   ref.watch(plansProvider);
 

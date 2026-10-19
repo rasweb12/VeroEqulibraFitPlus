@@ -1158,6 +1158,21 @@ class ExerciseLibraryPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final exercises = ref.watch(exercisesProvider);
+    final catalog = ref.watch(catalogExercisesProvider);
+    final muscle = ref.watch(exerciseMuscleFilterProvider);
+    final equipment = ref.watch(exerciseEquipmentFilterProvider);
+    final origin = ref.watch(exerciseOriginFilterProvider);
+    final muscles = catalog.map((e) => e.primaryMuscle).toSet().toList()
+      ..sort();
+    final equipments = catalog.map((e) => e.equipment).toSet().toList()..sort();
+    void clearFilters() {
+      ref.read(exerciseSearchProvider.notifier).state = '';
+      ref.read(exerciseMuscleFilterProvider.notifier).state = '';
+      ref.read(exerciseEquipmentFilterProvider.notifier).state = '';
+      ref.read(exerciseOriginFilterProvider.notifier).state = '';
+      ref.read(exerciseSearchResetProvider.notifier).state++;
+    }
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -1180,6 +1195,7 @@ class ExerciseLibraryPage extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
             child: TextField(
+              key: ValueKey(ref.watch(exerciseSearchResetProvider)),
               onChanged: (value) =>
                   ref.read(exerciseSearchProvider.notifier).state = value,
               decoration: const InputDecoration(
@@ -1191,96 +1207,178 @@ class ExerciseLibraryPage extends ConsumerWidget {
               ),
             ),
           ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: exercises.length,
-              itemBuilder: (_, index) {
-                final exercise = exercises[index];
-                return Card(
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                DropdownButton<String>(
+                  value: muscle,
+                  items: [
+                    const DropdownMenuItem(
+                      value: '',
+                      child: Text('Todos os músculos'),
                     ),
-                    leading: Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: VeroColors.primary.withValues(alpha: .11),
-                        borderRadius: BorderRadius.circular(13),
-                      ),
-                      child: const Icon(
-                        Icons.fitness_center_rounded,
-                        color: VeroColors.primary,
-                      ),
+                    for (final value in muscles)
+                      DropdownMenuItem(value: value, child: Text(value)),
+                  ],
+                  onChanged: (value) =>
+                      ref.read(exerciseMuscleFilterProvider.notifier).state =
+                          value ?? '',
+                ),
+                DropdownButton<String>(
+                  value: equipment,
+                  items: [
+                    const DropdownMenuItem(
+                      value: '',
+                      child: Text('Todos os equipamentos'),
                     ),
-                    title: Text(
-                      exercise.name,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    for (final value in equipments)
+                      DropdownMenuItem(value: value, child: Text(value)),
+                  ],
+                  onChanged: (value) =>
+                      ref.read(exerciseEquipmentFilterProvider.notifier).state =
+                          value ?? '',
+                ),
+                DropdownButton<String>(
+                  value: origin,
+                  items: const [
+                    DropdownMenuItem(
+                      value: '',
+                      child: Text('Todas as origens'),
                     ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        '${exercise.primaryMuscle} · ${exercise.equipment}${exercise.isCustom ? ' · Personalizado' : ''}',
-                      ),
+                    DropdownMenuItem(value: 'catalog', child: Text('Catálogo')),
+                    DropdownMenuItem(
+                      value: 'custom',
+                      child: Text('Personalizados'),
                     ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (exercise.demoVideoAsset != null)
-                          IconButton(
-                            tooltip: 'Ver demonstração',
-                            icon: const Icon(Icons.play_circle_outline),
-                            onPressed: () =>
-                                _showExerciseDetails(context, exercise),
-                          ),
-                        if (exercise.isCustom && planId == null)
-                          IconButton(
-                            tooltip: 'Excluir exercício personalizado',
-                            icon: const Icon(Icons.delete_outline),
-                            onPressed: () {
-                              ref
-                                  .read(trainingRepositoryProvider)
-                                  .deleteCustom(exercise.id);
-                              ref
-                                  .read(catalogRevisionProvider.notifier)
-                                  .state++;
-                            },
-                          ),
-                        Icon(
-                          planId == null
-                              ? Icons.arrow_forward_ios_rounded
-                              : Icons.add_circle_outline,
-                          size: planId == null ? 18 : 24,
-                        ),
-                      ],
-                    ),
-                    onTap: planId == null
-                        ? () => _showExerciseDetails(context, exercise)
-                        : () async {
-                            ref
-                                .read(plansProvider.notifier)
-                                .addExercise(planId!, exercise.id);
-                            await Future<void>.delayed(Duration.zero);
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  '${exercise.name} adicionado à ficha.',
-                                ),
-                              ),
-                            );
-                            context.go('/training/$planId');
-                          },
-                    onLongPress: exercise.isCustom && planId == null
-                        ? () => _editCustomExercise(context, ref, exercise)
-                        : null,
-                  ),
-                );
-              },
+                  ],
+                  onChanged: (value) =>
+                      ref.read(exerciseOriginFilterProvider.notifier).state =
+                          value ?? '',
+                ),
+                TextButton.icon(
+                  onPressed: clearFilters,
+                  icon: const Icon(Icons.filter_alt_off),
+                  label: const Text('Limpar filtros'),
+                ),
+              ],
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
+            child: Text('${exercises.length} exercícios encontrados'),
+          ),
+          if (exercises.isEmpty)
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.search_off, size: 42),
+                    const SizedBox(height: 10),
+                    const Text('Nenhum exercício encontrado.'),
+                    OutlinedButton(
+                      onPressed: clearFilters,
+                      child: const Text('Limpar filtros'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            Expanded(
+              child: ListView.builder(
+                itemCount: exercises.length,
+                itemBuilder: (_, index) {
+                  final exercise = exercises[index];
+                  return Card(
+                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+                      leading: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: VeroColors.primary.withValues(alpha: .11),
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                        child: const Icon(
+                          Icons.fitness_center_rounded,
+                          color: VeroColors.primary,
+                        ),
+                      ),
+                      title: Text(
+                        exercise.name,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          '${exercise.primaryMuscle} · ${exercise.equipment}${exercise.isCustom ? ' · Personalizado' : ''}',
+                        ),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (exercise.demoVideoAsset != null)
+                            IconButton(
+                              tooltip: 'Ver demonstração',
+                              icon: const Icon(Icons.play_circle_outline),
+                              onPressed: () =>
+                                  _showExerciseDetails(context, exercise),
+                            ),
+                          if (exercise.isCustom && planId == null)
+                            IconButton(
+                              tooltip: 'Excluir exercício personalizado',
+                              icon: const Icon(Icons.delete_outline),
+                              onPressed: () {
+                                ref
+                                    .read(trainingRepositoryProvider)
+                                    .deleteCustom(exercise.id);
+                                ref
+                                    .read(catalogRevisionProvider.notifier)
+                                    .state++;
+                              },
+                            ),
+                          Icon(
+                            planId == null
+                                ? Icons.arrow_forward_ios_rounded
+                                : Icons.add_circle_outline,
+                            size: planId == null ? 18 : 24,
+                          ),
+                        ],
+                      ),
+                      onTap: planId == null
+                          ? () => _showExerciseDetails(context, exercise)
+                          : () async {
+                              ref
+                                  .read(plansProvider.notifier)
+                                  .addExercise(planId!, exercise.id);
+                              await Future<void>.delayed(Duration.zero);
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    '${exercise.name} adicionado à ficha.',
+                                  ),
+                                ),
+                              );
+                              context.go('/training/$planId');
+                            },
+                      onLongPress: exercise.isCustom && planId == null
+                          ? () => _editCustomExercise(context, ref, exercise)
+                          : null,
+                    ),
+                  );
+                },
+              ),
+            ),
         ],
       ),
     );
