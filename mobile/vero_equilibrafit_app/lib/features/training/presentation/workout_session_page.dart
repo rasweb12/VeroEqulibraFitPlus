@@ -9,6 +9,7 @@ import 'training_providers.dart';
 import 'workout_session_providers.dart';
 import 'workout_rest_timer_widget.dart';
 
+// Vero 7.6.5D.2 - acessibilidade
 class WorkoutSessionPage extends ConsumerStatefulWidget {
   const WorkoutSessionPage({super.key, required this.planId});
 
@@ -300,12 +301,17 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           const SizedBox(height: 10),
-                          LinearProgressIndicator(
-                            value: session.totalSets == 0
-                                ? 0
-                                : session.completedSets / session.totalSets,
-                            minHeight: 9,
-                            borderRadius: BorderRadius.circular(8),
+                          Semantics(
+                            label: 'Progresso do treino',
+                            value:
+                                '${session.completedSets} de ${session.totalSets} séries concluídas',
+                            child: LinearProgressIndicator(
+                              value: session.totalSets == 0
+                                  ? 0
+                                  : session.completedSets / session.totalSets,
+                              minHeight: 9,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                         ],
                       ),
@@ -417,6 +423,7 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
               maxLines: 2,
               decoration: const InputDecoration(
                 labelText: 'Observações do exercício',
+                helperText: 'Anote orientações ou dificuldades desta execução.',
                 border: OutlineInputBorder(),
               ),
               onChanged: (value) => _notesDraft[exerciseIndex] = value,
@@ -459,11 +466,12 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
               initialValue: _repsDraft[key],
               enabled: canEdit && !result.completed,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Reps',
+                helperText: 'Série ${result.setNumber}',
                 hintText: '0',
                 isDense: true,
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
               onChanged: (value) => _repsDraft[key] = value,
             ),
@@ -479,6 +487,7 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
               ),
               decoration: const InputDecoration(
                 labelText: 'Kg',
+                helperText: 'Carga em quilogramas',
                 hintText: '0,0',
                 isDense: true,
                 border: OutlineInputBorder(),
@@ -487,6 +496,8 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
             ),
           ),
           Checkbox(
+            semanticLabel:
+                'Série ${result.setNumber}: ${result.completed ? 'concluída' : 'pendente'}. Alterar conclusão',
             value: result.completed,
             onChanged: canEdit
                 ? (value) async {

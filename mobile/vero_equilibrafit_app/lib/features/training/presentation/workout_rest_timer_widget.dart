@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/workout_rest_timer.dart';
 import 'workout_session_providers.dart';
 
+// Vero 7.6.5D.2 - acessibilidade
 class WorkoutRestTimer extends ConsumerStatefulWidget {
   const WorkoutRestTimer({super.key, required this.sessionId});
 
@@ -130,12 +131,22 @@ class WorkoutRestTimerState extends ConsumerState<WorkoutRestTimer> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            Text(
-              '$minutes:$remainder',
-              style: Theme.of(context).textTheme.headlineMedium,
+            Semantics(
+              label: 'Tempo restante do descanso',
+              value: '$minutes minutos e $remainder segundos',
+              child: ExcludeSemantics(
+                child: Text(
+                  '$minutes:$remainder',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+              ),
             ),
             const SizedBox(height: 8),
-            LinearProgressIndicator(value: progress),
+            Semantics(
+              label: 'Progresso do descanso',
+              value: '${(progress * 100).round()} por cento restante',
+              child: LinearProgressIndicator(value: progress),
+            ),
             const SizedBox(height: 8),
             Text(
               finished
@@ -158,7 +169,9 @@ class WorkoutRestTimerState extends ConsumerState<WorkoutRestTimer> {
                                 : rest.pause(DateTime.now().toUtc()),
                           ),
                     icon: Icon(rest.paused ? Icons.play_arrow : Icons.pause),
-                    label: Text(rest.paused ? 'Retomar' : 'Pausar'),
+                    label: Text(
+                      rest.paused ? 'Retomar descanso' : 'Pausar descanso',
+                    ),
                   ),
                 OutlinedButton.icon(
                   onPressed: _busy
@@ -168,7 +181,7 @@ class WorkoutRestTimerState extends ConsumerState<WorkoutRestTimer> {
                           seconds: rest.durationSeconds,
                         ),
                   icon: const Icon(Icons.restart_alt),
-                  label: const Text('Reiniciar'),
+                  label: const Text('Reiniciar descanso'),
                 ),
                 TextButton(
                   onPressed: _busy ? null : clear,
