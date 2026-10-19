@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -165,6 +167,11 @@ class MeasurementsPage extends ConsumerWidget {
         ],
       ),
     );
+    // A dialog route completes before all of its inherited dependencies have
+    // been detached. Deferring the provider update by one frame prevents a
+    // route disposal/provider rebuild race on Android while preserving the
+    // modal flow.
+    await _afterDialogFrame();
     if (save == true && context.mounted) {
       final values = [weight.text, waist.text, chest.text, hip.text];
       if (values.any(
@@ -187,6 +194,12 @@ class MeasurementsPage extends ConsumerWidget {
     for (final controller in [weight, waist, chest, hip, notes]) {
       controller.dispose();
     }
+  }
+
+  Future<void> _afterDialogFrame() async {
+    final completer = Completer<void>();
+    WidgetsBinding.instance.addPostFrameCallback((_) => completer.complete());
+    await completer.future;
   }
 
   Widget _numberField(TextEditingController controller, String label) =>

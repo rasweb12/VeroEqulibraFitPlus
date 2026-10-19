@@ -344,7 +344,8 @@ class HabitsPage extends ConsumerWidget {
         decoration: const InputDecoration(labelText: 'Volume em ml'),
       ),
     ]);
-    if (result) {
+    await _afterDialogFrame();
+    if (result && context.mounted) {
       ref
           .read(habitsProvider.notifier)
           .setWaterGoal(int.tryParse(text.text) ?? 0);
@@ -372,7 +373,8 @@ class HabitsPage extends ConsumerWidget {
         decoration: const InputDecoration(labelText: 'Observação opcional'),
       ),
     ]);
-    if (result) {
+    await _afterDialogFrame();
+    if (result && context.mounted) {
       ref
           .read(habitsProvider.notifier)
           .addActivity(name.text, int.tryParse(minutes.text) ?? 0, note.text);
@@ -392,7 +394,8 @@ class HabitsPage extends ConsumerWidget {
         decoration: const InputDecoration(labelText: 'Texto privado'),
       ),
     ]);
-    if (result) {
+    await _afterDialogFrame();
+    if (result && context.mounted) {
       ref.read(habitsProvider.notifier).addNote(text.text);
     }
     text.dispose();
@@ -421,4 +424,10 @@ class HabitsPage extends ConsumerWidget {
         ),
       ) ??
       false;
+
+  Future<void> _afterDialogFrame() async {
+    final completer = Completer<void>();
+    WidgetsBinding.instance.addPostFrameCallback((_) => completer.complete());
+    await completer.future;
+  }
 }
