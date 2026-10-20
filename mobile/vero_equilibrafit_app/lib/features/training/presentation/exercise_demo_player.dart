@@ -2,6 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 
+/// Identifica os arquivos de ângulos sem alterar os caminhos dos assets.
+List<String> findExerciseAngles(String assetPath, Iterable<String> assets) {
+  final base = assetPath.replaceFirst(
+    RegExp(r'\.mp4$', caseSensitive: false),
+    '',
+  );
+  final alternate = RegExp(
+    '^${RegExp.escape(base)}(?: \\([0-9]+\\)|[0-9]+)\\.mp4\$',
+    caseSensitive: false,
+  );
+  final all = assets.toList();
+  final matches =
+      all
+          .where((item) => item != assetPath && alternate.hasMatch(item))
+          .toList()
+        ..sort();
+  return [if (all.contains(assetPath)) assetPath, ...matches];
+}
+
 /// VERO_772_MULTIANGLE: videos (1), (2) sao outros angulos, nao duplicatas.
 class ExerciseDemoPlayer extends StatefulWidget {
   const ExerciseDemoPlayer({super.key, required this.assetPath});
@@ -29,22 +48,7 @@ class _ExerciseDemoPlayerState extends State<ExerciseDemoPlayer> {
     try {
       final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
       final all = manifest.listAssets();
-      final base = widget.assetPath.replaceFirst(
-        RegExp(r'\.mp4$', caseSensitive: false),
-        '',
-      );
-      final matches = all.where((item) {
-        if (item == widget.assetPath) return true;
-        if (!item.startsWith('$base (') || !item.endsWith(').mp4')) {
-          return false;
-        }
-        final number = item.substring(base.length + 2, item.length - 5);
-        return int.tryParse(number) != null;
-      }).toList()..sort();
-      final ordered = <String>[
-        if (all.contains(widget.assetPath)) widget.assetPath,
-        ...matches.where((item) => item != widget.assetPath),
-      ];
+      final ordered = findExerciseAngles(widget.assetPath, all);
       if (!mounted) return;
       setState(() => _angles = ordered);
       await _open(ordered.isEmpty ? widget.assetPath : ordered.first);
@@ -73,6 +77,7 @@ class _ExerciseDemoPlayerState extends State<ExerciseDemoPlayer> {
     try {
       await next.initialize();
       await next.setLooping(true);
+      await next.setPlaybackSpeed(_speed);
       if (!mounted || generation != _generation) {
         await next.dispose();
         return;

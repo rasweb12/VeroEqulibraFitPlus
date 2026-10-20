@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'nutrition_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../measurements/presentation/measurements_providers.dart';
@@ -70,7 +71,10 @@ class _NutritionReportsPageState extends ConsumerState<NutritionReportsPage> {
       (current, value) => value > current ? value : current,
     );
     return Scaffold(
-      appBar: AppBar(title: const Text('Relatório nutricional')),
+      appBar: AppBar(
+        leading: const NutritionBackButton(),
+        title: const Text('Relatório nutricional'),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
         children: [

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../../auth/data/auth_repository.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../../../shared/presentation/vero_design.dart';
+import 'nutrition_back_button.dart';
 
 class NutritionPlansPage extends ConsumerStatefulWidget {
   const NutritionPlansPage({super.key});
@@ -35,7 +37,10 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Plano alimentar')),
+    appBar: AppBar(
+      leading: const NutritionBackButton(),
+      title: const Text('Plano alimentar'),
+    ),
     body: ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       children: [
@@ -202,15 +207,25 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
               'Authorization': 'Bearer ${session.accessToken}',
             })
             ..body = jsonEncode(body);
-      final streamed = await client
+      final response = await client
           .send(request)
-          .timeout(const Duration(seconds: 35));
-      final response = await http.Response.fromStream(streamed);
+          .then(http.Response.fromStream)
+          .timeout(const Duration(seconds: 45));
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw HttpException(_message(response));
       }
       if (!saving) {
-        jsonDecode(response.body);
+        final decoded = jsonDecode(response.body);
+        if (decoded is! Map<String, dynamic>) {
+          throw const HttpException(
+            'A resposta da proposta é inválida. Tente novamente.',
+          );
+        }
+        if (decoded['fallback_used'] == true) {
+          throw const HttpException(
+            'O Gemini está indisponível. Nenhuma proposta por IA foi gerada; tente novamente mais tarde.',
+          );
+        }
         if (mounted) {
           setState(() {
             proposal = response.body;
@@ -218,6 +233,20 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
             editingPlanId = null;
           });
         }
+      }
+    } on TimeoutException {
+      if (mounted) {
+        setState(
+          () => error =
+              'A solicitação demorou demais. Verifique a conexão e tente novamente.',
+        );
+      }
+    } on http.ClientException {
+      if (mounted) {
+        setState(
+          () => error =
+              'Não foi possível conectar ao serviço. Verifique a rede e tente novamente.',
+        );
       }
     } on HttpException catch (exception) {
       if (mounted) {
@@ -302,6 +331,18 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
   }
 
   String _message(http.Response response) {
+    if (response.statusCode == 401) {
+      return 'Sua sessão expirou. Entre novamente para continuar.';
+    }
+    if (response.statusCode == 403) {
+      return 'Sua conta não tem permissão para esta operação.';
+    }
+    if (response.statusCode == 429) {
+      return 'Muitas solicitações. Aguarde e tente novamente.';
+    }
+    if (response.statusCode >= 500) {
+      return 'O serviço de planos está indisponível. Tente novamente mais tarde (${response.statusCode}).';
+    }
     try {
       final value = jsonDecode(response.body);
       if (value is Map<String, dynamic> && value['error'] is String) {
