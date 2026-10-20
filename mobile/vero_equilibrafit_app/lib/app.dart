@@ -1538,66 +1538,24 @@ class ExerciseLibraryPage extends ConsumerWidget {
     );
   }
 
+  // VERO_772_FORM_FINAL: formulario sem controladores a descartar.
   Future<void> _createCustomExercise(
     BuildContext context,
     WidgetRef ref,
   ) async {
-    final name = TextEditingController();
-    final muscle = TextEditingController();
-    final equipment = TextEditingController();
-    final create = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Exercício personalizado'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: name,
-                decoration: const InputDecoration(labelText: 'Nome'),
-              ),
-              TextField(
-                controller: muscle,
-                decoration: const InputDecoration(labelText: 'Grupo muscular'),
-              ),
-              TextField(
-                controller: equipment,
-                decoration: const InputDecoration(labelText: 'Equipamento'),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Salvar'),
-          ),
-        ],
-      ),
-    );
-    if (create == true && name.text.trim().isNotEmpty && context.mounted) {
-      ref
-          .read(trainingRepositoryProvider)
-          .createCustom(
-            name: name.text,
-            primaryMuscle: muscle.text.trim().isEmpty
-                ? 'Não informado'
-                : muscle.text,
-            equipment: equipment.text.trim().isEmpty
-                ? 'Não informado'
-                : equipment.text,
-          );
-      final revision = ref.read(catalogRevisionProvider.notifier);
-      revision.state = revision.state + 1;
-    }
-    name.dispose();
-    muscle.dispose();
-    equipment.dispose();
+    final result = await _showCustomExerciseForm(context);
+    if (result == null || !context.mounted) return;
+    ref
+        .read(trainingRepositoryProvider)
+        .createCustom(
+          name: result.$1,
+          primaryMuscle: result.$2,
+          equipment: result.$3,
+        );
+    ref.read(catalogRevisionProvider.notifier).state++;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Exercício criado.')));
   }
 
   Future<void> _editCustomExercise(
@@ -1605,57 +1563,109 @@ class ExerciseLibraryPage extends ConsumerWidget {
     WidgetRef ref,
     Exercise exercise,
   ) async {
-    final name = TextEditingController(text: exercise.name);
-    final muscle = TextEditingController(text: exercise.primaryMuscle);
-    final equipment = TextEditingController(text: exercise.equipment);
-    final save = await showDialog<bool>(
+    final result = await _showCustomExerciseForm(context, exercise: exercise);
+    if (result == null || !context.mounted) return;
+    ref
+        .read(trainingRepositoryProvider)
+        .updateCustom(
+          id: exercise.id,
+          name: result.$1,
+          primaryMuscle: result.$2,
+          equipment: result.$3,
+        );
+    ref.read(catalogRevisionProvider.notifier).state++;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Exercício atualizado.')));
+  }
+
+  Future<(String, String, String)?> _showCustomExerciseForm(
+    BuildContext context, {
+    Exercise? exercise,
+  }) async {
+    var name = exercise?.name ?? '';
+    var muscle = exercise?.primaryMuscle ?? '';
+    var equipment = exercise?.equipment ?? '';
+    var attempted = false;
+    return showDialog<(String, String, String)>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Editar exercício personalizado'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: name,
-              decoration: const InputDecoration(labelText: 'Nome'),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, update) => AlertDialog(
+          title: Text(
+            exercise == null
+                ? 'Criar exercício personalizado'
+                : 'Editar exercício personalizado',
+          ),
+          content: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    initialValue: name,
+                    maxLength: 100,
+                    textCapitalization: TextCapitalization.sentences,
+                    textInputAction: TextInputAction.next,
+                    decoration: InputDecoration(
+                      labelText: 'Nome do exercício',
+                      border: const OutlineInputBorder(),
+                      errorText: attempted && name.trim().isEmpty
+                          ? 'Informe o nome do exercício'
+                          : null,
+                    ),
+                    onChanged: (v) => update(() => name = v),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    initialValue: muscle,
+                    maxLength: 60,
+                    textCapitalization: TextCapitalization.sentences,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Grupo muscular',
+                      helperText: 'Opcional',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (v) => muscle = v,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    initialValue: equipment,
+                    maxLength: 60,
+                    textCapitalization: TextCapitalization.sentences,
+                    textInputAction: TextInputAction.done,
+                    decoration: const InputDecoration(
+                      labelText: 'Equipamento',
+                      helperText: 'Opcional',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (v) => equipment = v,
+                  ),
+                ],
+              ),
             ),
-            TextField(
-              controller: muscle,
-              decoration: const InputDecoration(labelText: 'Grupo muscular'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancelar'),
             ),
-            TextField(
-              controller: equipment,
-              decoration: const InputDecoration(labelText: 'Equipamento'),
+            FilledButton(
+              onPressed: () {
+                update(() => attempted = true);
+                if (name.trim().isEmpty) return;
+                Navigator.pop(dialogContext, (
+                  name.trim(),
+                  muscle.trim().isEmpty ? 'Não informado' : muscle.trim(),
+                  equipment.trim().isEmpty ? 'Não informado' : equipment.trim(),
+                ));
+              },
+              child: const Text('Salvar'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Salvar'),
-          ),
-        ],
       ),
     );
-    if (save == true && name.text.trim().isNotEmpty) {
-      ref
-          .read(trainingRepositoryProvider)
-          .updateCustom(
-            id: exercise.id,
-            name: name.text,
-            primaryMuscle: muscle.text.isEmpty ? 'Não informado' : muscle.text,
-            equipment: equipment.text.isEmpty
-                ? 'Não informado'
-                : equipment.text,
-          );
-      ref.read(catalogRevisionProvider.notifier).state++;
-    }
-    name.dispose();
-    muscle.dispose();
-    equipment.dispose();
   }
 }
