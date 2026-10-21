@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
@@ -73,7 +74,14 @@ class _ExerciseDemoPlayerState extends State<ExerciseDemoPlayer> {
       });
     }
     if (previous != null) await previous.dispose();
-    final next = VideoPlayerController.asset(Uri.encodeFull(path));
+    final encodedPath = Uri.encodeFull(path);
+    // Android's asset URI is decoded by ExoPlayer before AssetManager opens it.
+    // Flutter packages asset keys with percent-encoded characters, so preserve
+    // those percent signs through that URI decoding step.
+    final assetPath = !kIsWeb && defaultTargetPlatform == TargetPlatform.android
+        ? encodedPath.replaceAll('%', '%25')
+        : encodedPath;
+    final next = VideoPlayerController.asset(assetPath);
     try {
       await next.initialize();
       await next.setLooping(true);

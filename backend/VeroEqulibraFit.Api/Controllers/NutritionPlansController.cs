@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -32,10 +33,11 @@ public sealed class NutritionPlansController(
             logger.LogWarning(exception,
                 "Nutrition plan gateway failed with upstream status {StatusCode}. TraceId: {TraceId}",
                 exception.StatusCode, HttpContext.TraceIdentifier);
+            var rateLimited = exception.StatusCode == HttpStatusCode.TooManyRequests;
             return Problem(
-                statusCode: StatusCodes.Status502BadGateway,
-                title: "O serviço de planos alimentares está indisponível.",
-                detail: "Tente novamente em alguns instantes.");
+                statusCode: rateLimited ? StatusCodes.Status429TooManyRequests : StatusCodes.Status502BadGateway,
+                title: rateLimited ? "O serviço de planos recebeu muitas solicitações." : "O serviço de planos alimentares está indisponível.",
+                detail: rateLimited ? "Aguarde antes de tentar novamente." : "Tente novamente em alguns instantes.");
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {

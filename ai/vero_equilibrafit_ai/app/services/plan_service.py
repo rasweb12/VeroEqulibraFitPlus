@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import logging
+
 from app.core.config import Settings
 from app.providers.ai_provider_router import AiProviderRouter
 from app.schemas.common import MacroTargets, SafetyNotice
 from app.schemas.plans import MealSuggestion, PlanGenerateRequest, PlanGenerateResponse
+
+logger = logging.getLogger(__name__)
 
 
 class PlanService:
@@ -55,11 +59,14 @@ class PlanService:
             user_prompt=user_prompt,
         )
         if result.payload is None:
+            logger.warning("plan_generation_fallback stage=provider category=%s", result.error_type or "unknown")
             return None
 
         try:
             response = PlanGenerateResponse.model_validate(result.payload)
         except Exception:  # noqa: BLE001 - invalid model output must fallback safely
+            # Do not log validation details: they may contain the model output or user data.
+            logger.warning("plan_generation_fallback stage=schema_validation")
             return None
 
         bounded_calories = min(max(response.targets.calories, request.min_calories), request.max_calories)
