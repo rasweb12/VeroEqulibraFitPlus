@@ -112,7 +112,18 @@ class GeminiProvider:
                 ),
             )
 
-            return self._parse_json(response.text)
+            content = response.text
+            parsed = self._parse_json(content)
+            if parsed is None:
+                # Only a bounded reason is recorded; response text may contain private data.
+                candidates = response.candidates or []
+                reason = getattr(candidates[0], "finish_reason", None) if candidates else None
+                reason_name = getattr(reason, "name", None)
+                allowed = {"STOP", "MAX_TOKENS", "SAFETY", "RECITATION", "OTHER"}
+                safe_reason = reason_name if reason_name in allowed else "UNKNOWN"
+                category = "empty" if not content or not content.strip() else "invalid_json_or_non_object"
+                logger.warning("gemini_json_invalid category=%s finish_reason=%s", category, safe_reason)
+            return parsed
 
         except Exception as exc:  # noqa: BLE001 - invalid provider responses use safe fallback
             raise AiProviderError.from_exception(exc) from None
@@ -207,3 +218,4 @@ class GeminiProvider:
 
         except json.JSONDecodeError:
             return None
+
