@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock
 
 from app.core.config import Settings
 from app.providers.gemini_provider import GeminiProvider
+from app.schemas.plans import PlanGenerateResponse
 
 
 def test_invalid_json_logs_only_category_and_finish_reason(caplog):
@@ -42,3 +43,18 @@ def test_empty_json_response_does_not_log_untrusted_finish_reason(caplog):
     assert result is None
     assert "category=empty finish_reason=UNKNOWN" in caplog.text
     assert "private" not in caplog.text
+
+
+def test_structured_output_schema_is_forwarded_to_gemini():
+    provider = GeminiProvider(Settings())
+    generate = AsyncMock(return_value=SimpleNamespace(text='{}', candidates=[]))
+    provider._client = SimpleNamespace(aio=SimpleNamespace(models=SimpleNamespace(generate_content=generate)))
+    provider._types = SimpleNamespace(GenerateContentConfig=lambda **kwargs: kwargs)
+
+    result = asyncio.run(provider.complete_json(
+        system_prompt="", user_prompt="", response_schema=PlanGenerateResponse
+    ))
+
+    assert result == {}
+    assert generate.call_args.kwargs["config"]["response_schema"] is PlanGenerateResponse
+    assert generate.call_args.kwargs["config"]["response_mime_type"] == "application/json"

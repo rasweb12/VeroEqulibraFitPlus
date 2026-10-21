@@ -57,6 +57,7 @@ class PlanService:
             feature="plans",
             system_prompt=system_prompt,
             user_prompt=user_prompt,
+            response_schema=PlanGenerateResponse,
         )
         if result.payload is None:
             logger.warning("plan_generation_fallback stage=provider category=%s", result.error_type or "unknown")

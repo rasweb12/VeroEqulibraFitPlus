@@ -5,6 +5,7 @@ import binascii
 import json
 import logging
 import re
+from typing import Any
 
 from app.core.config import Settings
 from app.providers.provider_errors import AiProviderError
@@ -92,6 +93,7 @@ class GeminiProvider:
         system_prompt: str,
         user_prompt: str,
         model: str | None = None,
+        response_schema: Any = None,
     ) -> dict | None:
         """Generate a JSON object with Gemini."""
 
@@ -105,6 +107,7 @@ class GeminiProvider:
                 config=self._types.GenerateContentConfig(
                     system_instruction=system_prompt,
                     response_mime_type="application/json",
+                    response_schema=response_schema,
                     temperature=0.2,
                     max_output_tokens=(
                         self._settings.ai_max_output_tokens

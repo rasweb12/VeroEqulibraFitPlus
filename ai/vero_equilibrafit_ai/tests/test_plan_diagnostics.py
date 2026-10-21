@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 from app.core.config import Settings
 from app.providers.ai_provider_router import AiProviderResult
-from app.schemas.plans import PlanGenerateRequest
+from app.schemas.plans import PlanGenerateRequest, PlanGenerateResponse
 from app.services.plan_service import PlanService
 
 
@@ -21,6 +21,7 @@ def test_plan_fallback_logs_provider_category_without_request_data(caplog):
     assert result.fallback_used
     assert "stage=provider category=invalid_response" in caplog.text
     assert "private objective" not in caplog.text
+    assert service._provider.complete_json_result.call_args.kwargs["response_schema"] is PlanGenerateResponse
 
 
 def test_plan_fallback_logs_schema_failure_without_model_output(caplog):
