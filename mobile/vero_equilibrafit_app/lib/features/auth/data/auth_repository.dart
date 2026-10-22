@@ -116,10 +116,13 @@ class AuthRepository {
 
   Future<AuthSession> refresh() async {
     final refresh = await _storage.read(key: _refreshKey);
-    if (refresh == null) {
+    final expectedUserId = await _storage.read(key: _userIdKey);
+    if (refresh == null || expectedUserId == null || expectedUserId.isEmpty) {
       throw const AuthException('A sessão não está disponível.');
     }
-    return _authenticate('/api/v1/auth/refresh', {'refreshToken': refresh});
+    return _authenticate('/api/v1/auth/refresh', {
+      'refreshToken': refresh,
+    }, expectedUserId: expectedUserId);
   }
 
   Future<void> requestPasswordReset(String email) async {
@@ -175,8 +178,9 @@ class AuthRepository {
 
   Future<AuthSession> _authenticate(
     String path,
-    Map<String, Object?> body,
-  ) async {
+    Map<String, Object?> body, {
+    String? expectedUserId,
+  }) async {
     if (apiBaseUrl.isEmpty) {
       throw const AuthException(
         'Defina API_BASE_URL para conectar sua conta ao ambiente isolado.',
@@ -198,6 +202,9 @@ class AuthRepository {
       userId: data['userId'] as String,
       displayName: data['displayName'] as String?,
     );
+    if (expectedUserId != null && session.userId != expectedUserId) {
+      throw const AuthException('Não foi possível renovar a sessão.');
+    }
     await _store(session);
     return session;
   }

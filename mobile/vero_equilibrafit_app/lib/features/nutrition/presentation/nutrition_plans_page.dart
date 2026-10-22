@@ -200,17 +200,28 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
     });
     final client = http.Client();
     try {
-      final request =
-          http.Request(method, Uri.parse('${AuthRepository.apiBaseUrl}$path'))
-            ..headers.addAll({
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ${session.accessToken}',
-            })
-            ..body = jsonEncode(body);
-      final response = await client
-          .send(request)
-          .then(http.Response.fromStream)
-          .timeout(const Duration(seconds: 45));
+      Future<http.Response> send(AuthSession active) {
+        final request =
+            http.Request(method, Uri.parse('${AuthRepository.apiBaseUrl}$path'))
+              ..headers.addAll({
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ${active.accessToken}',
+              })
+              ..body = jsonEncode(body);
+        return client
+            .send(request)
+            .then(http.Response.fromStream)
+            .timeout(const Duration(seconds: 45));
+      }
+
+      var response = await send(session);
+      // Only proposal generation is retried; writes lack an idempotency key.
+      if (response.statusCode == 401 && !saving && mounted) {
+        final refreshed = await ref
+            .read(authSessionProvider.notifier)
+            .refreshAfterUnauthorized(session);
+        if (refreshed != null && mounted) response = await send(refreshed);
+      }
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw HttpException(_message(response));
       }
@@ -276,12 +287,19 @@ class _NutritionPlansPageState extends ConsumerState<NutritionPlansPage> {
       error = null;
     });
     try {
-      final response = await http
+      Future<http.Response> getPlans(AuthSession active) => http
           .get(
             Uri.parse('${AuthRepository.apiBaseUrl}/api/v1/nutrition-plans'),
-            headers: {'Authorization': 'Bearer ${session.accessToken}'},
+            headers: {'Authorization': 'Bearer ${active.accessToken}'},
           )
           .timeout(const Duration(seconds: 35));
+      var response = await getPlans(session);
+      if (response.statusCode == 401 && mounted) {
+        final refreshed = await ref
+            .read(authSessionProvider.notifier)
+            .refreshAfterUnauthorized(session);
+        if (refreshed != null && mounted) response = await getPlans(refreshed);
+      }
       if (response.statusCode != 200) throw HttpException(_message(response));
       final decoded = jsonDecode(response.body) as List<dynamic>;
       savedPlans = decoded.whereType<Map<String, dynamic>>().toList(

@@ -92,7 +92,10 @@ class NutritionPage extends ConsumerWidget {
             onPrevious: () =>
                 ref.read(nutritionDiaryDateProvider.notifier).state =
                     selectedDay.subtract(const Duration(days: 1)),
-            onNext: selectedDay.isBefore(DateTime.now())
+            onNext:
+                DateUtils.dateOnly(
+                  selectedDay,
+                ).isBefore(DateUtils.dateOnly(DateTime.now()))
                 ? () => ref.read(nutritionDiaryDateProvider.notifier).state =
                       selectedDay.add(const Duration(days: 1))
                 : null,
@@ -215,6 +218,35 @@ class NutritionPage extends ConsumerWidget {
       return;
     }
     if (!context.mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Confirmar foto'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.memory(bytes, fit: BoxFit.contain),
+              const SizedBox(height: 12),
+              const Text(
+                'A imagem será enviada para análise. Você poderá revisar os alimentos antes de salvar.',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Analisar foto'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
     await _reviewPhoto(context, ref, bytes, mime);
   }
 
@@ -321,6 +353,20 @@ class _DiarySummary extends StatelessWidget {
               context,
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
+          if (calorieGoal > 0) ...[
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+              value: (calories / calorieGoal).clamp(0.0, 1.0),
+              minHeight: 8,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              calories > calorieGoal
+                  ? '${(calories - calorieGoal).round()} kcal acima da meta'
+                  : '${(calorieGoal - calories).round()} kcal restantes',
+            ),
+          ],
           const SizedBox(height: 4),
           Text(
             'Proteínas ${protein.round()}${proteinGoal == 0 ? '' : ' / $proteinGoal'} g  ·  Carboidratos ${carbs.round()}${carbsGoal == 0 ? '' : ' / $carbsGoal'} g  ·  Gorduras ${fat.round()}${fatGoal == 0 ? '' : ' / $fatGoal'} g',
@@ -725,6 +771,15 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
     super.initState();
     final mealId = widget.mealId;
     if (mealId == null) {
+      final day = ref.read(nutritionDiaryDateProvider);
+      final now = DateTime.now();
+      _recordedAt = DateTime(
+        day.year,
+        day.month,
+        day.day,
+        now.hour,
+        now.minute,
+      );
       final barcode = widget.barcode;
       if (barcode != null && barcode.isNotEmpty) {
         _notes.text = 'Código de barras: $barcode';
@@ -736,11 +791,20 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
       _fat.text = widget.initialFat?.toString() ?? '';
       return;
     }
-    for (final meal in ref.read(mealsProvider)) {
-      if (meal.id != mealId) continue;
+    _loadExisting(ref.read(mealsProvider));
+  }
+
+  void _loadExisting(List<MealEntry> meals) {
+    if (widget.mealId == null || _existing != null) return;
+    for (final meal in meals) {
+      if (meal.id != widget.mealId) continue;
       _existing = meal;
       _name.text = meal.name;
-      _notes.text = meal.notes;
+      final lines = meal.notes.split('\n');
+      if (lines.isNotEmpty && lines.last.startsWith('Porção: ')) {
+        _portion.text = lines.removeLast().substring('Porção: '.length);
+      }
+      _notes.text = lines.join('\n');
       _mealType = meal.mealType;
       _recordedAt = meal.recordedAt;
       _calories.text = meal.estimatedCalories?.toString() ?? '';
@@ -768,99 +832,121 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      leading: IconButton(
-        tooltip: 'Voltar',
-        icon: const Icon(Icons.arrow_back),
-        onPressed: () => context.go('/nutrition'),
-      ),
-      title: Text(_existing == null ? 'Registrar refeição' : 'Editar refeição'),
-    ),
-    body: ListView(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-      children: [
-        Text(
+  Widget build(BuildContext context) {
+    _loadExisting(ref.watch(mealsProvider));
+    if (widget.mealId != null && _existing == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Editar refeição')),
+        body: const Center(child: Text('Refeição indisponível ou carregando.')),
+      );
+    }
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Voltar',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/nutrition'),
+        ),
+        title: Text(
           _existing == null ? 'Registrar refeição' : 'Editar refeição',
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
         ),
-        const SizedBox(height: 4),
-        const Text(
-          'Preencha os dados ou use o Gemini como sugestão revisável.',
-          style: TextStyle(color: VeroColors.muted),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _name,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: 'O que você comeu?'),
-        ),
-        TextField(
-          controller: _portion,
-          decoration: const InputDecoration(
-            labelText: 'Porção (ex.: 150 g, 1 unidade)',
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+        children: [
+          Text(
+            _existing == null ? 'Registrar refeição' : 'Editar refeição',
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
           ),
-        ),
-        DropdownButtonFormField<String>(
-          initialValue: _mealType,
-          decoration: const InputDecoration(labelText: 'Momento'),
-          items:
-              const ['Café da manhã', 'Almoço', 'Lanche', 'Jantar', 'Refeição']
-                  .map(
-                    (item) => DropdownMenuItem(value: item, child: Text(item)),
-                  )
-                  .toList(growable: false),
-          onChanged: (value) => setState(() => _mealType = value!),
-        ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.calendar_today_outlined),
-          title: Text(
-            'Data: ${MaterialLocalizations.of(context).formatMediumDate(_recordedAt)}',
+          const SizedBox(height: 4),
+          const Text(
+            'Preencha os dados ou use o Gemini como sugestão revisável.',
+            style: TextStyle(color: VeroColors.muted),
           ),
-          onTap: _pickDate,
-        ),
-        TextField(
-          controller: _notes,
-          maxLines: 2,
-          decoration: const InputDecoration(
-            labelText: 'Observações (opcional)',
+          const SizedBox(height: 16),
+          TextField(
+            controller: _name,
+            autofocus: true,
+            decoration: const InputDecoration(labelText: 'O que você comeu?'),
           ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'Informações nutricionais',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const Text(
-          'Preencha manualmente ou peça uma sugestão ao Gemini. Todos os valores permanecem editáveis.',
-        ),
-        _numberField(_calories, 'Calorias (kcal)'),
-        _numberField(_protein, 'Proteínas (g)'),
-        _numberField(_carbs, 'Carboidratos (g)'),
-        _numberField(_fat, 'Gorduras (g)'),
-        if (_estimateMessage != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(_estimateMessage!),
+          TextField(
+            controller: _portion,
+            decoration: const InputDecoration(
+              labelText: 'Porção (ex.: 150 g, 1 unidade)',
+            ),
           ),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: _estimating ? null : _estimate,
-          icon: const Icon(Icons.auto_awesome_outlined),
-          label: Text(_estimating ? 'Estimando…' : 'Estimar com Gemini'),
-        ),
-        const SizedBox(height: 8),
-        FilledButton.icon(
-          onPressed: _save,
-          icon: const Icon(Icons.save_outlined),
-          label: Text(
-            _existing == null ? 'Salvar refeição' : 'Salvar alterações',
+          DropdownButtonFormField<String>(
+            initialValue: _mealType,
+            decoration: const InputDecoration(labelText: 'Momento'),
+            items:
+                <String>{
+                      'Café da manhã',
+                      'Lanche da manhã',
+                      'Almoço',
+                      'Lanche',
+                      'Lanche da tarde',
+                      'Jantar',
+                      'Ceia',
+                      'Refeição',
+                      _mealType,
+                    }
+                    .map(
+                      (item) =>
+                          DropdownMenuItem(value: item, child: Text(item)),
+                    )
+                    .toList(growable: false),
+            onChanged: (value) => setState(() => _mealType = value!),
           ),
-        ),
-      ],
-    ),
-  );
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.calendar_today_outlined),
+            title: Text(
+              'Data: ${MaterialLocalizations.of(context).formatMediumDate(_recordedAt)}',
+            ),
+            onTap: _pickDate,
+          ),
+          TextField(
+            controller: _notes,
+            maxLines: 2,
+            decoration: const InputDecoration(
+              labelText: 'Observações (opcional)',
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Informações nutricionais',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const Text(
+            'Preencha manualmente ou peça uma sugestão ao Gemini. Todos os valores permanecem editáveis.',
+          ),
+          _numberField(_calories, 'Calorias (kcal)'),
+          _numberField(_protein, 'Proteínas (g)'),
+          _numberField(_carbs, 'Carboidratos (g)'),
+          _numberField(_fat, 'Gorduras (g)'),
+          if (_estimateMessage != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(_estimateMessage!),
+            ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: _estimating ? null : _estimate,
+            icon: const Icon(Icons.auto_awesome_outlined),
+            label: Text(_estimating ? 'Estimando…' : 'Estimar com Gemini'),
+          ),
+          const SizedBox(height: 8),
+          FilledButton.icon(
+            onPressed: _save,
+            icon: const Icon(Icons.save_outlined),
+            label: Text(
+              _existing == null ? 'Salvar refeição' : 'Salvar alterações',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _pickDate() async {
     final selected = await showDatePicker(
@@ -869,7 +955,17 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 1)),
     );
-    if (selected != null && mounted) setState(() => _recordedAt = selected);
+    if (selected != null && mounted) {
+      setState(
+        () => _recordedAt = DateTime(
+          selected.year,
+          selected.month,
+          selected.day,
+          _recordedAt.hour,
+          _recordedAt.minute,
+        ),
+      );
+    }
   }
 
   Future<void> _estimate() async {
@@ -930,6 +1026,20 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
       ).showSnackBar(const SnackBar(content: Text('Informe a refeição.')));
       return;
     }
+    for (final field in [_calories, _protein, _carbs, _fat]) {
+      if (field.text.trim().isEmpty) continue;
+      final value = _number(field.text.trim());
+      if (value == null || !value.isFinite || value < 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Informe valores nutricionais válidos e não negativos.',
+            ),
+          ),
+        );
+        return;
+      }
+    }
     final portion = _portion.text.trim();
     final notes = _notes.text.trim();
     final controller = ref.read(mealsProvider.notifier);
@@ -952,7 +1062,8 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
       );
     } else {
       controller.update(
-        existing.copyWith(
+        MealEntry(
+          id: existing.id,
           name: _name.text.trim(),
           mealType: _mealType,
           notes: savedNotes,
@@ -961,9 +1072,12 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
           carbohydrateGrams: _number(_carbs.text),
           fatGrams: _number(_fat.text),
           recordedAt: _recordedAt,
+          revision: existing.revision,
+          updatedAt: existing.updatedAt,
         ),
       );
     }
+    ref.read(nutritionDiaryDateProvider.notifier).state = _recordedAt;
     context.go('/nutrition');
   }
 
