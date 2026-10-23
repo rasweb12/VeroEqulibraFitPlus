@@ -63,4 +63,31 @@ Os arquivos previamente existentes alterados podem ser restaurados a partir do b
 
 Antes de iniciar 7.7.3B, resolver os problemas críticos pendentes e solicitar a homologação do proprietário. MVP não homologado.
 
+## Complemento 7.7.3A.2 — 23/10/2026
+
+- **CORRIGIDO LOCALMENTE / PENDENTE DE PUBLICAÇÃO:** o provedor Gemini solicitava
+  saída estruturada, mas só interpretava `response.text`. A versão atual do SDK
+  também pode materializar a saída validada em `response.parsed`; quando o texto
+  não é JSON, isso era tratado como `invalid_json_or_non_object` mesmo sob HTTP
+  200. O provedor agora aceita apenas objetos JSON de `response.parsed` (incluindo
+  modelos Pydantic com `model_dump`) e preserva a validação `PlanGenerateResponse`.
+  Nada é aceito como plano sem essa validação.
+- **TESTADO LOCALMENTE:** `pytest -q -p no:cacheprovider` no FastAPI: 15
+  aprovados; `ruff check` dos arquivos alterados: aprovado. O teste novo cobre
+  objeto estruturado do SDK com texto não JSON. `dotnet test` da API: 12
+  aprovados. Esses testes usam respostas simuladas e não comprovam o Gemini
+  publicado.
+- **EVIDÊNCIA DO AMBIENTE PUBLICADO:** o diagnóstico histórico mostra que uma
+  requisição chegou ao Gemini com HTTP 200 e foi classificada como
+  `invalid_json_or_non_object`. Isso sustenta a correção de leitura do SDK, mas
+  não demonstra que seja a única causa do HTTP 500 observado anteriormente.
+- **SECURE STORAGE — PENDENTE:** `flutter_secure_storage` está em `^10.0.0` e o
+  manifesto Android não explicita política de backup. O erro de descriptografia
+  permanece não reproduzido e não houve limpeza de dados, desinstalação ou
+  exclusão de chaves. A hipótese de restauração de backup não está comprovada.
+- **BLOQUEADO PARA CONFIRMAÇÃO REMOTA:** publicar a alteração do FastAPI e fazer
+  uma geração autenticada, sem salvar o plano automaticamente, com correlação de
+  logs entre API e IA. Não foi feito deploy, alteração de segredo nem chamada
+  externa nesta etapa.
+
 - Complemento: APK debug de 21/10/2026 21:44 instalado com sucesso no emulador via `adb install -r`, sem limpeza dos dados. O processo do aplicativo foi identificado após abertura. A instalação e a inicialização não comprovam os fluxos funcionais; teste real de geração de plano continua adiado a pedido do proprietário. A limpeza de caches do computador foi interrompida e pode ter sido parcial.

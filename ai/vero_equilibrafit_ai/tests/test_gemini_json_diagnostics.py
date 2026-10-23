@@ -47,14 +47,29 @@ def test_empty_json_response_does_not_log_untrusted_finish_reason(caplog):
 
 def test_structured_output_schema_is_forwarded_to_gemini():
     provider = GeminiProvider(Settings())
-    generate = AsyncMock(return_value=SimpleNamespace(text='{}', candidates=[]))
+    generate = AsyncMock(return_value=SimpleNamespace(text="{}", candidates=[]))
     provider._client = SimpleNamespace(aio=SimpleNamespace(models=SimpleNamespace(generate_content=generate)))
     provider._types = SimpleNamespace(GenerateContentConfig=lambda **kwargs: kwargs)
 
-    result = asyncio.run(provider.complete_json(
-        system_prompt="", user_prompt="", response_schema=PlanGenerateResponse
-    ))
+    result = asyncio.run(provider.complete_json(system_prompt="", user_prompt="", response_schema=PlanGenerateResponse))
 
     assert result == {}
     assert generate.call_args.kwargs["config"]["response_schema"] is PlanGenerateResponse
     assert generate.call_args.kwargs["config"]["response_mime_type"] == "application/json"
+
+
+def test_structured_sdk_payload_is_accepted_when_text_is_not_json():
+    provider = GeminiProvider(Settings())
+    response = SimpleNamespace(
+        text="structured response",
+        parsed={"targets": {"calories": 2000}},
+        candidates=[],
+    )
+    provider._client = SimpleNamespace(
+        aio=SimpleNamespace(models=SimpleNamespace(generate_content=AsyncMock(return_value=response)))
+    )
+    provider._types = SimpleNamespace(GenerateContentConfig=lambda **kwargs: kwargs)
+
+    result = asyncio.run(provider.complete_json(system_prompt="", user_prompt="", response_schema=PlanGenerateResponse))
+
+    assert result == {"targets": {"calories": 2000}}

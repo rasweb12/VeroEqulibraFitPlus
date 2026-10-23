@@ -39,9 +39,7 @@ class GeminiProvider:
             self._types = types
 
         except ImportError:
-            logger.warning(
-                "google-genai is not installed."
-            )
+            logger.warning("google-genai is not installed.")
 
     @property
     def is_configured(self) -> bool:
@@ -74,9 +72,7 @@ class GeminiProvider:
                 config=self._types.GenerateContentConfig(
                     system_instruction=system_prompt,
                     temperature=0.4,
-                    max_output_tokens=(
-                        self._settings.ai_max_output_tokens
-                    ),
+                    max_output_tokens=(self._settings.ai_max_output_tokens),
                 ),
             )
 
@@ -109,14 +105,16 @@ class GeminiProvider:
                     response_mime_type="application/json",
                     response_schema=response_schema,
                     temperature=0.2,
-                    max_output_tokens=(
-                        self._settings.ai_max_output_tokens
-                    ),
+                    max_output_tokens=(self._settings.ai_max_output_tokens),
                 ),
             )
 
+            # The Google SDK can materialize structured output in ``parsed``.
+            # Prefer it when it is a JSON object; otherwise retain the strict
+            # text parser for SDK versions/providers that only expose text.
+            parsed = self._structured_payload(getattr(response, "parsed", None))
             content = response.text
-            parsed = self._parse_json(content)
+            parsed = parsed or self._parse_json(content)
             if parsed is None:
                 # Only a bounded reason is recorded; response text may contain private data.
                 candidates = response.candidates or []
@@ -181,9 +179,7 @@ class GeminiProvider:
                     system_instruction=system_prompt,
                     response_mime_type="application/json",
                     temperature=0.2,
-                    max_output_tokens=(
-                        self._settings.ai_max_output_tokens
-                    ),
+                    max_output_tokens=(self._settings.ai_max_output_tokens),
                 ),
             )
 
@@ -191,6 +187,20 @@ class GeminiProvider:
 
         except Exception as exc:  # noqa: BLE001 - vision failures must require manual review
             raise AiProviderError.from_exception(exc) from None
+
+    @staticmethod
+    def _structured_payload(value: Any) -> dict | None:
+        """Normalize an SDK structured result without accepting arbitrary values."""
+
+        if isinstance(value, dict):
+            return value
+
+        model_dump = getattr(value, "model_dump", None)
+        if callable(model_dump):
+            candidate = model_dump(mode="json")
+            return candidate if isinstance(candidate, dict) else None
+
+        return None
 
     @staticmethod
     def _parse_json(text: str | None) -> dict | None:
