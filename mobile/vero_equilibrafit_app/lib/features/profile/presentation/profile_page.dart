@@ -8,6 +8,9 @@ import '../../../core/offline/sync_conflicts_provider.dart';
 import '../../../core/persistence/owner_scope.dart';
 import '../../../core/persistence/preferences_provider.dart';
 import '../../auth/presentation/auth_providers.dart';
+import '../../habits/presentation/habits_page.dart';
+import '../../measurements/presentation/measurements_providers.dart';
+import '../../nutrition/presentation/nutrition_goals_page.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -16,6 +19,12 @@ class ProfilePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(authSessionProvider).valueOrNull;
     final conflicts = ref.watch(syncConflictsProvider);
+    final habits = ref.watch(habitsProvider);
+    final measurements = ref.watch(measurementsProvider);
+    final goals = ref.watch(nutritionGoalsProvider);
+    final latestWeight = measurements.isEmpty
+        ? null
+        : measurements.first.weightKg;
     return Scaffold(
       drawer: const AppDrawer(),
       bottomNavigationBar: const VeroBottomNavigation(location: '/profile'),
@@ -63,6 +72,35 @@ class ProfilePage extends ConsumerWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 8,
+                ),
+                child: Row(
+                  children: [
+                    _metric(
+                      'Peso atual',
+                      latestWeight == null
+                          ? 'Sem registro'
+                          : '${latestWeight.toStringAsFixed(1)} kg',
+                    ),
+                    _metric(
+                      'Meta diária',
+                      goals.calories == 0
+                          ? 'Não definida'
+                          : '${goals.calories} kcal',
+                    ),
+                    _metric(
+                      'Hidratação',
+                      '${(habits.waterMl / 1000).toStringAsFixed(1)} L',
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -118,6 +156,24 @@ class ProfilePage extends ConsumerWidget {
       ),
     );
   }
+
+  Widget _metric(String label, String value) => Expanded(
+    child: Column(
+      children: [
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 11, color: VeroColors.muted),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+      ],
+    ),
+  );
 
   Future<void> _privacy(
     BuildContext context,

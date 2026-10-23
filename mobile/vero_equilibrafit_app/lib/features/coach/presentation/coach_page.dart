@@ -65,6 +65,35 @@ class _CoachPageState extends ConsumerState<CoachPage> {
           'O Coach usa somente Gemini pela API autenticada. Ele não substitui profissionais de saúde e nunca altera uma ficha sem sua confirmação.',
         ),
         const SizedBox(height: 20),
+        const Text(
+          'SUGESTÕES RÁPIDAS',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: VeroColors.muted,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children:
+              [
+                    'Sugestão pós-treino',
+                    'Ajustar hidratação',
+                    'Dúvida sobre execução',
+                  ]
+                  .map(
+                    (suggestion) => ActionChip(
+                      label: Text(suggestion),
+                      onPressed: _sending
+                          ? null
+                          : () => setState(() => _message.text = suggestion),
+                    ),
+                  )
+                  .toList(),
+        ),
+        const SizedBox(height: 16),
         TextField(
           controller: _message,
           minLines: 3,
@@ -76,6 +105,14 @@ class _CoachPageState extends ConsumerState<CoachPage> {
             ),
             labelText: 'Sua pergunta',
             hintText: 'Ex.: Como posso adaptar meu treino hoje?',
+          ),
+          onChanged: (_) => setState(() {}),
+        ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: Text(
+            '${_message.text.length}/1000',
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ),
         const SizedBox(height: 12),
@@ -165,9 +202,9 @@ class _CoachPageState extends ConsumerState<CoachPage> {
 
   Future<void> _send() async {
     final text = _message.text.trim();
-    if (text.length < 3) {
+    if (text.length < 3 || text.length > 1000) {
       setState(
-        () => _error = 'Escreva uma pergunta com pelo menos três caracteres.',
+        () => _error = 'Escreva uma pergunta entre 3 e 1000 caracteres.',
       );
       return;
     }
