@@ -1,0 +1,96 @@
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final meals = ref.watch(mealsProvider);
+    final selectedDay = ref.watch(nutritionDiaryDateProvider);
+    final goals = ref.watch(nutritionGoalsProvider);
+    final dayMeals = meals.where((meal) => _sameDay(meal.recordedAt, selectedDay)).toList();
+    double total(double? Function(MealEntry) value) => dayMeals.fold(0.0, (sum, meal) => sum + (value(meal) ?? 0));
+    final categories = <String>{'Café da manhã', 'Almoço', 'Lanche', 'Jantar', ...dayMeals.map((meal) => meal.mealType)};
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Nutrição'),
+        actions: [
+          IconButton(tooltip: 'Analisar foto da refeição', onPressed: () => _pickAndAnalyzePhoto(context, ref), icon: const Icon(Icons.camera_alt_outlined)),
+          IconButton(tooltip: 'Ler código de barras', onPressed: () => context.go('/nutrition/barcode'), icon: const Icon(Icons.qr_code_scanner)),
+          PopupMenuButton<String>(
+            tooltip: 'Mais opções de nutrição',
+            onSelected: (path) => context.go(path),
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: '/nutrition/plans', child: Text('Plano alimentar')),
+              PopupMenuItem(value: '/nutrition/goals', child: Text('Metas nutricionais')),
+              PopupMenuItem(value: '/nutrition/reports', child: Text('Relatório nutricional')),
+            ],
+          ),
+        ],
+      ),
+      drawer: const AppDrawer(),
+      bottomNavigationBar: const VeroBottomNavigation(location: '/nutrition'),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.go('/nutrition/new'),
+        icon: const Icon(Icons.add), label: const Text('Registrar refeição'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
+        children: [
+          _DiarySummary(
+            selectedDay: selectedDay, calories: total((m) => m.estimatedCalories),
+            protein: total((m) => m.proteinGrams), carbs: total((m) => m.carbohydrateGrams), fat: total((m) => m.fatGrams),
+            calorieGoal: goals.calories, proteinGoal: goals.proteinGrams, carbsGoal: goals.carbohydrateGrams, fatGoal: goals.fatGrams,
+            onPrevious: () => ref.read(nutritionDiaryDateProvider.notifier).state = DateTime(selectedDay.year, selectedDay.month, selectedDay.day - 1),
+            onNext: DateUtils.dateOnly(selectedDay).isBefore(DateUtils.dateOnly(DateTime.now()))
+              ? () => ref.read(nutritionDiaryDateProvider.notifier).state = DateTime(selectedDay.year, selectedDay.month, selectedDay.day + 1) : null,
+          ),
+          const SizedBox(height: 20),
+          Text('Diário Alimentar', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          for (final category in categories) ...[
+            _mealCategory(context, ref, category, dayMeals.where((meal) => meal.mealType == category).toList()),
+            const SizedBox(height: 12),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _mealCategory(BuildContext context, WidgetRef ref, String category, List<MealEntry> meals) {
+    final colors = Theme.of(context).colorScheme;
+    final knownCalories = meals.where((meal) => meal.estimatedCalories != null).toList();
+    final calories = knownCalories.fold<double>(0, (sum, meal) => sum + meal.estimatedCalories!);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: colors.primaryContainer, borderRadius: BorderRadius.circular(10)), child: Icon(Icons.restaurant_outlined, color: colors.primary)),
+            const SizedBox(width: 10),
+            Expanded(child: Text(category, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15))),
+            if (knownCalories.isNotEmpty) Text('≈ ${calories.round()} kcal'),
+            IconButton(tooltip: 'Adicionar em $category', onPressed: () => context.go(Uri(path: '/nutrition/new', queryParameters: {'mealType': category}).toString()), icon: const Icon(Icons.add_circle_outline)),
+          ]),
+          if (meals.isEmpty)
+            const Padding(padding: EdgeInsets.only(top: 8), child: Text('Nenhum registro nesta refeição.'))
+          else
+            for (final meal in meals)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(meal.name),
+                subtitle: Text('${TimeOfDay.fromDateTime(meal.recordedAt).format(context)}${meal.estimatedCalories == null ? '' : ' · ≈ ${meal.estimatedCalories!.round()} kcal'}${meal.notes.isEmpty ? '' : '\n${meal.notes}'}'),
+                trailing: PopupMenuButton<String>(
+                  tooltip: 'Opções de ${meal.name}',
+                  onSelected: (action) async {
+                    if (action == 'edit') { context.go('/nutrition/${meal.id}/edit'); return; }
+                    final confirmed = await showDialog<bool>(context: context, builder: (dialogContext) => AlertDialog(
+                      title: const Text('Excluir refeição?'),
+                      content: Text('Excluir o registro ${meal.name}?'),
+                      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancelar')), FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Excluir'))],
+                    ));
+                    if (confirmed == true && context.mounted) ref.read(mealsProvider.notifier).delete(meal.id);
+                  },
+                  itemBuilder: (context) => const [PopupMenuItem(value: 'edit', child: Text('Editar')), PopupMenuItem(value: 'delete', child: Text('Excluir'))],
+                ),
+              ),
+        ]),
+      ),
+    );
+  }
+
