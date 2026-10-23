@@ -40,18 +40,22 @@ class ProfilePage extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: VeroColors.primary.withValues(alpha: .08),
-                borderRadius: BorderRadius.circular(24),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xffF1F5F9)),
               ),
               child: Row(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 28,
                     backgroundColor: VeroColors.primary,
-                    child: Icon(
-                      Icons.person_outline,
-                      color: Colors.white,
-                      size: 30,
+                    child: Text(
+                      _initials(session?.displayName ?? session?.email ?? 'V'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -63,11 +67,29 @@ class ProfilePage extends ConsumerWidget {
                           session?.displayName ?? session?.email ?? 'Conta',
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
-                        if (session?.displayName != null)
-                          Text(
-                            session!.email,
-                            style: const TextStyle(color: VeroColors.muted),
+                        Text(
+                          session?.email ?? 'Sessão indisponível',
+                          style: const TextStyle(color: VeroColors.muted),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
                           ),
+                          decoration: BoxDecoration(
+                            color: VeroColors.primary.withValues(alpha: .12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            '• Conta autenticada',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              color: VeroColors.primary,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -75,7 +97,12 @@ class ProfilePage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            Card(
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xffF1F5F9)),
+              ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   vertical: 14,
@@ -104,6 +131,11 @@ class ProfilePage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
+            const Text(
+              'Metas e planejamento',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+            ),
+            const SizedBox(height: 10),
             VeroActionCard(
               icon: Icons.flag_outlined,
               title: 'Metas nutricionais',
@@ -112,6 +144,19 @@ class ProfilePage extends ConsumerWidget {
               onTap: () => context.push('/nutrition/goals'),
             ),
             const SizedBox(height: 12),
+            VeroActionCard(
+              icon: Icons.monitor_weight_outlined,
+              title: 'Evolução corporal',
+              subtitle: 'Consulte peso e medidas registrados.',
+              tint: VeroColors.water,
+              onTap: () => context.push('/measurements'),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Preferências e conta',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+            ),
+            const SizedBox(height: 10),
             conflicts.when(
               data: (items) => items.isEmpty
                   ? const SizedBox.shrink()
@@ -174,6 +219,16 @@ class ProfilePage extends ConsumerWidget {
       ],
     ),
   );
+
+  String _initials(String value) {
+    final pieces = value
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (pieces.isEmpty) return 'V';
+    return pieces.take(2).map((part) => part[0].toUpperCase()).join();
+  }
 
   Future<void> _privacy(
     BuildContext context,

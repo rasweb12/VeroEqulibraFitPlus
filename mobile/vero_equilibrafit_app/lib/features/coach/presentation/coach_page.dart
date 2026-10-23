@@ -31,7 +31,7 @@ class _CoachPageState extends ConsumerState<CoachPage> {
     drawer: const AppDrawer(),
     bottomNavigationBar: const VeroBottomNavigation(location: '/coach'),
     body: ListView(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
       children: [
         Builder(
           builder: (context) => VeroTopBar(
@@ -39,22 +39,48 @@ class _CoachPageState extends ConsumerState<CoachPage> {
             onMenu: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: VeroColors.gemini.withValues(alpha: .08),
             borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: VeroColors.gemini.withValues(alpha: .16)),
           ),
           child: const Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.auto_awesome_rounded, color: VeroColors.gemini),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(10),
+                  child: Icon(
+                    Icons.auto_awesome_rounded,
+                    color: VeroColors.gemini,
+                  ),
+                ),
+              ),
               SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  'Orientação como apoio',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Coach Gemini',
+                      style: TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Orientação para treino e nutrição, no seu ritmo.',
+                      style: TextStyle(color: VeroColors.muted),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -62,7 +88,7 @@ class _CoachPageState extends ConsumerState<CoachPage> {
         ),
         const SizedBox(height: 12),
         const Text(
-          'O Coach usa somente Gemini pela API autenticada. Ele não substitui profissionais de saúde e nunca altera uma ficha sem sua confirmação.',
+          'O Coach usa Gemini pela API autenticada. As respostas são apoio informativo e não substituem profissionais de saúde.',
         ),
         const SizedBox(height: 20),
         const Text(
@@ -94,38 +120,33 @@ class _CoachPageState extends ConsumerState<CoachPage> {
                   .toList(),
         ),
         const SizedBox(height: 16),
-        TextField(
-          controller: _message,
-          minLines: 3,
-          maxLines: 6,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(16)),
+        if (_turns.isEmpty) ...[
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xffF1F5F9)),
             ),
-            labelText: 'Sua pergunta',
-            hintText: 'Ex.: Como posso adaptar meu treino hoje?',
+            child: const Row(
+              children: [
+                Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  color: VeroColors.gemini,
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Envie uma pergunta para iniciar a conversa. O histórico desta tela dura somente esta sessão.',
+                    style: TextStyle(color: VeroColors.muted),
+                  ),
+                ),
+              ],
+            ),
           ),
-          onChanged: (_) => setState(() {}),
-        ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: Text(
-            '${_message.text.length}/1000',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ),
-        const SizedBox(height: 12),
-        FilledButton.icon(
-          onPressed: _sending ? null : _send,
-          icon: _sending
-              ? const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.send_outlined),
-          label: const Text('Perguntar ao Coach'),
-        ),
+          const SizedBox(height: 16),
+        ],
         if (_error != null) ...[
           const SizedBox(height: 16),
           Card(
@@ -191,6 +212,49 @@ class _CoachPageState extends ConsumerState<CoachPage> {
           ),
         ],
         const SizedBox(height: 8),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xffF1F5F9)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _message,
+                  minLines: 1,
+                  maxLines: 4,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: 'Sua dúvida sobre treino ou nutrição...',
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Enviar pergunta',
+                onPressed: _sending ? null : _send,
+                icon: _sending
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.send_rounded, color: VeroColors.primary),
+              ),
+            ],
+          ),
+        ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: Text(
+            '${_message.text.length}/1000',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
         TextButton.icon(
           onPressed: () => context.go('/nutrition'),
           icon: const Icon(Icons.restaurant_outlined),

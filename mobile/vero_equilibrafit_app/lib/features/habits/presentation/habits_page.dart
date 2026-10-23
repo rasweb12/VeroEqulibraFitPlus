@@ -203,13 +203,23 @@ class HabitsPage extends ConsumerWidget {
               onMenu: () => Scaffold.of(context).openDrawer(),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           const Text(
-            'Registre o que fez hoje, no seu ritmo.',
-            style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
+            'Registre o que fez hoje',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'No seu ritmo, construindo consistência dia após dia.',
+            style: TextStyle(color: VeroColors.muted),
           ),
           const SizedBox(height: 16),
-          Card(
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xffF1F5F9)),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -271,27 +281,67 @@ class HabitsPage extends ConsumerWidget {
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
+            runSpacing: 8,
             children: [150, 200, 250, 300, 500]
                 .map(
-                  (ml) => OutlinedButton(
+                  (ml) => ActionChip(
                     onPressed: () =>
                         ref.read(habitsProvider.notifier).addWater(ml),
-                    child: Text('+$ml ml'),
+                    label: Text('+$ml ml'),
+                    labelStyle: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: VeroColors.water,
+                    ),
+                    backgroundColor: VeroColors.water.withValues(alpha: .08),
+                    side: BorderSide.none,
                   ),
                 )
                 .toList(),
           ),
           const SizedBox(height: 16),
-          Card(
-            child: SwitchListTile(
-              secondary: const Icon(
-                Icons.self_improvement_outlined,
-                color: VeroColors.primary,
-              ),
-              title: const Text('Mobilidade'),
-              subtitle: const Text('Marque quando concluir sua prática.'),
-              value: state.mobilityDone,
-              onChanged: ref.read(habitsProvider.notifier).setMobility,
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xffF1F5F9)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.self_improvement,
+                  color: VeroColors.primary,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Mobilidade',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                        ),
+                      ),
+                      Text(
+                        state.mobilityDone
+                            ? 'Prática registrada hoje.'
+                            : 'Marque quando concluir sua prática.',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: VeroColors.muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: state.mobilityDone,
+                  onChanged: ref.read(habitsProvider.notifier).setMobility,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 12),

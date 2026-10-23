@@ -31,99 +31,139 @@ class MeasurementsPage extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: const Text('Registrar medida'),
       ),
-      body: entries.isEmpty
-          ? const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Text(
-                  'Registre peso ou medidas quando fizer sentido para você.',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 96),
-              itemCount: entries.length + 1,
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  final current = entries.first.weightKg;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: VeroColors.primary.withValues(alpha: .08),
-                        borderRadius: BorderRadius.circular(20),
+      body: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 96),
+        itemCount: entries.length + 1,
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            final current = entries.isEmpty ? null : entries.first.weightKg;
+            final first = entries.isEmpty ? null : entries.last.weightKg;
+            final change = current != null && first != null
+                ? current - first
+                : null;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xffF1F5F9)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'ÚLTIMO REGISTRO',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: VeroColors.muted,
+                        ),
                       ),
-                      child: Row(
+                      const SizedBox(height: 8),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          const Icon(
-                            Icons.monitor_weight_outlined,
-                            color: VeroColors.primary,
-                            size: 32,
-                          ),
-                          const SizedBox(width: 12),
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Evolução corporal',
-                                  style: TextStyle(
-                                    fontSize: 19,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                Text(
-                                  current == null
-                                      ? '${entries.length} registros'
-                                      : 'Peso mais recente: ${current.toStringAsFixed(1)} kg',
-                                  style: const TextStyle(
-                                    color: VeroColors.muted,
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              current == null
+                                  ? 'Sem peso'
+                                  : '${current.toStringAsFixed(1)} kg',
+                              style: const TextStyle(
+                                fontSize: 30,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            change == null
+                                ? 'Meta não configurada'
+                                : '${change >= 0 ? '+' : ''}${change.toStringAsFixed(1)} kg desde o início',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: VeroColors.muted,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  );
-                }
-                final entry = entries[index - 1];
-                final values = <String>[
-                  if (entry.weightKg != null)
-                    '${entry.weightKg!.toStringAsFixed(1)} kg',
-                  if (entry.waistCm != null)
-                    'Cintura ${entry.waistCm!.toStringAsFixed(1)} cm',
-                  if (entry.chestCm != null)
-                    'Peito ${entry.chestCm!.toStringAsFixed(1)} cm',
-                  if (entry.hipCm != null)
-                    'Quadril ${entry.hipCm!.toStringAsFixed(1)} cm',
-                ];
-                return Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.monitor_weight_outlined),
-                    title: Text(
-                      values.isEmpty
-                          ? 'Registro de evolução'
-                          : values.join(' · '),
-                    ),
-                    subtitle: Text(
-                      '${MaterialLocalizations.of(context).formatShortDate(entry.recordedAt)}${entry.notes.isEmpty ? '' : '\n${entry.notes}'}',
-                    ),
-                    isThreeLine: entry.notes.isNotEmpty,
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      tooltip: 'Excluir registro',
-                      onPressed: () => ref
-                          .read(measurementsProvider.notifier)
-                          .delete(entry.id),
-                    ),
+                      const SizedBox(height: 12),
+                      Text(
+                        entries.isEmpty
+                            ? 'Registre peso ou medidas quando fizer sentido para você.'
+                            : '${entries.length} registro(s) no histórico.',
+                        style: const TextStyle(color: VeroColors.muted),
+                      ),
+                    ],
                   ),
-                );
-              },
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Histórico de medições',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                ),
+                const SizedBox(height: 10),
+                if (entries.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 28),
+                    child: Center(child: Text('Ainda não há medições.')),
+                  ),
+              ],
+            );
+          }
+          final entry = entries[index - 1];
+          final values = <String>[
+            if (entry.weightKg != null)
+              '${entry.weightKg!.toStringAsFixed(1)} kg',
+            if (entry.waistCm != null)
+              'Cintura ${entry.waistCm!.toStringAsFixed(1)} cm',
+            if (entry.chestCm != null)
+              'Peito ${entry.chestCm!.toStringAsFixed(1)} cm',
+            if (entry.hipCm != null)
+              'Quadril ${entry.hipCm!.toStringAsFixed(1)} cm',
+          ];
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xffF1F5F9)),
             ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 6,
+              ),
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: VeroColors.primary.withValues(alpha: .10),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.monitor_weight_outlined,
+                  color: VeroColors.primary,
+                ),
+              ),
+              title: Text(
+                values.isEmpty ? 'Registro de evolução' : values.join(' · '),
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              subtitle: Text(
+                '${MaterialLocalizations.of(context).formatShortDate(entry.recordedAt)}${entry.notes.isEmpty ? '' : '\n${entry.notes}'}',
+              ),
+              isThreeLine: entry.notes.isNotEmpty,
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: 'Excluir registro',
+                onPressed: () =>
+                    ref.read(measurementsProvider.notifier).delete(entry.id),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 

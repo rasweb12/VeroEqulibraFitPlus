@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'appcolors.dart';
+
 abstract final class VeroColors {
-  static const background = Color(0xffF8F9FF);
-  static const surface = Color(0xffFFFFFF);
-  static const text = Color(0xff0B1C30);
-  static const muted = Color(0xff64748B);
-  static const primary = Color(0xff006D43);
-  static const primaryBright = Color(0xff00A86B);
-  static const border = Color(0xffF1F5F9);
-  static const water = Color(0xff0284C7);
-  static const gemini = Color(0xff7C3AED);
+  static const background = AppColors.background;
+  static const surface = AppColors.surface;
+  static const text = AppColors.textDark;
+  static const muted = AppColors.textMuted;
+  static const primary = AppColors.primaryDark;
+  static const primaryBright = AppColors.primary;
+  static const primaryLight = AppColors.primaryLight;
+  static const border = AppColors.border;
+  static const water = AppColors.blueWater;
+  static const waterLight = AppColors.blueWaterLight;
+  static const gemini = AppColors.purpleAI;
+  static const geminiLight = AppColors.purpleAILight;
   static const gold = Color(0xffF59E0B);
 }
 
