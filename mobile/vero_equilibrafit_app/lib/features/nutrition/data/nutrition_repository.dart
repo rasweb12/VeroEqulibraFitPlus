@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import '../../../core/persistence/owner_scope.dart';
@@ -22,7 +21,7 @@ class NutritionRepository {
 
   List<MealEntry> entries() => List.unmodifiable(_entries.reversed);
 
-  void add({
+  Future<void> add({
     required String name,
     required String mealType,
     required String notes,
@@ -31,7 +30,7 @@ class NutritionRepository {
     double? carbohydrateGrams,
     double? fatGrams,
     DateTime? recordedAt,
-  }) {
+  }) async {
     final entry = MealEntry(
       id: newStableId(),
       name: name.trim(),
@@ -44,23 +43,40 @@ class NutritionRepository {
       fatGrams: fatGrams,
     );
     _entries.add(entry);
-    unawaited(_save());
-    unawaited(_enqueueMeal(entry));
+    try {
+      await _save();
+    } catch (_) {
+      _entries.removeWhere((item) => item.id == entry.id);
+      rethrow;
+    }
+    await _enqueueMeal(entry);
   }
 
-  void delete(String id) {
+  Future<void> delete(String id) async {
     final existing = _entries.where((entry) => entry.id == id).firstOrNull;
+    if (existing == null) return;
     _entries.removeWhere((entry) => entry.id == id);
-    unawaited(_save());
-    if (existing != null) unawaited(_enqueueDelete(existing.id));
+    try {
+      await _save();
+    } catch (_) {
+      _entries.add(existing);
+      rethrow;
+    }
+    await _enqueueDelete(existing.id);
   }
 
-  void update(MealEntry entry) {
+  Future<void> update(MealEntry entry) async {
     final index = _entries.indexWhere((item) => item.id == entry.id);
     if (index < 0) return;
+    final previous = _entries[index];
     _entries[index] = entry;
-    unawaited(_save());
-    unawaited(_enqueueUpdate(entry));
+    try {
+      await _save();
+    } catch (_) {
+      _entries[index] = previous;
+      rethrow;
+    }
+    await _enqueueUpdate(entry);
   }
 
   Future<void> load() async {
@@ -113,7 +129,9 @@ class NutritionRepository {
     }
     final payload = change['payload'];
     if (payload is! Map<String, dynamic>) return;
-    final consumedAt = DateTime.tryParse(payload['consumedAt'] as String? ?? '');
+    final consumedAt = DateTime.tryParse(
+      payload['consumedAt'] as String? ?? '',
+    );
     if (consumedAt == null) return;
     final existing = index < 0 ? null : _entries[index];
     final remote = MealEntry(
@@ -202,13 +220,18 @@ class NutritionRepository {
     await queue.enqueue(
       ownerId: ownerId,
       idempotencyKey: 'meal-update:${entry.id}:${entry.revision}',
-      entityType: 'meal', entityId: entry.id, operationType: 'meal.update',
+      entityType: 'meal',
+      entityId: entry.id,
+      operationType: 'meal.update',
       clientVersion: '1.0.0',
       payloadJson: jsonEncode({
-        'baseRevision': entry.revision, 'description': entry.name,
+        'baseRevision': entry.revision,
+        'description': entry.name,
         'consumedAt': entry.recordedAt.toUtc().toIso8601String(),
-        'estimatedCalories': entry.estimatedCalories, 'proteinGrams': entry.proteinGrams,
-        'carbohydrateGrams': entry.carbohydrateGrams, 'fatGrams': entry.fatGrams,
+        'estimatedCalories': entry.estimatedCalories,
+        'proteinGrams': entry.proteinGrams,
+        'carbohydrateGrams': entry.carbohydrateGrams,
+        'fatGrams': entry.fatGrams,
       }),
     );
   }

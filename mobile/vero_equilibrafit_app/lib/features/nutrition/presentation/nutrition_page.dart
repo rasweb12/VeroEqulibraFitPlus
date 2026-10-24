@@ -227,7 +227,21 @@ class NutritionPage extends ConsumerWidget {
                         ),
                       );
                       if (confirmed == true && context.mounted) {
-                        ref.read(mealsProvider.notifier).delete(meal.id);
+                        try {
+                          await ref
+                              .read(mealsProvider.notifier)
+                              .delete(meal.id);
+                        } on Object {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Não foi possível excluir a refeição.',
+                                ),
+                              ),
+                            );
+                          }
+                        }
                       }
                     },
                     itemBuilder: (context) => const [
@@ -532,6 +546,7 @@ class _NutritionPhotoReviewPageState
     extends ConsumerState<NutritionPhotoReviewPage> {
   late List<_PhotoFoodDraft> _items;
   DateTime _recordedAt = DateTime.now();
+  bool _saving = false;
 
   @override
   void initState() {
@@ -619,9 +634,9 @@ class _NutritionPhotoReviewPageState
           ),
           const SizedBox(height: 20),
           FilledButton.icon(
-            onPressed: _save,
+            onPressed: _saving ? null : _save,
             icon: const Icon(Icons.save_outlined),
-            label: const Text('Confirmar e salvar refeição'),
+            label: Text(_saving ? 'Salvando…' : 'Confirmar e salvar refeição'),
           ),
         ],
       ),
@@ -763,7 +778,7 @@ class _NutritionPhotoReviewPageState
     });
   }
 
-  void _save() {
+  Future<void> _save() async {
     final validItems = _items
         .where((item) => item.name.trim().isNotEmpty)
         .toList();
@@ -775,24 +790,37 @@ class _NutritionPhotoReviewPageState
       );
       return;
     }
-    ref
-        .read(mealsProvider.notifier)
-        .add(
-          name: validItems
-              .map(
-                (item) =>
-                    '${item.name.trim()} (${item.portion} ${item.unit.trim()})',
-              )
-              .join(', '),
-          mealType: 'Refeição',
-          notes: 'Estimativa por foto revisada pelo usuário.',
-          recordedAt: _recordedAt,
-          estimatedCalories: _calories,
-          proteinGrams: _protein,
-          carbohydrateGrams: _carbs,
-          fatGrams: _fat,
+    setState(() => _saving = true);
+    try {
+      await ref
+          .read(mealsProvider.notifier)
+          .add(
+            name: validItems
+                .map(
+                  (item) =>
+                      '${item.name.trim()} (${item.portion} ${item.unit.trim()})',
+                )
+                .join(', '),
+            mealType: 'Refeição',
+            notes: 'Estimativa por foto revisada pelo usuário.',
+            recordedAt: _recordedAt,
+            estimatedCalories: _calories,
+            proteinGrams: _protein,
+            carbohydrateGrams: _carbs,
+            fatGrams: _fat,
+          );
+      if (!mounted) return;
+      ref.read(nutritionDiaryDateProvider.notifier).state = _recordedAt;
+      context.go('/nutrition');
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível salvar a refeição.')),
         );
-    context.go('/nutrition');
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   double _number(String value) =>
@@ -892,6 +920,7 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
   DateTime _recordedAt = DateTime.now();
   String? _estimateMessage;
   bool _estimating = false;
+  bool _saving = false;
   MealEntry? _existing;
 
   @override
@@ -1068,10 +1097,14 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
           ),
           const SizedBox(height: 8),
           FilledButton.icon(
-            onPressed: _save,
+            onPressed: _saving ? null : _save,
             icon: const Icon(Icons.save_outlined),
             label: Text(
-              _existing == null ? 'Salvar refeição' : 'Salvar alterações',
+              _saving
+                  ? 'Salvando…'
+                  : _existing == null
+                  ? 'Salvar refeição'
+                  : 'Salvar alterações',
             ),
           ),
         ],
@@ -1150,7 +1183,7 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
     }
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (_name.text.trim().isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -1180,22 +1213,11 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
         : notes.isEmpty
         ? 'Porção: $portion'
         : '$notes\nPorção: $portion';
-    if (existing == null) {
-      controller.add(
-        name: _name.text,
-        mealType: _mealType,
-        notes: savedNotes,
-        estimatedCalories: _number(_calories.text),
-        proteinGrams: _number(_protein.text),
-        carbohydrateGrams: _number(_carbs.text),
-        fatGrams: _number(_fat.text),
-        recordedAt: _recordedAt,
-      );
-    } else {
-      controller.update(
-        MealEntry(
-          id: existing.id,
-          name: _name.text.trim(),
+    setState(() => _saving = true);
+    try {
+      if (existing == null) {
+        await controller.add(
+          name: _name.text,
           mealType: _mealType,
           notes: savedNotes,
           estimatedCalories: _number(_calories.text),
@@ -1203,13 +1225,36 @@ class _NutritionMealFormPageState extends ConsumerState<NutritionMealFormPage> {
           carbohydrateGrams: _number(_carbs.text),
           fatGrams: _number(_fat.text),
           recordedAt: _recordedAt,
-          revision: existing.revision,
-          updatedAt: existing.updatedAt,
-        ),
-      );
+        );
+      } else {
+        await controller.update(
+          MealEntry(
+            id: existing.id,
+            name: _name.text.trim(),
+            mealType: _mealType,
+            notes: savedNotes,
+            estimatedCalories: _number(_calories.text),
+            proteinGrams: _number(_protein.text),
+            carbohydrateGrams: _number(_carbs.text),
+            fatGrams: _number(_fat.text),
+            recordedAt: _recordedAt,
+            revision: existing.revision,
+            updatedAt: existing.updatedAt,
+          ),
+        );
+      }
+      if (!mounted) return;
+      ref.read(nutritionDiaryDateProvider.notifier).state = _recordedAt;
+      context.go('/nutrition');
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível salvar a refeição.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
-    ref.read(nutritionDiaryDateProvider.notifier).state = _recordedAt;
-    context.go('/nutrition');
   }
 
   Widget _numberField(TextEditingController controller, String label) =>

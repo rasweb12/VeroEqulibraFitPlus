@@ -52,8 +52,7 @@ void main() {
       outbox: queue,
     );
 
-    repository.add(name: 'Almoço', mealType: 'Almoço', notes: '');
-    await Future<void>.delayed(Duration.zero);
+    await repository.add(name: 'Almoço', mealType: 'Almoço', notes: '');
 
     final pending = await queue.due(ownerId: 'account-a');
     expect(pending, hasLength(1));
@@ -69,11 +68,9 @@ void main() {
       outbox: queue,
     );
 
-    repository.add(name: 'Jantar', mealType: 'Jantar', notes: '');
-    await Future<void>.delayed(Duration.zero);
+    await repository.add(name: 'Jantar', mealType: 'Jantar', notes: '');
     final mealId = repository.entries().single.id;
-    repository.delete(mealId);
-    await Future<void>.delayed(Duration.zero);
+    await repository.delete(mealId);
 
     final pending = await queue.due(ownerId: 'account-a');
     expect(pending.map((item) => item.operationType), contains('meal.delete'));
@@ -82,15 +79,24 @@ void main() {
   test('editing a synchronized meal queues a revisioned update', () async {
     final store = MemorySecureOwnerStore();
     final queue = SecureOperationQueue(ownerId: 'account-a', store: store);
-    final repository = NutritionRepository(ownerId: 'account-a', store: store, outbox: queue);
+    final repository = NutritionRepository(
+      ownerId: 'account-a',
+      store: store,
+      outbox: queue,
+    );
     await repository.applyRemote({
-      'entityType': 'meal', 'entityId': 'a4f8a0d3-2ddf-4a8e-9a36-0b3d85b6755c',
-      'action': 'upsert', 'revision': 2, 'changedAt': '2026-10-18T00:00:00Z',
-      'payload': {'description': 'Almoço', 'consumedAt': '2026-10-18T00:00:00Z'},
+      'entityType': 'meal',
+      'entityId': 'a4f8a0d3-2ddf-4a8e-9a36-0b3d85b6755c',
+      'action': 'upsert',
+      'revision': 2,
+      'changedAt': '2026-10-18T00:00:00Z',
+      'payload': {
+        'description': 'Almoço',
+        'consumedAt': '2026-10-18T00:00:00Z',
+      },
     });
     final current = repository.entries().single;
-    repository.update(current.copyWith(name: 'Almoço ajustado'));
-    await Future<void>.delayed(Duration.zero);
+    await repository.update(current.copyWith(name: 'Almoço ajustado'));
     final pending = await queue.due(ownerId: 'account-a');
     expect(pending.map((item) => item.operationType), contains('meal.update'));
   });

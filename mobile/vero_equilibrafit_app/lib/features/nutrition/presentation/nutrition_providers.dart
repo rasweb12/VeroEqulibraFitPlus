@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/offline/sync_providers.dart';
 import '../../../core/persistence/preferences_provider.dart';
 import '../../../core/offline/secure_operation_queue.dart';
 import '../../auth/presentation/current_owner_provider.dart';
@@ -21,7 +24,14 @@ final nutritionRepositoryProvider = Provider.autoDispose<NutritionRepository>(
 
 final mealsProvider =
     StateNotifierProvider.autoDispose<MealsController, List<MealEntry>>(
-      (ref) => MealsController(ref.read(nutritionRepositoryProvider)),
+      (ref) => MealsController(
+        ref.read(nutritionRepositoryProvider),
+        onPersistedMutation: () {
+          final session = ref.read(authSessionProvider).valueOrNull;
+          if (session == null) return;
+          unawaited(ref.read(syncServiceProvider).pushPending(session));
+        },
+      ),
     );
 
 /// Dia exibido no diário. O registro continua usando seu horário original.
@@ -39,16 +49,18 @@ final mealPhotoAnalysisRepositoryProvider =
     });
 
 class MealsController extends StateNotifier<List<MealEntry>> {
-  MealsController(this._repository) : super(const []) {
+  MealsController(this._repository, {this.onPersistedMutation})
+    : super(const []) {
     _restore();
   }
   final NutritionRepository _repository;
+  final void Function()? onPersistedMutation;
   Future<void> _restore() async {
     await _repository.load();
     if (mounted) state = _repository.entries();
   }
 
-  void add({
+  Future<void> add({
     required String name,
     required String mealType,
     required String notes,
@@ -57,8 +69,8 @@ class MealsController extends StateNotifier<List<MealEntry>> {
     double? carbohydrateGrams,
     double? fatGrams,
     DateTime? recordedAt,
-  }) {
-    _repository.add(
+  }) async {
+    await _repository.add(
       name: name,
       mealType: mealType,
       notes: notes,
@@ -69,15 +81,18 @@ class MealsController extends StateNotifier<List<MealEntry>> {
       recordedAt: recordedAt,
     );
     state = _repository.entries();
+    onPersistedMutation?.call();
   }
 
-  void delete(String id) {
-    _repository.delete(id);
+  Future<void> delete(String id) async {
+    await _repository.delete(id);
     state = _repository.entries();
+    onPersistedMutation?.call();
   }
 
-  void update(MealEntry entry) {
-    _repository.update(entry);
+  Future<void> update(MealEntry entry) async {
+    await _repository.update(entry);
     state = _repository.entries();
+    onPersistedMutation?.call();
   }
 }

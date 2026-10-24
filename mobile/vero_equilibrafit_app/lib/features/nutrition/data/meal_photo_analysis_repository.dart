@@ -28,6 +28,7 @@ class MealPhotoItem {
   final num proteinGrams;
   final num carbohydrateGrams;
   final num fatGrams;
+
   /// Confidence supplied by Gemini or the server normalization, from 0 to 1.
   final num confidence;
 }
@@ -48,18 +49,20 @@ class MealPhotoAnalysisRepository {
         'Defina API_BASE_URL para analisar uma foto.',
       );
     }
-    final response = await _client.post(
-      Uri.parse('${AuthRepository.apiBaseUrl}/api/v1/meals/analyze-photo'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${_session.accessToken}',
-      },
-      body: jsonEncode({
-        'imageBase64': base64Encode(bytes),
-        'mimeType': mimeType,
-        'mealContext': context,
-      }),
-    );
+    final response = await _client
+        .post(
+          Uri.parse('${AuthRepository.apiBaseUrl}/api/v1/meals/analyze-photo'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ${_session.accessToken}',
+          },
+          body: jsonEncode({
+            'imageBase64': base64Encode(bytes),
+            'mimeType': mimeType,
+            'mealContext': context,
+          }),
+        )
+        .timeout(const Duration(seconds: 35));
     if (response.statusCode != 200) {
       throw MealPhotoAnalysisException(
         'Não foi possível analisar a foto. Revise ou registre manualmente.',
