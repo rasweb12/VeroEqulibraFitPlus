@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     enable_docs: bool = False
     internal_api_key: str | None = None
+    previous_internal_api_key: str | None = None
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-3.5-flash-lite"
     request_timeout_seconds: int = Field(default=30, ge=5, le=120)
@@ -44,6 +45,10 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_security(self) -> Settings:
+        if self.previous_internal_api_key and not self.internal_api_key:
+            raise ValueError(
+                "VERO_EQUILIBRAFIT_INTERNAL_API_KEY is required when a previous internal key is configured."
+            )
         if self.environment.casefold() == "production":
             if not self.internal_api_key:
                 raise ValueError("VERO_EQUILIBRAFIT_INTERNAL_API_KEY is required in Production.")
