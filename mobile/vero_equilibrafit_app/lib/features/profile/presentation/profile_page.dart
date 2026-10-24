@@ -10,6 +10,7 @@ import '../../../core/persistence/preferences_provider.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../../habits/presentation/habits_page.dart';
 import '../../measurements/presentation/measurements_providers.dart';
+import '../../measurements/domain/measurement_selectors.dart';
 import '../../nutrition/presentation/nutrition_goals_page.dart';
 
 class ProfilePage extends ConsumerWidget {
@@ -22,9 +23,7 @@ class ProfilePage extends ConsumerWidget {
     final habits = ref.watch(habitsProvider);
     final measurements = ref.watch(measurementsProvider);
     final goals = ref.watch(nutritionGoalsProvider);
-    final latestWeight = measurements.isEmpty
-        ? null
-        : measurements.first.weightKg;
+    final latestWeight = latestWeightMeasurement(measurements)?.weightKg;
     return Scaffold(
       backgroundColor: VeroColors.background,
       drawer: const AppDrawer(),

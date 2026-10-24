@@ -7,6 +7,7 @@ import '../../../shared/presentation/vero_design.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../../habits/presentation/habits_page.dart';
 import '../../measurements/presentation/measurements_providers.dart';
+import '../../measurements/domain/measurement_selectors.dart';
 import '../../nutrition/presentation/nutrition_goals_page.dart';
 import '../../nutrition/presentation/nutrition_providers.dart';
 import '../../training/presentation/training_providers.dart';
@@ -52,7 +53,7 @@ class DashboardPage extends ConsumerWidget {
     final progress = configured.isEmpty
         ? null
         : configured.reduce((a, b) => a + b) / configured.length;
-    final weight = measurements.isEmpty ? null : measurements.first.weightKg;
+    final weight = latestWeightMeasurement(measurements)?.weightKg;
     final name = session?.displayName?.trim().isNotEmpty == true
         ? session!.displayName!.trim()
         : session?.email.split('@').first ?? 'você';

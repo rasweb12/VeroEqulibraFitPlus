@@ -22,49 +22,65 @@ class MeasurementsController extends StateNotifier<List<BodyMeasurement>> {
     _restore();
   }
   final MeasurementsRepository _repository;
-  Future<void> _restore() async {
+  Future<void> _operations = Future<void>.value();
+  Future<void> _restore() => _enqueue(() async {
     await _repository.load();
     if (mounted) state = _repository.all();
-  }
+  });
 
-  void add({
+  Future<void> add({
+    required DateTime recordedAt,
     double? weightKg,
     double? waistCm,
     double? chestCm,
     double? hipCm,
     required String notes,
-  }) {
-    _repository.add(
-      weightKg: weightKg,
-      waistCm: waistCm,
-      chestCm: chestCm,
-      hipCm: hipCm,
-      notes: notes,
+  }) => _enqueue(() async {
+    await _repository.add(
+      measurement: BodyMeasurement(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        recordedAt: recordedAt,
+        weightKg: weightKg,
+        waistCm: waistCm,
+        chestCm: chestCm,
+        hipCm: hipCm,
+        notes: notes,
+      ),
     );
-    state = _repository.all();
-  }
+    if (mounted) state = _repository.all();
+  });
 
-  void delete(String id) {
-    _repository.delete(id);
-    state = _repository.all();
-  }
+  Future<void> delete(String id) => _enqueue(() async {
+    await _repository.delete(id);
+    if (mounted) state = _repository.all();
+  });
 
-  void update(
-    String id, {
+  Future<void> update(
+    BodyMeasurement previous, {
+    required DateTime recordedAt,
     double? weightKg,
     double? waistCm,
     double? chestCm,
     double? hipCm,
     required String notes,
-  }) {
-    _repository.update(
-      id,
-      weightKg: weightKg,
-      waistCm: waistCm,
-      chestCm: chestCm,
-      hipCm: hipCm,
-      notes: notes,
+  }) => _enqueue(() async {
+    await _repository.update(
+      BodyMeasurement(
+        id: previous.id,
+        recordedAt: recordedAt,
+        weightKg: weightKg,
+        waistCm: waistCm,
+        chestCm: chestCm,
+        hipCm: hipCm,
+        notes: notes,
+      ),
     );
-    state = _repository.all();
+    if (mounted) state = _repository.all();
+  });
+
+  Future<void> _enqueue(Future<void> Function() operation) {
+    final task = _operations.then((_) => operation());
+    _operations = task.catchError((_) {});
+    return task;
   }
 }

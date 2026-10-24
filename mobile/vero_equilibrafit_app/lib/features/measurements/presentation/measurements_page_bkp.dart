@@ -183,6 +183,7 @@ class MeasurementsPage extends ConsumerWidget {
         ref
             .read(measurementsProvider.notifier)
             .add(
+              recordedAt: DateTime.now(),
               weightKg: parse(weight),
               waistCm: parse(waist),
               chestCm: parse(chest),

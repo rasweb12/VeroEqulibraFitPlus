@@ -3,6 +3,7 @@ import 'nutrition_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../measurements/presentation/measurements_providers.dart';
+import '../../measurements/domain/measurement_selectors.dart';
 import '../../../shared/presentation/vero_design.dart';
 import 'nutrition_providers.dart';
 
@@ -47,11 +48,11 @@ class _NutritionReportsPageState extends ConsumerState<NutritionReportsPage> {
       0,
       (sum, meal) => sum + (meal.fatGrams ?? 0),
     );
-    final weights = measurements
-        .where(
-          (item) => item.recordedAt.isAfter(start) && item.weightKg != null,
-        )
-        .toList();
+    final weights = chronologicalWeightMeasurements(
+      measurements.where(
+        (item) => item.recordedAt.isAfter(start) && item.weightKg != null,
+      ),
+    );
     final days = List.generate(
       _period,
       (i) => DateTime.now().subtract(Duration(days: _period - 1 - i)),
@@ -115,9 +116,9 @@ class _NutritionReportsPageState extends ConsumerState<NutritionReportsPage> {
             'Peso',
             weights.isEmpty
                 ? 'Sem registros'
-                : '${weights.first.weightKg!.toStringAsFixed(1)} kg',
+                : '${weights.last.weightKg!.toStringAsFixed(1)} kg',
             weights.length > 1
-                ? 'Variação ${(weights.first.weightKg! - weights.last.weightKg!).toStringAsFixed(1)} kg no período'
+                ? 'Variação ${(weights.last.weightKg! - weights.first.weightKg!).toStringAsFixed(1)} kg no período'
                 : 'Registre mais medidas para visualizar tendência',
           ),
           const SizedBox(height: 12),
