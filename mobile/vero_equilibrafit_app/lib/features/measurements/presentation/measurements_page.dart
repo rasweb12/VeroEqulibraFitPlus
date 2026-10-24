@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/presentation/app_drawer.dart';
 import '../../../shared/presentation/vero_design.dart';
+import '../domain/body_measurement.dart';
 import 'measurements_providers.dart';
 
 class MeasurementsPage extends ConsumerWidget {
@@ -14,13 +15,23 @@ class MeasurementsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final entries = ref.watch(measurementsProvider);
     return Scaffold(
+      backgroundColor: VeroColors.background,
       appBar: AppBar(
-        title: const Text('Evolução corporal'),
-        leading: IconButton(
-          tooltip: 'Voltar',
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.maybePop(context),
+        backgroundColor: VeroColors.surface,
+        surfaceTintColor: VeroColors.surface,
+        elevation: 0,
+        title: const Text(
+          'Evolução corporal',
+          style: TextStyle(fontWeight: FontWeight.w800, color: VeroColors.text),
         ),
+        leading: Builder(
+          builder: (scaffoldContext) => IconButton(
+            tooltip: 'Menu',
+            icon: const Icon(Icons.menu_rounded, color: VeroColors.text),
+            onPressed: () => Scaffold.of(scaffoldContext).openDrawer(),
+          ),
+        ),
+        centerTitle: true,
       ),
       drawer: const AppDrawer(),
       bottomNavigationBar: const VeroBottomNavigation(
@@ -154,11 +165,25 @@ class MeasurementsPage extends ConsumerWidget {
                 '${MaterialLocalizations.of(context).formatShortDate(entry.recordedAt)}${entry.notes.isEmpty ? '' : '\n${entry.notes}'}',
               ),
               isThreeLine: entry.notes.isNotEmpty,
-              trailing: IconButton(
-                icon: const Icon(Icons.delete_outline),
-                tooltip: 'Excluir registro',
-                onPressed: () =>
-                    ref.read(measurementsProvider.notifier).delete(entry.id),
+              trailing: PopupMenuButton<_MeasureAction>(
+                tooltip: 'Opções do registro',
+                onSelected: (action) {
+                  if (action == _MeasureAction.edit) {
+                    _edit(context, ref, entry);
+                  } else {
+                    _confirmDelete(context, ref, entry.id);
+                  }
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem(
+                    value: _MeasureAction.edit,
+                    child: Text('Editar'),
+                  ),
+                  PopupMenuItem(
+                    value: _MeasureAction.delete,
+                    child: Text('Excluir'),
+                  ),
+                ],
               ),
             ),
           );
@@ -236,6 +261,101 @@ class MeasurementsPage extends ConsumerWidget {
     }
   }
 
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    String id,
+  ) async {
+    final confirmed =
+        await showDialog<bool>(
+          context: context,
+          builder: (dialog) => AlertDialog(
+            title: const Text('Excluir registro?'),
+            content: const Text(
+              'Esta ação remove somente esta medição do histórico local.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialog, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialog, true),
+                child: const Text('Excluir'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (confirmed && context.mounted) {
+      ref.read(measurementsProvider.notifier).delete(id);
+    }
+  }
+
+  Future<void> _edit(
+    BuildContext context,
+    WidgetRef ref,
+    BodyMeasurement entry,
+  ) async {
+    final weight = TextEditingController(text: entry.weightKg?.toString());
+    final waist = TextEditingController(text: entry.waistCm?.toString());
+    final chest = TextEditingController(text: entry.chestCm?.toString());
+    final hip = TextEditingController(text: entry.hipCm?.toString());
+    final notes = TextEditingController(text: entry.notes);
+    final save = await showDialog<bool>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: const Text('Editar evolução'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _numberField(weight, 'Peso (kg)'),
+              _numberField(waist, 'Cintura (cm)'),
+              _numberField(chest, 'Peito (cm)'),
+              _numberField(hip, 'Quadril (cm)'),
+              TextField(
+                controller: notes,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Observações (opcional)',
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialog, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialog, true),
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+    await _afterDialogFrame();
+    if (save == true && context.mounted) {
+      double? parse(TextEditingController controller) =>
+          double.tryParse(controller.text.replaceAll(',', '.'));
+      ref
+          .read(measurementsProvider.notifier)
+          .update(
+            entry.id,
+            weightKg: parse(weight),
+            waistCm: parse(waist),
+            chestCm: parse(chest),
+            hipCm: parse(hip),
+            notes: notes.text,
+          );
+    }
+    for (final controller in [weight, waist, chest, hip, notes]) {
+      controller.dispose();
+    }
+  }
+
   Future<void> _afterDialogFrame() async {
     final completer = Completer<void>();
     WidgetsBinding.instance.addPostFrameCallback((_) => completer.complete());
@@ -249,3 +369,5 @@ class MeasurementsPage extends ConsumerWidget {
         decoration: InputDecoration(labelText: label),
       );
 }
+
+enum _MeasureAction { edit, delete }

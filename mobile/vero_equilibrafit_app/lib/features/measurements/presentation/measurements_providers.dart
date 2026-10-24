@@ -48,4 +48,23 @@ class MeasurementsController extends StateNotifier<List<BodyMeasurement>> {
     _repository.delete(id);
     state = _repository.all();
   }
+
+  void update(
+    String id, {
+    double? weightKg,
+    double? waistCm,
+    double? chestCm,
+    double? hipCm,
+    required String notes,
+  }) {
+    _repository.update(
+      id,
+      weightKg: weightKg,
+      waistCm: waistCm,
+      chestCm: chestCm,
+      hipCm: hipCm,
+      notes: notes,
+    );
+    state = _repository.all();
+  }
 }

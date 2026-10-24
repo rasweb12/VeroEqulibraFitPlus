@@ -68,12 +68,12 @@ void main() {
       await tester.pumpAndSettle();
 
       Future<void> open() async {
-        final button = find.text(kind);
-        await tester.ensureVisible(button);
         if (kind == 'Anotação do dia') {
           await tester.drag(find.byType(ListView).first, const Offset(0, -250));
           await tester.pumpAndSettle();
         }
+        final button = find.text(kind);
+        await tester.ensureVisible(button);
         await tester.tap(button);
         await tester.pumpAndSettle();
       }

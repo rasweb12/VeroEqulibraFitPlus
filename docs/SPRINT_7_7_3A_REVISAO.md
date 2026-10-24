@@ -85,9 +85,44 @@ Antes de iniciar 7.7.3B, resolver os problemas críticos pendentes e solicitar a
   manifesto Android não explicita política de backup. O erro de descriptografia
   permanece não reproduzido e não houve limpeza de dados, desinstalação ou
   exclusão de chaves. A hipótese de restauração de backup não está comprovada.
+- **CORREÇÃO PREVENTIVA LOCAL / AINDA NÃO HOMOLOGADA:** o aplicativo agora define
+  `android:allowBackup="false"`. Isso impede que futuras cópias de dados
+  criptografados sejam restauradas sem a chave do Android Keystore. A alteração
+  não lê, remove ou recria dados e chaves já existentes; ainda é necessário
+  validar atualização e reinicialização no emulador sem logout inesperado.
+- **APK PARA VALIDAÇÃO ANDROID (23/10/2026):** `app-debug.apk` foi recompilada
+  com sucesso e instalada no emulador, confirmada pelo `lastUpdateTime` do
+  pacote. Ainda falta executar no aparelho o salvamento e a reabertura de
+  medida, atividade e anotação, além de confirmar que não há logout ou erro de
+  decriptografia após reiniciar o aplicativo.
 - **BLOQUEADO PARA CONFIRMAÇÃO REMOTA:** publicar a alteração do FastAPI e fazer
   uma geração autenticada, sem salvar o plano automaticamente, com correlação de
   logs entre API e IA. Não foi feito deploy, alteração de segredo nem chamada
   externa nesta etapa.
+- **TESTADO MANUALMENTE NO AMBIENTE PUBLICADO (23/10/2026):** o proprietário
+  confirmou que o Coach Gemini funcionou e que a tela de planos gerou uma
+  proposta. A proposta foi editada, aprovada, salva, a tela foi fechada e
+  reaberta, e o mesmo plano foi recuperado por **Carregar plano salvo**. Isso
+  aprova, para a sessão autenticada testada, geração Gemini, revisão humana,
+  persistência e recuperação do plano. Não substitui testes de isolamento entre
+  contas, sincronização entre dispositivos ou o roteiro completo de regressão.
+- **TESTADO MANUALMENTE NO ANDROID (23/10/2026):** medida corporal, atividade e
+  anotação foram salvas e recuperadas após fechar e reabrir as respectivas
+  telas. Depois de reiniciar o aplicativo, a sessão permaneceu ativa e não houve
+  erro de decriptografia; `_dependents.isEmpty` não foi reproduzido. Isso aprova
+  esses fluxos na APK testada, sem provar comportamento em todos os aparelhos.
+
+## Fechamento da Sprint 7.7.3A — evidência de 23/10/2026
+
+- **TESTADO E APROVADO NA SESSÃO HOMOLOGADA:** geração Gemini de plano, edição,
+  aprovação, persistência e recuperação de plano salvo; Coach Gemini; salvamento
+  e reabertura de medida corporal, atividade e anotação; reinicialização sem
+  logout ou erro de descriptografia.
+- **CORRIGIDO LOCALMENTE:** a leitura de resposta estruturada do SDK Gemini e a
+  prevenção de restauração automática de dados criptografados no Android. Essas
+  alterações locais não são evidência de publicação remota.
+- **PENDENTE FORA DESTE ACEITE:** rotação da chave interna exposta em captura de
+  tela, verificação em outro dispositivo e publicação autorizada de qualquer
+  alteração de serviço ainda não implantada.
 
 - Complemento: APK debug de 21/10/2026 21:44 instalado com sucesso no emulador via `adb install -r`, sem limpeza dos dados. O processo do aplicativo foi identificado após abertura. A instalação e a inicialização não comprovam os fluxos funcionais; teste real de geração de plano continua adiado a pedido do proprietário. A limpeza de caches do computador foi interrompida e pode ter sido parcial.

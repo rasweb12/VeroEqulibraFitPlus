@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/persistence/owner_scope.dart';
@@ -192,18 +193,30 @@ class HabitsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(habitsProvider);
     return Scaffold(
+      backgroundColor: VeroColors.background,
       drawer: const AppDrawer(),
+      appBar: AppBar(
+        backgroundColor: VeroColors.surface,
+        surfaceTintColor: VeroColors.surface,
+        elevation: 0,
+        leading: Builder(
+          builder: (scaffoldContext) => IconButton(
+            tooltip: 'Menu',
+            icon: const Icon(Icons.menu_rounded, color: VeroColors.text),
+            onPressed: () => Scaffold.of(scaffoldContext).openDrawer(),
+          ),
+        ),
+        title: const Text(
+          'Hábitos',
+          style: TextStyle(fontWeight: FontWeight.w800, color: VeroColors.text),
+        ),
+        centerTitle: true,
+      ),
       bottomNavigationBar: const VeroBottomNavigation(location: '/habits'),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        scrollCacheExtent: const ScrollCacheExtent.pixels(1000),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
-          Builder(
-            builder: (context) => VeroTopBar(
-              title: 'Hábitos',
-              onMenu: () => Scaffold.of(context).openDrawer(),
-            ),
-          ),
-          const SizedBox(height: 16),
           const Text(
             'Registre o que fez hoje',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
@@ -274,29 +287,40 @@ class HabitsPage extends ConsumerWidget {
                     color: VeroColors.water,
                     backgroundColor: const Color(0xffE7EEF8),
                   ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'ADIÇÃO RÁPIDA',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: VeroColors.muted,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [150, 200, 250, 300, 500]
+                        .map(
+                          (ml) => ActionChip(
+                            onPressed: () =>
+                                ref.read(habitsProvider.notifier).addWater(ml),
+                            label: Text('+$ml ml'),
+                            labelStyle: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: VeroColors.water,
+                            ),
+                            backgroundColor: VeroColors.water.withValues(
+                              alpha: .08,
+                            ),
+                            side: BorderSide.none,
+                          ),
+                        )
+                        .toList(),
+                  ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [150, 200, 250, 300, 500]
-                .map(
-                  (ml) => ActionChip(
-                    onPressed: () =>
-                        ref.read(habitsProvider.notifier).addWater(ml),
-                    label: Text('+$ml ml'),
-                    labelStyle: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: VeroColors.water,
-                    ),
-                    backgroundColor: VeroColors.water.withValues(alpha: .08),
-                    side: BorderSide.none,
-                  ),
-                )
-                .toList(),
           ),
           const SizedBox(height: 16),
           Container(

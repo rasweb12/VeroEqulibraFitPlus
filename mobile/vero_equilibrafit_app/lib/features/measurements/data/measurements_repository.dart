@@ -41,6 +41,29 @@ class MeasurementsRepository {
     unawaited(_save());
   }
 
+  void update(
+    String id, {
+    double? weightKg,
+    double? waistCm,
+    double? chestCm,
+    double? hipCm,
+    required String notes,
+  }) {
+    final index = _items.indexWhere((item) => item.id == id);
+    if (index < 0) return;
+    final current = _items[index];
+    _items[index] = BodyMeasurement(
+      id: current.id,
+      recordedAt: current.recordedAt,
+      weightKg: weightKg,
+      waistCm: waistCm,
+      chestCm: chestCm,
+      hipCm: hipCm,
+      notes: notes.trim(),
+    );
+    unawaited(_save());
+  }
+
   Future<void> load() async {
     final encoded = await _store.read(_storageKey);
     if (encoded == null || encoded.isEmpty) return;

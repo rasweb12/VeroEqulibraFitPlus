@@ -26,17 +26,30 @@ class ProfilePage extends ConsumerWidget {
         ? null
         : measurements.first.weightKg;
     return Scaffold(
+      backgroundColor: VeroColors.background,
       drawer: const AppDrawer(),
+      appBar: AppBar(
+        backgroundColor: VeroColors.surface,
+        surfaceTintColor: VeroColors.surface,
+        elevation: 0,
+        leading: Builder(
+          builder: (scaffoldContext) => IconButton(
+            tooltip: 'Menu',
+            icon: const Icon(Icons.menu_rounded, color: VeroColors.text),
+            onPressed: () => Scaffold.of(scaffoldContext).openDrawer(),
+          ),
+        ),
+        title: const Text(
+          'Perfil',
+          style: TextStyle(fontWeight: FontWeight.w800, color: VeroColors.text),
+        ),
+        centerTitle: true,
+      ),
       bottomNavigationBar: const VeroBottomNavigation(location: '/profile'),
       body: Builder(
         builder: (context) => ListView(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           children: [
-            VeroTopBar(
-              title: 'Perfil',
-              onMenu: () => Scaffold.of(context).openDrawer(),
-            ),
-            const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
@@ -44,90 +57,89 @@ class ProfilePage extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: const Color(0xffF1F5F9)),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: VeroColors.primary,
-                    child: Text(
-                      _initials(session?.displayName ?? session?.email ?? 'V'),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 17,
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor: VeroColors.primaryLight,
+                        child: Text(
+                          _initials(
+                            session?.displayName ?? session?.email ?? 'V',
+                          ),
+                          style: const TextStyle(
+                            color: VeroColors.primary,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          session?.displayName ?? session?.email ?? 'Conta',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        Text(
-                          session?.email ?? 'Sessão indisponível',
-                          style: const TextStyle(color: VeroColors.muted),
-                        ),
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: VeroColors.primary.withValues(alpha: .12),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Text(
-                            '• Conta autenticada',
-                            style: TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w700,
-                              color: VeroColors.primary,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              session?.displayName ?? session?.email ?? 'Conta',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.w800),
                             ),
-                          ),
+                            Text(
+                              session?.email ?? 'Sessão indisponível',
+                              style: const TextStyle(
+                                color: VeroColors.muted,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: VeroColors.primaryLight,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                '• Conta autenticada',
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: VeroColors.primary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(color: VeroColors.border),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      _metric(
+                        'Peso atual',
+                        latestWeight == null
+                            ? 'Sem registro'
+                            : '${latestWeight.toStringAsFixed(1)} kg',
+                      ),
+                      _metric(
+                        'Meta diária',
+                        goals.calories == 0
+                            ? 'Não definida'
+                            : '${goals.calories} kcal',
+                      ),
+                      _metric(
+                        'Hidratação',
+                        '${(habits.waterMl / 1000).toStringAsFixed(1)} L',
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xffF1F5F9)),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 14,
-                  horizontal: 8,
-                ),
-                child: Row(
-                  children: [
-                    _metric(
-                      'Peso atual',
-                      latestWeight == null
-                          ? 'Sem registro'
-                          : '${latestWeight.toStringAsFixed(1)} kg',
-                    ),
-                    _metric(
-                      'Meta diária',
-                      goals.calories == 0
-                          ? 'Não definida'
-                          : '${goals.calories} kcal',
-                    ),
-                    _metric(
-                      'Hidratação',
-                      '${(habits.waterMl / 1000).toStringAsFixed(1)} L',
-                    ),
-                  ],
-                ),
               ),
             ),
             const SizedBox(height: 16),

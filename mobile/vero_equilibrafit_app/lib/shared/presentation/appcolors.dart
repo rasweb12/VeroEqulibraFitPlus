@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 // Constantes de Cor do VeroEquilibraFit+
 class AppColors {
   static const Color primary = Color(0xFF00A86B);
+  static const Color primaryDark = Color(0xFF006D43);
   static const Color primaryLight = Color(0xFFE8F8F0);
   static const Color background = Color(0xFFF8FAFC);
   static const Color surface = Colors.white;
