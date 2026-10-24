@@ -124,5 +124,12 @@ Antes de iniciar 7.7.3B, resolver os problemas críticos pendentes e solicitar a
 - **PENDENTE FORA DESTE ACEITE:** rotação da chave interna exposta em captura de
   tela, verificação em outro dispositivo e publicação autorizada de qualquer
   alteração de serviço ainda não implantada.
+- **CORRIGIDO E TESTADO NO EMULADOR (24/10/2026):** `launch_background.xml`
+  tentava usar o ícone adaptativo `@mipmap/ic_launcher` como bitmap, causando
+  `Resources.NotFoundException` no splash e uma transição preta. Os dois
+  recursos de splash agora usam o bitmap válido
+  `@drawable/vero_launcher_foreground`. A APK debug foi recompilada, instalada
+  com `adb install -r` sem limpar dados e apresentou o Dashboard após a
+  inicialização.
 
 - Complemento: APK debug de 21/10/2026 21:44 instalado com sucesso no emulador via `adb install -r`, sem limpeza dos dados. O processo do aplicativo foi identificado após abertura. A instalação e a inicialização não comprovam os fluxos funcionais; teste real de geração de plano continua adiado a pedido do proprietário. A limpeza de caches do computador foi interrompida e pode ter sido parcial.
