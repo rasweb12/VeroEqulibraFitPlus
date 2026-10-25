@@ -48,3 +48,29 @@ Data: 25/10/2026
 
 `backups/sprint_7_7_6a_admin_20261025_145312`
 
+
+## Homologação publicada
+
+- Branch publicada: `codex/admin-users-homologation` (`f6cb5b7`).
+- Migration aplicada somente na branch Neon de homologação: `20261025180012_AddAdminUserManagementAudit`.
+- API isolada: `https://vero-equilibrafit-admin-api-homologation.onrender.com`.
+- Admin isolado: `https://vero-equilibrafit-admin-homologation.onrender.com`.
+- Produção não foi alterada.
+
+### Validação autenticada executada
+
+Com duas contas descartáveis exclusivas do ambiente de homologação:
+
+1. Administrador autenticado acessou indicadores, listagem de usuários e papéis.
+2. Usuário comum recebeu HTTP 403 ao requisitar a rota administrativa diretamente.
+3. Bloqueio revogou a sessão e impediu novo login (HTTP 401).
+4. Reativação restaurou o login.
+5. As ações de bloqueio e reativação apareceram no histórico de auditoria.
+6. Concessão temporária de `Administrator` permitiu acesso administrativo; a revogação posterior devolveu HTTP 403 e ambas as alterações foram auditadas.
+7. A interface Admin publicada respondeu HTTP 200.
+
+A conta temporariamente promovida voltou a não ter papel administrativo ao fim do teste. Nenhum dado de saúde, conversa ou credencial foi consultado ou exposto.
+
+### Pendência de qualidade
+
+O adaptador xUnit desta máquina ainda trava antes de emitir resultado, embora a suíte compile. A validação autenticada publicada acima foi executada com sucesso; estabilizar o executor de testes continua pendente antes da homologação final da sprint.
