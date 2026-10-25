@@ -50,7 +50,7 @@ public sealed class AuthController(
     {
         var email = request.Email.Trim().ToLowerInvariant();
         var user = await userManager.FindByEmailAsync(email);
-        if (user is null || !await userManager.CheckPasswordAsync(user, request.Password))
+        if (user is null || !await userManager.CheckPasswordAsync(user, request.Password) || await userManager.IsLockedOutAsync(user))
             return Unauthorized(new ProblemDetails { Title = "Credenciais inválidas." });
         if (!user.EmailConfirmed)
             return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = "Confirme seu e-mail antes de entrar." });
