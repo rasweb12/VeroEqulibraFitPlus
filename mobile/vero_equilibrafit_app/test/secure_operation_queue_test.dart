@@ -100,4 +100,30 @@ void main() {
     final pending = await queue.due(ownerId: 'account-a');
     expect(pending.map((item) => item.operationType), contains('meal.update'));
   });
+
+  test(
+    'recovers an interrupted processing operation after app restart',
+    () async {
+      final store = MemorySecureOwnerStore();
+      final first = SecureOperationQueue(ownerId: 'account-a', store: store);
+      await first.enqueue(
+        ownerId: 'account-a',
+        idempotencyKey: 'operation-a',
+        entityType: 'meal',
+        entityId: 'a4f8a0d3-2ddf-4a8e-9a36-0b3d85b6755c',
+        operationType: 'meal.create',
+        payloadJson: '{}',
+        clientVersion: '1',
+      );
+      final initial = await first.due(ownerId: 'account-a');
+      await first.markProcessing(initial.single.id);
+
+      final restored = SecureOperationQueue(ownerId: 'account-a', store: store);
+      final recovered = await restored.due(ownerId: 'account-a');
+
+      expect(recovered, hasLength(1));
+      expect(recovered.single.status, 'pending');
+      expect(recovered.single.lastErrorCode, 'interrupted');
+    },
+  );
 }

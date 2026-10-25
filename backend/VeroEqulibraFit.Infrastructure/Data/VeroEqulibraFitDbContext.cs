@@ -20,6 +20,7 @@ public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbC
     public DbSet<FoodProduct> FoodProducts => Set<FoodProduct>();
     public DbSet<JournalRecord> JournalRecords => Set<JournalRecord>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<AdminAuditEvent> AdminAuditEvents => Set<AdminAuditEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -29,6 +30,7 @@ public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbC
         {
             entity.ToTable("users");
             entity.Property(user => user.DisplayName).HasMaxLength(120);
+            entity.HasIndex(user => user.RegisteredAt);
         });
         modelBuilder.Entity<AppRole>().ToTable("roles");
         modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityUserRole<Guid>>().ToTable("user_roles");
@@ -129,6 +131,16 @@ public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbC
             entity.HasIndex(record => new { record.OwnerId, record.UpdatedAt });
             entity.HasIndex(record => new { record.OwnerId, record.Kind, record.OccurredAt });
             entity.HasQueryFilter(record => record.DeletedAt == null);
+        });
+        modelBuilder.Entity<AdminAuditEvent>(entity =>
+        {
+            entity.ToTable("admin_audit_events");
+            entity.HasKey(audit => audit.Id);
+            entity.Property(audit => audit.Action).HasMaxLength(100).IsRequired();
+            entity.Property(audit => audit.Result).HasMaxLength(32).IsRequired();
+            entity.Property(audit => audit.Reason).HasMaxLength(500);
+            entity.HasIndex(audit => new { audit.TargetUserId, audit.OccurredAt });
+            entity.HasIndex(audit => new { audit.ActorUserId, audit.OccurredAt });
         });
     }
 }
