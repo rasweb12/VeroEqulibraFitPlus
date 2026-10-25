@@ -9,6 +9,7 @@ using System.Net;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Identity;
 using VeroEqulibraFit.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,7 +30,7 @@ builder.Services.AddHttpClient<GeminiAiClient>(client =>
 var connectionString = builder.Configuration.GetConnectionString("Postgres")
     ?? builder.Configuration["Database:ConnectionString"];
 if (!string.IsNullOrWhiteSpace(connectionString))
-    builder.Services.AddVeroEqulibraFitInfrastructure(connectionString);
+    builder.Services.AddVeroEqulibraFitInfrastructure(connectionString).AddDefaultTokenProviders();
 else
     throw new InvalidOperationException("ConnectionStrings:Postgres must be configured for authentication and data isolation.");
 builder.Services.AddDataProtection()
