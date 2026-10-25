@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using VeroEqulibraFit.Api.Services;
+using VeroEqulibraFit.Infrastructure.Data;
 namespace VeroEqulibraFit.Api.Tests;
 
 public sealed class AuthorizationTests
@@ -25,6 +28,25 @@ public sealed class AuthorizationTests
         var response = await client.GetAsync("/api/v1/admin/overview");
 
         Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AdminOverview_RejectsAuthenticatedNonAdministrator()
+    {
+        await using var environment = new TestEnvironment();
+        using var factory = new WebApplicationFactory<Program>();
+        using var client = factory.CreateClient();
+        var tokens = factory.Services.GetRequiredService<JwtTokenService>();
+        var token = tokens.CreateAccessToken(
+            new AppUser { Id = Guid.NewGuid(), Email = "member@example.test" },
+            ["member"]);
+        client.DefaultRequestHeaders.TryAddWithoutValidation(
+            "Authorization",
+            $"Bearer {token.Token}");
+
+        var response = await client.GetAsync("/api/v1/admin/overview");
+
+        Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     private sealed class TestEnvironment : IAsyncDisposable

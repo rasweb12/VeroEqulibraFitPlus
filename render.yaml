@@ -79,3 +79,5 @@ services:
     envVars:
       - key: PORT
         value: "8080"
+      - key: Api__BaseUrl
+        value: https://veroequlibrafitplus.onrender.com/
