@@ -28,15 +28,14 @@ Data: 25/10/2026
 
 - `dotnet build backend\\VeroEqulibraFit.Api\\VeroEqulibraFit.Api.csproj --no-restore -m:1 -v:minimal`: aprovado, zero avisos/erros.
 - `dotnet build admin\\VeroEqulibraFit.Admin\\VeroEqulibraFit.Admin.csproj --no-restore -m:1 -v:minimal`: aprovado, zero avisos/erros.
-- `dotnet test backend\\VeroEqulibraFit.Api\\VeroEqulibraFit.Api.csproj --no-build -m:1 -v:minimal`: concluído; A suíte local de política de segurança foi criada, mas o adaptador de execução não retornou resultado nesta máquina e o processo foi interrompido sem teste aprovado.
+- `dotnet test backend\\VeroEqulibraFit.Api.Tests\\VeroEqulibraFit.Api.Tests.csproj --no-build -m:1 -v:minimal`: aprovado fora do sandbox; 5 aprovados, 0 falhas, em 309 ms.
 - `git diff --check`: sem erros de espaço em branco (somente avisos LF/CRLF do Git).
 
-## Não executado
+## Limitações e pendências
 
-- Migration não foi aplicada a Neon, Render ou produção.
-- Não houve deploy, commit ou push.
-- Não foi possível testar HTTP remoto de sincronização nesta sessão: a aprovação automática da chamada HTTPS atingiu o limite de uso e a chamada não foi executada.
-- Ainda faltam testes de integração autenticados para 401, 403, paginação, alteração de status, papéis e auditoria; a execução do adaptador xUnit local também precisa ser estabilizada. A fase não está homologada até esses testes e a aplicação da migration em ambiente de homologação.
+- O executor VSTest dentro do sandbox local falha ao abrir o canal TCP de loopback entre `vstest.console` e `testhost` (`SocketException 10013`). Fora do sandbox, a mesma suíte foi executada e aprovada; não há falha funcional do teste.
+- A promoção para produção continua pendente e não foi iniciada.
+- As duas contas descartáveis criadas exclusivamente para a prova de revogação, incluindo sessões, papéis e auditoria associados, foram removidas da branch de homologação após a validação.
 
 ## Rollback
 
@@ -68,9 +67,18 @@ Com duas contas descartáveis exclusivas do ambiente de homologação:
 5. As ações de bloqueio e reativação apareceram no histórico de auditoria.
 6. Concessão temporária de `Administrator` permitiu acesso administrativo; a revogação posterior devolveu HTTP 403 e ambas as alterações foram auditadas.
 7. A interface Admin publicada respondeu HTTP 200.
+8. Uma nova prova de sessão bloqueou uma conta descartável e reutilizou seu refresh token já emitido: `POST /api/v1/auth/refresh` respondeu HTTP 401. Após reativação, um novo login foi aceito.
 
 A conta temporariamente promovida voltou a não ter papel administrativo ao fim do teste. Nenhum dado de saúde, conversa ou credencial foi consultado ou exposto.
 
-### Pendência de qualidade
+### Credencial de homologação
 
-O adaptador xUnit desta máquina ainda trava antes de emitir resultado, embora a suíte compile. A validação autenticada publicada acima foi executada com sucesso; estabilizar o executor de testes continua pendente antes da homologação final da sprint.
+- A senha do papel `neondb_owner` da branch Neon de homologação foi rotacionada. A documentação do Neon confirma que a operação é isolada por branch; a branch padrão de produção não foi alterada.
+- Os dois serviços isolados receberam a nova configuração no formato aceito pelo Npgsql e voltaram ao estado `live`.
+- Nenhum segredo é registrado neste relatório.
+
+## Promoção controlada
+
+- A migration administrativa foi aplicada na branch Neon de produção após a criação do ponto de restauração `br-dawn-bar-b6cyua6f`.
+- A confirmação posterior encontrou a tabela de auditoria, a coluna `RegisteredAt` e o registro da migration no histórico.
+- A publicação do código e a validação autenticada em produção são registradas separadamente quando concluídas.
