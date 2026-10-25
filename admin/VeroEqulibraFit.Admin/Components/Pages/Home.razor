@@ -30,7 +30,7 @@ else
         <div class="col-md-4"><article class="card p-3"><h2 class="h5">Fichas de treino</h2><p class="display-6 mb-0">@Session.Overview.TrainingPlans</p></article></div>
         <div class="col-md-4"><article class="card p-3"><h2 class="h5">Refeições</h2><p class="display-6 mb-0">@Session.Overview.MealEntries</p></article></div>
         <div class="col-md-4"><article class="card p-3"><h2 class="h5">Planos alimentares</h2><p class="display-6 mb-0">@Session.Overview.NutritionPlans</p></article></div>
-        <div class="col-md-4"><article class="card p-3"><h2 class="h5">Exercícios personalizados</h2><p class="display-6 mb-0">@Session.Overview.CustomExercises</p></article></div>
+        <div class="col-md-4"><article class="card p-3"><h2 class="h5">Exercícios personalizados</h2><p class="display-6 mb-0">@(Session.Overview.CustomExercises?.ToString() ?? "Indisponível")</p></article></div>
     </div>
     <div class="alert alert-info mt-4">Catálogo, mídias e auditoria exigem endpoints administrativos específicos e continuam indisponíveis até serem implementados no servidor.</div>
 }

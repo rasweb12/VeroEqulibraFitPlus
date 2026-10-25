@@ -50,4 +50,9 @@ public sealed class AdminApiSession(IHttpClientFactory clients)
     private sealed record AuthToken(string AccessToken);
 }
 
-public sealed record AdminOverview(int Users, int TrainingPlans, int MealEntries, int NutritionPlans, int CustomExercises);
+public sealed record AdminOverview(
+    int Users,
+    int TrainingPlans,
+    int MealEntries,
+    int NutritionPlans,
+    int? CustomExercises);

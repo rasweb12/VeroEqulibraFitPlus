@@ -1,0 +1,42 @@
+@page "/"
+@rendermode InteractiveServer
+@inject AdminApiSession Session
+@inject NavigationManager Navigation
+
+<PageTitle>VeroEqulibraFit+ Administração</PageTitle>
+
+@if (!Session.IsAuthenticated)
+{
+    <h1>Operação VeroEqulibraFit+</h1>
+    <p>Entre com uma conta que tenha o papel administrativo atribuído no servidor.</p>
+    <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/entrar")'>Entrar</button>
+}
+else if (_error is not null)
+{
+    <h1>Indicadores indisponíveis</h1>
+    <div class="alert alert-warning">@_error</div>
+    <button class="btn btn-primary" @onclick="LoadAsync">Tentar novamente</button>
+}
+else if (Session.Overview is null)
+{
+    <p>Carregando indicadores operacionais…</p>
+}
+else
+{
+    <h1>Operação VeroEqulibraFit+</h1>
+    <p class="text-muted">Indicadores agregados. Nenhum perfil ou conversa privada é exibido aqui.</p>
+    <div class="row g-3 mt-2">
+        <div class="col-md-4"><article class="card p-3"><h2 class="h5">Usuários</h2><p class="display-6 mb-0">@Session.Overview.Users</p></article></div>
+        <div class="col-md-4"><article class="card p-3"><h2 class="h5">Fichas de treino</h2><p class="display-6 mb-0">@Session.Overview.TrainingPlans</p></article></div>
+        <div class="col-md-4"><article class="card p-3"><h2 class="h5">Refeições</h2><p class="display-6 mb-0">@Session.Overview.MealEntries</p></article></div>
+        <div class="col-md-4"><article class="card p-3"><h2 class="h5">Planos alimentares</h2><p class="display-6 mb-0">@Session.Overview.NutritionPlans</p></article></div>
+        <div class="col-md-4"><article class="card p-3"><h2 class="h5">Exercícios personalizados</h2><p class="display-6 mb-0">@(Session.Overview.CustomExercises?.ToString() ?? "Indisponível")</p></article></div>
+    </div>
+    <div class="alert alert-info mt-4">Catálogo, mídias e auditoria exigem endpoints administrativos específicos e continuam indisponíveis até serem implementados no servidor.</div>
+}
+
+@code {
+    private string? _error;
+    protected override async Task OnInitializedAsync() { if (Session.IsAuthenticated) await LoadAsync(); }
+    private async Task LoadAsync() => _error = await Session.RefreshAsync();
+}
