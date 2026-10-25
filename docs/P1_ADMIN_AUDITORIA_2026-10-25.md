@@ -1,7 +1,7 @@
 # P1 — Auditoria do Blazor Admin
 
 Data: 25/10/2026  
-Estado: **PARCIAL — não homologado em produção.**
+Estado: **PARCIAL — publicado; autenticação positiva e negativa completa ainda não homologada.**
 
 ## Implementado e verificado localmente
 
@@ -23,10 +23,18 @@ O `render.yaml` passou a declarar `Api__BaseUrl` para o serviço
 `vero-equilibrafit-admin`. Essa variável não é segredo e aponta para a API
 HTTPS já publicada.
 
+## Evidência de publicação
+
+- Serviço gratuito `vero-equilibrafit-admin` criado no workspace Render em
+  Oregon, com auto deploy desligado.
+- Primeiro deploy manual da revisão `dfedfc7` ficou `live` em
+  25/10/2026 00:14 UTC.
+- A página pública respondeu HTTP 200 e apresentou a identidade do painel.
+- A API pública respondeu HTTP 401 a uma solicitação anônima para
+  `/api/v1/admin/overview`.
+
 ## Limites reais
 
-- Não existe serviço Blazor Admin no workspace Render atual; somente API e IA
-  estão publicados. Portanto não há URL administrativa disponível para teste.
 - O painel atual não tem ações de catálogo, mídias, usuários, auditoria ou
   quotas Gemini. Esses recursos não devem ser apresentados como operacionais.
 - A sessão do painel não sobrevive ao reinício do circuito e não faz refresh
@@ -36,7 +44,7 @@ HTTPS já publicada.
 
 ## Próximo bloco seguro
 
-Criar o serviço gratuito `vero-equilibrafit-admin` a partir do Blueprint,
-aguardar o health check e realizar o roteiro de login positivo/negativo. A
-criação do serviço é uma alteração remota e será feita apenas dentro da
-autorização explícita de publicação do P1.
+Executar o roteiro de login positivo com a conta que já possui
+`Administrator` e o roteiro negativo com uma conta comum. Não envie as
+credenciais pelo chat; o resultado pode ser informado como aprovado ou
+reprovado.
