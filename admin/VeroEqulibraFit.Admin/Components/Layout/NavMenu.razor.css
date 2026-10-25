@@ -103,3 +103,5 @@
         overflow-y: auto;
     }
 }
+
+.nav-item button.nav-link { cursor: pointer; text-align: left; }

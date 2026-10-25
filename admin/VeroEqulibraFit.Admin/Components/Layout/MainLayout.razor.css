@@ -96,3 +96,5 @@ main {
         right: 0.75rem;
         top: 0.5rem;
     }
+
+.admin-context { color: #475569; font-size: 0.9rem; font-weight: 600; }
