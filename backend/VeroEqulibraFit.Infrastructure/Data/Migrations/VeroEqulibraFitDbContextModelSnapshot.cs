@@ -543,6 +543,44 @@ namespace VeroEqulibraFit.Infrastructure.Data.Migrations
                     b.ToTable("training_sessions", (string)null);
                 });
 
+            modelBuilder.Entity("VeroEqulibraFit.Infrastructure.Data.AdminAuditEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid?>("TargetUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId", "OccurredAt");
+
+                    b.HasIndex("TargetUserId", "OccurredAt");
+
+                    b.ToTable("admin_audit_events", (string)null);
+                });
+
             modelBuilder.Entity("VeroEqulibraFit.Infrastructure.Data.AppRole", b =>
                 {
                     b.Property<Guid>("Id")
@@ -617,6 +655,9 @@ namespace VeroEqulibraFit.Infrastructure.Data.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTimeOffset?>("RegisteredAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
 
@@ -635,6 +676,8 @@ namespace VeroEqulibraFit.Infrastructure.Data.Migrations
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
+
+                    b.HasIndex("RegisteredAt");
 
                     b.ToTable("users", (string)null);
                 });

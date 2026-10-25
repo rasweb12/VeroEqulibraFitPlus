@@ -29,7 +29,14 @@ public sealed class AuthController(
         var email = request.Email.Trim().ToLowerInvariant();
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(request.Password))
             return ValidationProblem("E-mail e senha são obrigatórios.");
-        var user = new AppUser { Id = Guid.NewGuid(), UserName = email, Email = email, DisplayName = request.DisplayName?.Trim() };
+        var user = new AppUser
+        {
+            Id = Guid.NewGuid(),
+            UserName = email,
+            Email = email,
+            DisplayName = request.DisplayName?.Trim(),
+            RegisteredAt = DateTimeOffset.UtcNow,
+        };
         var result = await userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
             return BadRequest(new ValidationProblemDetails(result.Errors.GroupBy(error => error.Code).ToDictionary(group => group.Key, group => group.Select(error => error.Description).ToArray())));
@@ -43,7 +50,7 @@ public sealed class AuthController(
     {
         var email = request.Email.Trim().ToLowerInvariant();
         var user = await userManager.FindByEmailAsync(email);
-        if (user is null || !await userManager.CheckPasswordAsync(user, request.Password))
+        if (user is null || !await userManager.CheckPasswordAsync(user, request.Password) || await userManager.IsLockedOutAsync(user))
             return Unauthorized(new ProblemDetails { Title = "Credenciais inválidas." });
         if (!user.EmailConfirmed)
             return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = "Confirme seu e-mail antes de entrar." });

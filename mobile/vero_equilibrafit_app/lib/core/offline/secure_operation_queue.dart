@@ -30,7 +30,9 @@ class SecureOperationQueue implements SyncOperationQueue {
     _verifyOwner(ownerId);
     await _load();
     final now = DateTime.now().toUtc();
-    final existing = _operations.where((item) => item.idempotencyKey == idempotencyKey).firstOrNull;
+    final existing = _operations
+        .where((item) => item.idempotencyKey == idempotencyKey)
+        .firstOrNull;
     // Several offline edits can share the same server revision. Before a
     // request starts, retain only the newest complete representation instead
     // of creating conflicting operations for that same base revision.
@@ -62,10 +64,17 @@ class SecureOperationQueue implements SyncOperationQueue {
   }
 
   @override
-  Future<void> replacePayload({required String idempotencyKey, required String payloadJson}) async {
+  Future<void> replacePayload({
+    required String idempotencyKey,
+    required String payloadJson,
+  }) async {
     await _load();
-    final item = _operations.where((item) => item.idempotencyKey == idempotencyKey).firstOrNull;
-    if (item == null || item.status != OfflineOperationStatus.pending.name) return;
+    final item = _operations
+        .where((item) => item.idempotencyKey == idempotencyKey)
+        .firstOrNull;
+    if (item == null || item.status != OfflineOperationStatus.pending.name) {
+      return;
+    }
     item.payloadJson = payloadJson;
     item.updatedAt = DateTime.now().toUtc();
     await _save();
@@ -78,6 +87,21 @@ class SecureOperationQueue implements SyncOperationQueue {
   }) async {
     _verifyOwner(ownerId);
     await _load();
+    // A process can end after the operation is marked as processing but before
+    // it receives the server response. Re-queue it on the next launch: the
+    // server-side idempotency key makes a repeated delivery safe.
+    var recovered = false;
+    for (final item in _operations) {
+      if (item.status == OfflineOperationStatus.processing.name) {
+        item.status = OfflineOperationStatus.pending.name;
+        item.updatedAt = DateTime.now().toUtc();
+        item.lastErrorCode = 'interrupted';
+        recovered = true;
+      }
+    }
+    if (recovered) {
+      await _save();
+    }
     final now = DateTime.now().toUtc();
     return _operations
         .where(
@@ -93,7 +117,9 @@ class SecureOperationQueue implements SyncOperationQueue {
   Future<List<PendingOperation>> conflicts({required String ownerId}) async {
     _verifyOwner(ownerId);
     await _load();
-    return _operations.where((item) => item.status == OfflineOperationStatus.conflict.name).toList(growable: false);
+    return _operations
+        .where((item) => item.status == OfflineOperationStatus.conflict.name)
+        .toList(growable: false);
   }
 
   @override
