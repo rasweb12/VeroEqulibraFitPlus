@@ -1,41 +1,30 @@
-﻿@inject VeroEqulibraFit.Admin.Services.AdminApiSession Session
+@inject VeroEqulibraFit.Admin.Services.AdminApiSession Session
 @inject NavigationManager Navigation
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">VeroEqulibraFit+ Admin</a>
-    </div>
-</div>
-
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
+<div class="brand"><span class="brand-mark">V</span><span>VeroEquilibraFit+<small>Administração</small></span></div>
+<input type="checkbox" title="Abrir navegação" class="navbar-toggler" />
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-shield-lock-fill-nav-menu" aria-hidden="true"></span> Operação
-            </NavLink>
-        </div>
+    <nav aria-label="Navegação administrativa">
+        <p class="nav-caption">PAINEL</p>
+        <NavLink class="nav-link" href="" Match="NavLinkMatch.All"><span>▦</span> Visão geral</NavLink>
         @if (Session.IsAuthenticated)
         {
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="usuarios">
-                    <span aria-hidden="true">◉</span> Usuários
-                </NavLink>
-            </div>
-            <div class="nav-item px-3">
-                <button type="button" class="nav-link" @onclick="SignOut">
-                    <span class="bi bi-box-arrow-in-right-nav-menu" aria-hidden="true"></span> Sair
-                </button>
-            </div>
+            <p class="nav-caption">GESTÃO</p>
+            <NavLink class="nav-link" href="usuarios"><span>◉</span> Usuários</NavLink>
+            <p class="nav-caption">CATÁLOGO</p>
+            <span class="nav-link unavailable" title="Será ativado junto da Sprint 7.7.6B"><span>⌁</span> Exercícios <small>em preparação</small></span>
+            <span class="nav-link unavailable" title="Será ativado junto da Sprint 7.7.6B"><span>▷</span> Mídias e demonstrações <small>em preparação</small></span>
+            <p class="nav-caption">OPERAÇÃO</p>
+            <span class="nav-link unavailable"><span>▤</span> Conteúdos e planos <small>indisponível</small></span>
+            <span class="nav-link unavailable"><span>◷</span> Auditoria <small>indisponível</small></span>
+            <span class="nav-link unavailable"><span>⚙</span> Serviços e configurações <small>indisponível</small></span>
+            <div class="nav-divider"></div>
+            <button type="button" class="nav-link signout" @onclick="SignOut"><span>↪</span> Sair</button>
         }
         else
         {
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="entrar">
-                    <span class="bi bi-box-arrow-in-right-nav-menu" aria-hidden="true"></span> Entrar
-                </NavLink>
-            </div>
+            <div class="nav-divider"></div>
+            <NavLink class="nav-link" href="entrar"><span>→</span> Entrar</NavLink>
         }
     </nav>
 </div>
