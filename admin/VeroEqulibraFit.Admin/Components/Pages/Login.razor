@@ -23,6 +23,7 @@
     {
         _busy = true; _error = null;
         try { _error = await Session.SignInAsync(_input.Email, _input.Password); if (_error is null) Navigation.NavigateTo("/"); }
+        catch { _error = "Não foi possível concluir o acesso agora. Tente novamente."; }
         finally { _busy = false; }
     }
     private sealed class LoginInput { [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.EmailAddress] public string Email { get; set; } = string.Empty; [System.ComponentModel.DataAnnotations.Required] public string Password { get; set; } = string.Empty; }

@@ -9,7 +9,9 @@ builder.Services.AddRazorComponents()
 builder.Services.AddHttpClient("vero-api", client =>
 {
     client.BaseAddress = AdminApiSession.ReadBaseUrl(builder.Configuration);
-    client.Timeout = TimeSpan.FromSeconds(20);
+    // Render free instances can require a cold-start window. The UI still
+    // reports timeout explicitly instead of leaking an unhandled exception.
+    client.Timeout = TimeSpan.FromSeconds(45);
 });
 builder.Services.AddScoped<AdminApiSession>();
 

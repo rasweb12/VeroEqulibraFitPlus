@@ -16,16 +16,31 @@ public sealed class AdminApiSession(IHttpClientFactory clients)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password)) return "Informe e-mail e senha.";
         var client = clients.CreateClient(ClientName);
-        using var response = await client.PostAsJsonAsync("api/v1/auth/login", new { email = email.Trim(), password }, cancellationToken);
-        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden) return "Não foi possível autenticar esta conta administrativa.";
-        if (!response.IsSuccessStatusCode) return "A autenticação administrativa está indisponível. Tente novamente.";
-        var token = await response.Content.ReadFromJsonAsync<AuthToken>(cancellationToken: cancellationToken);
-        if (string.IsNullOrWhiteSpace(token?.AccessToken)) return "A API retornou uma sessão inválida.";
-        _accessToken = token.AccessToken;
-        var error = await RefreshAsync(cancellationToken);
-        if (error is null) return null;
-        SignOut();
-        return error;
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.PostAsJsonAsync("api/v1/auth/login", new { email = email.Trim(), password }, cancellationToken);
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return "A API demorou para responder. Aguarde alguns segundos e tente novamente.";
+        }
+        catch (HttpRequestException)
+        {
+            return "Não foi possível conectar à API administrativa. Tente novamente.";
+        }
+        using (response)
+        {
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden) return "Não foi possível autenticar esta conta administrativa.";
+            if (!response.IsSuccessStatusCode) return "A autenticação administrativa está indisponível. Tente novamente.";
+            var token = await response.Content.ReadFromJsonAsync<AuthToken>(cancellationToken: cancellationToken);
+            if (string.IsNullOrWhiteSpace(token?.AccessToken)) return "A API retornou uma sessão inválida.";
+            _accessToken = token.AccessToken;
+            var error = await RefreshAsync(cancellationToken);
+            if (error is null) return null;
+            SignOut();
+            return error;
+        }
     }
 
     public async Task<string?> RefreshAsync(CancellationToken cancellationToken = default)
