@@ -87,6 +87,54 @@ public sealed class AdminApiSession(IHttpClientFactory clients)
     public async Task<string?> ChangeUserRolesAsync(Guid id, IReadOnlyList<string> roles, string reason, bool confirmed, CancellationToken cancellationToken = default) =>
         await MutateAsync($"api/v1/admin/users/{id}/roles", new { roles, reason, confirmed }, cancellationToken);
 
+    public async Task<AdminCatalogExercisePageResult> ListCatalogExercisesAsync(int page, string? query, string publication, CancellationToken cancellationToken = default)
+    {
+        if (!IsAuthenticated) return new(null, "Entre para acessar o catálogo.");
+        var path = $"api/v1/admin/catalog/exercises?page={page}&pageSize=25";
+        if (!string.IsNullOrWhiteSpace(query)) path += $"&query={Uri.EscapeDataString(query.Trim())}";
+        if (publication is "published" or "unpublished") path += $"&publication={publication}";
+        using var response = await AuthorizedClient().GetAsync(path, cancellationToken);
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden) return new(null, "Sua sessão não tem permissão administrativa.");
+        if (!response.IsSuccessStatusCode) return new(null, "Não foi possível carregar o catálogo.");
+        return new(await response.Content.ReadFromJsonAsync<AdminCatalogExercisePage>(cancellationToken: cancellationToken), null);
+    }
+
+    public async Task<AdminCatalogExerciseDetailResult> GetCatalogExerciseAsync(string id, CancellationToken cancellationToken = default)
+    {
+        if (!IsAuthenticated) return new(null, "Entre para acessar o catálogo.");
+        using var response = await AuthorizedClient().GetAsync($"api/v1/admin/catalog/exercises/{Uri.EscapeDataString(id)}", cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound) return new(null, "Exercício não encontrado.");
+        if (!response.IsSuccessStatusCode) return new(null, "Não foi possível carregar o exercício.");
+        return new(await response.Content.ReadFromJsonAsync<AdminCatalogExerciseDetail>(cancellationToken: cancellationToken), null);
+    }
+
+    public async Task<AdminCatalogExerciseDetailResult> SaveCatalogExerciseAsync(string id, SaveAdminCatalogExerciseRequest request, CancellationToken cancellationToken = default)
+    {
+        if (!IsAuthenticated) return new(null, "Entre para alterar o catálogo.");
+        using var response = await AuthorizedClient().PutAsJsonAsync($"api/v1/admin/catalog/exercises/{Uri.EscapeDataString(id)}", request, cancellationToken);
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden) return new(null, "Sua sessão não tem permissão administrativa.");
+        if (!response.IsSuccessStatusCode) return new(null, await ReadProblemAsync(response, "Não foi possível salvar o exercício."));
+        return new(await response.Content.ReadFromJsonAsync<AdminCatalogExerciseDetail>(cancellationToken: cancellationToken), null);
+    }
+
+    public async Task<AdminCatalogExerciseDetailResult> SaveCatalogMediaAsync(string exerciseId, Guid mediaId, SaveAdminCatalogMediaRequest request, CancellationToken cancellationToken = default)
+    {
+        if (!IsAuthenticated) return new(null, "Entre para alterar as mídias.");
+        using var response = await AuthorizedClient().PutAsJsonAsync($"api/v1/admin/catalog/exercises/{Uri.EscapeDataString(exerciseId)}/media/{mediaId}", request, cancellationToken);
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden) return new(null, "Sua sessão não tem permissão administrativa.");
+        if (!response.IsSuccessStatusCode) return new(null, await ReadProblemAsync(response, "Não foi possível associar a mídia."));
+        return new(await response.Content.ReadFromJsonAsync<AdminCatalogExerciseDetail>(cancellationToken: cancellationToken), null);
+    }
+
+    public async Task<AdminCatalogMediaInventoryResult> GetMediaInventoryAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsAuthenticated) return new(null, "Entre para acessar as mídias.");
+        using var response = await AuthorizedClient().GetAsync("api/v1/admin/catalog/media-inventory", cancellationToken);
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden) return new(null, "Sua sessão não tem permissão administrativa.");
+        if (!response.IsSuccessStatusCode) return new(null, "Não foi possível carregar o inventário de mídias.");
+        return new(await response.Content.ReadFromJsonAsync<AdminCatalogMediaInventory>(cancellationToken: cancellationToken), null);
+    }
+
     private async Task<string?> MutateAsync(string path, object body, CancellationToken cancellationToken)
     {
         if (!IsAuthenticated) return "Entre para executar esta ação.";
@@ -96,6 +144,12 @@ public sealed class AdminApiSession(IHttpClientFactory clients)
         if (response.StatusCode == HttpStatusCode.Conflict) return "A operação foi bloqueada para preservar o último administrador ativo.";
         var problem = await response.Content.ReadFromJsonAsync<ApiProblem>(cancellationToken: cancellationToken);
         return problem?.Title ?? "Não foi possível concluir a alteração.";
+    }
+
+    private static async Task<string> ReadProblemAsync(HttpResponseMessage response, string fallback)
+    {
+        var problem = await response.Content.ReadFromJsonAsync<ApiProblem>();
+        return problem?.Title ?? fallback;
     }
 
     public void SignOut() { _accessToken = null; Overview = null; }
@@ -123,3 +177,13 @@ public sealed record AdminUserDetail(Guid Id, string? DisplayName, string Email,
 public sealed record AdminRole(string Name);
 public sealed record AdminUserPageResult(AdminUserPage? Page, string? Error);
 public sealed record AdminUserDetailResult(AdminUserDetail? User, string? Error);
+public sealed record AdminCatalogExerciseListItem(string Id, string Name, string PrimaryMuscle, string Equipment, bool IsPublished, int MediaCount, DateTimeOffset UpdatedAt);
+public sealed record AdminCatalogExercisePage(IReadOnlyList<AdminCatalogExerciseListItem> Items, int Page, int PageSize, int TotalCount);
+public sealed record AdminCatalogMediaItem(Guid Id, string AssetPath, string? Label, bool IsPrimary);
+public sealed record AdminCatalogExerciseDetail(string Id, string Name, string PrimaryMuscle, string Equipment, string Instructions, bool IsPublished, IReadOnlyList<AdminCatalogMediaItem> Media);
+public sealed record SaveAdminCatalogExerciseRequest(string Id, string Name, string PrimaryMuscle, string Equipment, string Instructions, bool IsPublished, string Reason, bool Confirmed);
+public sealed record SaveAdminCatalogMediaRequest(string AssetPath, string? Label, bool IsPrimary, string Reason, bool Confirmed);
+public sealed record AdminCatalogMediaInventory(IReadOnlyList<string> RegisteredAssets, IReadOnlyList<string> UnmappedAssets);
+public sealed record AdminCatalogExercisePageResult(AdminCatalogExercisePage? Page, string? Error);
+public sealed record AdminCatalogExerciseDetailResult(AdminCatalogExerciseDetail? Exercise, string? Error);
+public sealed record AdminCatalogMediaInventoryResult(AdminCatalogMediaInventory? Inventory, string? Error);
