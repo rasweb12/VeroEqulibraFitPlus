@@ -1,6 +1,9 @@
 .env
 .env.local
 .neon/
+**/android/key.properties
+**/*.jks
+**/*.keystore
 /.vs/
 **/bin/
 **/obj/

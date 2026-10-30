@@ -1,0 +1,1 @@
+Backup anterior à preparação de assinatura Android e checklist de release beta.

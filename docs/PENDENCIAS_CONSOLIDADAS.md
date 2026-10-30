@@ -2,10 +2,14 @@
 
 Data: 30/10/2026
 
-## Bloqueio imediato
+## Release e beta Android
 
-- [ ] **APK do catálogo:** a compilação Android não concluiu neste executor. O APK disponível em uild/app/outputs/flutter-apk/app-debug.apk é de 28/10/2026 e não foi instalado como versão nova.
-- [ ] **Homologação Android do catálogo:** executar os 12 cenários de HOMOLOGACAO_CATALOGO_200_EXERCICIOS.md após gerar o APK novo.
+- [x] APK novo do catálogo instalado no emulador sem remover dados; homologação móvel registrada abaixo.
+- [x] Permissão de internet incluída no manifesto principal para builds de release.
+- [x] Configuração de assinatura de release preparada com `android/key.properties` fora do Git.
+- [ ] Criar ou recuperar o keystore de publicação e preencher `android/key.properties` localmente.
+- [ ] Gerar e testar o AAB assinado com novo `versionCode`; roteiro em `docs/RELEASE_BETA_ANDROID.md`.
+- [ ] Validar em Android físico os fluxos de conta, sincronização, foto alimentar, scanner e notificações antes do beta fechado.
 
 ## Catálogo e vídeos
 
@@ -25,6 +29,14 @@ Data: 30/10/2026
 - [ ] Concluir a homologação da sincronização Neon entre dois dispositivos, incluindo offline, conflitos e isolamento por usuário.
 - [ ] Validar notificações configuráveis de hidratação e treino.
 - [ ] Executar testes ponta a ponta, acessibilidade, desempenho e empacotamento antes da liberação do MVP.
+
+## Promoção Neon
+
+- [x] Prévia validada e quatro migrations de sincronização aplicadas em produção. Não inclui a migration administrativa do catálogo.
+- [x] Snapshot de rollback criado antes da janela de produção.
+- [x] Health checks da API de produção responderam HTTP 200 após a migration.
+- [ ] Validar push/pull de sincronização com dois dispositivos na API de produção.
+- [ ] Procedimento completo: `docs/NEON_PROMOCAO_PRODUCAO.md`.
 
 ## Já validado nesta etapa
 

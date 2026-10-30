@@ -1,3 +1,18 @@
+import java.io.FileInputStream
+import java.util.Properties
+
+val releaseKeyPropertiesFile = rootProject.file("key.properties")
+val releaseKeyProperties = Properties()
+val hasReleaseSigning = releaseKeyPropertiesFile.isFile
+
+if (hasReleaseSigning) {
+    FileInputStream(releaseKeyPropertiesFile).use(releaseKeyProperties::load)
+    val required = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+    require(required.all { !releaseKeyProperties.getProperty(it).isNullOrBlank() }) {
+        "android/key.properties deve conter storeFile, storePassword, keyAlias e keyPassword."
+    }
+}
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -25,12 +40,34 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = rootProject.file(releaseKeyProperties.getProperty("storeFile"))
+                storePassword = releaseKeyProperties.getProperty("storePassword")
+                keyAlias = releaseKeyProperties.getProperty("keyAlias")
+                keyPassword = releaseKeyProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
+    }
+}
+
+gradle.taskGraph.whenReady {
+    val requiresReleaseSigning = allTasks.any { task ->
+        task.name.contains("Release", ignoreCase = true)
+    }
+    if (requiresReleaseSigning && !hasReleaseSigning) {
+        throw GradleException(
+            "A assinatura de release não foi configurada. Crie android/key.properties a partir de key.properties.example.",
+        )
     }
 }
 
