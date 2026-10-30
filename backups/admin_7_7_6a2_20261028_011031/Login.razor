@@ -1,0 +1,30 @@
+@page "/entrar"
+@rendermode InteractiveServer
+@inject AdminApiSession Session
+@inject NavigationManager Navigation
+
+<PageTitle>Entrar na administração</PageTitle>
+<h1>Entrar</h1>
+<p>O acesso é conferido pela API; uma conta comum não recebe dados operacionais.</p>
+<EditForm Model="_input" OnValidSubmit="SubmitAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="mb-3"><label class="form-label" for="email">E-mail</label><InputText id="email" class="form-control" @bind-Value="_input.Email" autocomplete="username" /></div>
+    <div class="mb-3"><label class="form-label" for="password">Senha</label><InputText id="password" type="password" class="form-control" @bind-Value="_input.Password" autocomplete="current-password" /></div>
+    @if (_error is not null) { <div class="alert alert-danger">@_error</div> }
+    <button class="btn btn-primary" disabled="@_busy">@(_busy ? "Entrando…" : "Entrar")</button>
+</EditForm>
+
+@code {
+    private readonly LoginInput _input = new();
+    private string? _error;
+    private bool _busy;
+    private async Task SubmitAsync()
+    {
+        _busy = true; _error = null;
+        try { _error = await Session.SignInAsync(_input.Email, _input.Password); if (_error is null) Navigation.NavigateTo("/"); }
+        catch { _error = "Não foi possível concluir o acesso agora. Tente novamente."; }
+        finally { _busy = false; }
+    }
+    private sealed class LoginInput { [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.EmailAddress] public string Email { get; set; } = string.Empty; [System.ComponentModel.DataAnnotations.Required] public string Password { get; set; } = string.Empty; }
+}

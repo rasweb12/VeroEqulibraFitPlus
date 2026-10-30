@@ -1,0 +1,12 @@
+@page "/catalogo/midias"
+@inject VeroEqulibraFit.Admin.Services.AdminApiSession Session
+@inject NavigationManager Navigation
+
+<PageTitle>Mídias e demonstrações</PageTitle>
+<h1>Mídias e demonstrações</h1>
+<p class="text-muted">Inventário somente leitura dos vídeos originais. Nenhum arquivo é movido, renomeado ou removido nesta tela.</p>
+@if (_error is not null) { <div class="alert alert-warning">@_error</div> }
+else if (_inventory is null) { <p>Carregando inventário…</p> }
+else { <div class="row g-3 mb-3"><div class="col-md-6"><div class="card p-3"><strong>Vídeos originais</strong><p class="display-6 mb-0">@_inventory.RegisteredAssets.Count</p></div></div><div class="col-md-6"><div class="card p-3"><strong>Sem associação no catálogo</strong><p class="display-6 mb-0">@_inventory.UnmappedAssets.Count</p></div></div></div><div class="card p-3"><h2 class="h5">Arquivos sem mapeamento</h2><p class="text-muted">Associe cada arquivo a partir da página de edição do exercício, com justificativa e confirmação.</p><div class="table-responsive"><table class="table table-sm"><thead><tr><th>Arquivo</th></tr></thead><tbody>@foreach(var path in _inventory.UnmappedAssets){<tr><td>@path</td></tr>}</tbody></table></div></div> }
+
+@code { private AdminCatalogMediaInventory? _inventory; private string? _error; protected override async Task OnInitializedAsync() { if (!Session.IsAuthenticated) { Navigation.NavigateTo("/entrar"); return; } var result = await Session.GetMediaInventoryAsync(); _inventory = result.Inventory; _error = result.Error; } }

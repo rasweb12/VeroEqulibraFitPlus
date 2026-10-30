@@ -1163,14 +1163,21 @@ class ExerciseLibraryPage extends ConsumerWidget {
     final muscle = ref.watch(exerciseMuscleFilterProvider);
     final equipment = ref.watch(exerciseEquipmentFilterProvider);
     final origin = ref.watch(exerciseOriginFilterProvider);
+    final objective = ref.watch(exerciseObjectiveFilterProvider);
+    final video = ref.watch(exerciseVideoFilterProvider);
     final muscles = catalog.map((e) => e.primaryMuscle).toSet().toList()
       ..sort();
     final equipments = catalog.map((e) => e.equipment).toSet().toList()..sort();
+    final objectives =
+        catalog.map((e) => e.objective).whereType<String>().toSet().toList()
+          ..sort();
     void clearFilters() {
       ref.read(exerciseSearchProvider.notifier).state = '';
       ref.read(exerciseMuscleFilterProvider.notifier).state = '';
       ref.read(exerciseEquipmentFilterProvider.notifier).state = '';
       ref.read(exerciseOriginFilterProvider.notifier).state = '';
+      ref.read(exerciseObjectiveFilterProvider.notifier).state = '';
+      ref.read(exerciseVideoFilterProvider.notifier).state = '';
       ref.read(exerciseSearchResetProvider.notifier).state++;
     }
 
@@ -1288,6 +1295,37 @@ class ExerciseLibraryPage extends ConsumerWidget {
                   ],
                   onChanged: (value) =>
                       ref.read(exerciseOriginFilterProvider.notifier).state =
+                          value ?? '',
+                ),
+                DropdownButton<String>(
+                  value: objective,
+                  items: [
+                    const DropdownMenuItem(
+                      value: '',
+                      child: Text('Todos os objetivos'),
+                    ),
+                    for (final value in objectives)
+                      DropdownMenuItem(value: value, child: Text(value)),
+                  ],
+                  onChanged: (value) =>
+                      ref.read(exerciseObjectiveFilterProvider.notifier).state =
+                          value ?? '',
+                ),
+                DropdownButton<String>(
+                  value: video,
+                  items: const [
+                    DropdownMenuItem(value: '', child: Text('Todos os vídeos')),
+                    DropdownMenuItem(
+                      value: 'with-video',
+                      child: Text('Com vídeo'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'without-video',
+                      child: Text('Sem vídeo'),
+                    ),
+                  ],
+                  onChanged: (value) =>
+                      ref.read(exerciseVideoFilterProvider.notifier).state =
                           value ?? '',
                 ),
                 TextButton.icon(

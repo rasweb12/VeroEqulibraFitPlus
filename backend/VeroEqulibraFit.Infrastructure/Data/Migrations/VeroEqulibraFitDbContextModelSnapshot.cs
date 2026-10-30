@@ -392,6 +392,84 @@ namespace VeroEqulibraFit.Infrastructure.Data.Migrations
                     b.ToTable("custom_exercises", (string)null);
                 });
 
+            modelBuilder.Entity("VeroEqulibraFit.Domain.Training.ExerciseCatalogItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Equipment")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("Instructions")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
+
+                    b.Property<string>("PrimaryMuscle")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsPublished", "Name");
+
+                    b.ToTable("exercise_catalog_items", (string)null);
+                });
+
+            modelBuilder.Entity("VeroEqulibraFit.Domain.Training.ExerciseCatalogMedia", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AssetPath")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ExerciseId")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Label")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetPath")
+                        .IsUnique();
+
+                    b.HasIndex("ExerciseId", "IsPrimary");
+
+                    b.ToTable("exercise_catalog_media", (string)null);
+                });
+
             modelBuilder.Entity("VeroEqulibraFit.Domain.Training.SyncOperation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -766,6 +844,15 @@ namespace VeroEqulibraFit.Infrastructure.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("VeroEqulibraFit.Domain.Training.ExerciseCatalogMedia", b =>
+                {
+                    b.HasOne("VeroEqulibraFit.Domain.Training.ExerciseCatalogItem", null)
+                        .WithMany("Media")
+                        .HasForeignKey("ExerciseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("VeroEqulibraFit.Domain.Training.TrainingPlanExercise", b =>
                 {
                     b.HasOne("VeroEqulibraFit.Domain.Training.TrainingPlan", null)
@@ -773,6 +860,11 @@ namespace VeroEqulibraFit.Infrastructure.Data.Migrations
                         .HasForeignKey("TrainingPlanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("VeroEqulibraFit.Domain.Training.ExerciseCatalogItem", b =>
+                {
+                    b.Navigation("Media");
                 });
 
             modelBuilder.Entity("VeroEqulibraFit.Domain.Training.TrainingPlan", b =>

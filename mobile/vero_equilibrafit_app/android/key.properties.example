@@ -1,0 +1,4 @@
+storeFile=../upload-keystore.jks
+storePassword=SUBSTITUA_PELA_SENHA_DO_KEYSTORE
+keyAlias=vero-equilibrafit
+keyPassword=SUBSTITUA_PELA_SENHA_DA_CHAVE

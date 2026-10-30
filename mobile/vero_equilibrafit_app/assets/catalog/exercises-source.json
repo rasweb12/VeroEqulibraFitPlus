@@ -1,0 +1,1209 @@
+{
+  "metadata": {
+    "versao_schema": "1.0.0",
+    "ultima_atualizacao": "2026-10-19",
+    "total_exercicios": 200
+  },
+  "exercicios": [
+    {
+      "id": 1,
+      "nome": "Agachamento livre com barra",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 2,
+      "nome": "Agachamento no Smith (barra guiada)",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 3,
+      "nome": "Agachamento búlgaro com halteres",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 4,
+      "nome": "Agachamento búlgaro no Smith",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 5,
+      "nome": "Leg Press 45° tradicional",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 6,
+      "nome": "Leg Press 45° unilateral",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 7,
+      "nome": "Leg Press Horizontal (máquina)",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 8,
+      "nome": "Afundo (passada estática) com halteres",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 9,
+      "nome": "Afundo no Smith",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 10,
+      "nome": "Avanço em movimento (passada) com barra nas costas",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Ambos"
+    },
+    {
+      "id": 11,
+      "nome": "Avanço em movimento com halteres",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Ambos"
+    },
+    {
+      "id": 12,
+      "nome": "Cadeira extensora bilateral",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 13,
+      "nome": "Cadeira extensora unilateral",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 14,
+      "nome": "Hack Squat máquina",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 15,
+      "nome": "Agachamento frontal com barra (Front Squat)",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 16,
+      "nome": "Agachamento Taça (Goblet Squat com halter)",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 17,
+      "nome": "Sissy Squat (com peso corporal ou anilha)",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 18,
+      "nome": "Agachamento Zercher (barra apoiada nos cotovelos)",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 19,
+      "nome": "Agachamento sumô com halter em cima de steps",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 20,
+      "nome": "Extensão de joelhos no cabo (polia baixa)",
+      "grupo_muscular": "Quadríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 21,
+      "nome": "Elevação pélvica com barra livre",
+      "grupo_muscular": "Glúteos",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 22,
+      "nome": "Elevação pélvica na máquina articulada",
+      "grupo_muscular": "Glúteos",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 23,
+      "nome": "Elevação pélvica unilateral com halter",
+      "grupo_muscular": "Glúteos",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 24,
+      "nome": "Cadeira abdutora (tronco ereto)",
+      "grupo_muscular": "Glúteos",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 25,
+      "nome": "Cadeira abdutora com tronco inclinado para a frente",
+      "grupo_muscular": "Glúteos",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 26,
+      "nome": "Glúteo na polia baixa (coice com perna estendida)",
+      "grupo_muscular": "Glúteos",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 27,
+      "nome": "Glúteo na polia baixa com joelho flexionado",
+      "grupo_muscular": "Glúteos",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 28,
+      "nome": "Glúteo no cabo com abdução lateral (45 graus)",
+      "grupo_muscular": "Glúteos",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 29,
+      "nome": "Extensão de quadril em quatro apoios (com caneleira)",
+      "grupo_muscular": "Glúteos",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 30,
+      "nome": "Abdução de quadril lateral (em pé com caneleira ou elástico)",
+      "grupo_muscular": "Glúteos",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 31,
+      "nome": "Agachamento Sumô tradicional",
+      "grupo_muscular": "Glúteos",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 32,
+      "nome": "Passada lateral com miniband",
+      "grupo_muscular": "Glúteos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 33,
+      "nome": "Glúteo na máquina pélvica vertical",
+      "grupo_muscular": "Glúteos",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 34,
+      "nome": "Subida no banco (Step-up) com halteres",
+      "grupo_muscular": "Glúteos",
+      "foco_principal": "Ambos"
+    },
+    {
+      "id": 35,
+      "nome": "Clam shell (abdução ostra) com elástico no solo",
+      "grupo_muscular": "Glúteos",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 36,
+      "nome": "Stiff com barra",
+      "grupo_muscular": "Posteriores de Coxa",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 37,
+      "nome": "Stiff com halteres",
+      "grupo_muscular": "Posteriores de Coxa",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 38,
+      "nome": "Levantamento terra romeno (RDL) com barra",
+      "grupo_muscular": "Posteriores de Coxa",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 39,
+      "nome": "Levantamento terra romeno com halteres",
+      "grupo_muscular": "Posteriores de Coxa",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 40,
+      "nome": "Cadeira flexora bilateral",
+      "grupo_muscular": "Posteriores de Coxa",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 41,
+      "nome": "Cadeira flexora unilateral",
+      "grupo_muscular": "Posteriores de Coxa",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 42,
+      "nome": "Mesa flexora deitado",
+      "grupo_muscular": "Posteriores de Coxa",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 43,
+      "nome": "Flexão de pernas em pé na máquina",
+      "grupo_muscular": "Posteriores de Coxa",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 44,
+      "nome": "Flexão de pernas deitado com halter entre os pés",
+      "grupo_muscular": "Posteriores de Coxa",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 45,
+      "nome": "Flexão de perna no cabo (em pé na polia baixa)",
+      "grupo_muscular": "Posteriores de Coxa",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 46,
+      "nome": "Good Morning (Bom dia) com barra nas costas",
+      "grupo_muscular": "Posteriores de Coxa",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 47,
+      "nome": "Flexão de pernas na bola suíça",
+      "grupo_muscular": "Posteriores de Coxa",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 48,
+      "nome": "Nordic Hamstring Curl (Flexão nórdica no solo)",
+      "grupo_muscular": "Posteriores de Coxa",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 49,
+      "nome": "Extensão de quadril no banco romano",
+      "grupo_muscular": "Posteriores de Coxa",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 50,
+      "nome": "Gêmeos em pé na máquina",
+      "grupo_muscular": "Panturrilhas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 51,
+      "nome": "Gêmeos sentado (máquina burrinho)",
+      "grupo_muscular": "Panturrilhas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 52,
+      "nome": "Panturrilha no Leg Press 45°",
+      "grupo_muscular": "Panturrilhas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 53,
+      "nome": "Panturrilha no Leg Press Horizontal",
+      "grupo_muscular": "Panturrilhas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 54,
+      "nome": "Gêmeos em pé no Smith",
+      "grupo_muscular": "Panturrilhas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 55,
+      "nome": "Panturrilha unilateral em pé com halter",
+      "grupo_muscular": "Panturrilhas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 56,
+      "nome": "Gêmeos em pé sem peso",
+      "grupo_muscular": "Panturrilhas",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 57,
+      "nome": "Panturrilha tibial anterior",
+      "grupo_muscular": "Panturrilhas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 58,
+      "nome": "Puxada alta na polia frontal (pegada aberta)",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 59,
+      "nome": "Puxada alta com pegada supinada",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 60,
+      "nome": "Puxada alta com pegada triângulo",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 61,
+      "nome": "Puxada alta unilateral na polia",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 62,
+      "nome": "Barra fixa pronada (Pull-up)",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 63,
+      "nome": "Barra fixa supinada (Chin-up)",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 64,
+      "nome": "Barra fixa com pegada neutra",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 65,
+      "nome": "Graviton (barra fixa assistida)",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 66,
+      "nome": "Pullover na polia alta com barra reta",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 67,
+      "nome": "Pullover na polia alta com corda",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 68,
+      "nome": "Pullover deitado no banco com halter",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 69,
+      "nome": "Puxada articulada em máquina Hammer vertical",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 70,
+      "nome": "Remada curvada com barra (pegada pronada)",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 71,
+      "nome": "Remada curvada com barra (pegada supinada)",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 72,
+      "nome": "Remada unilateral com halter (serrote)",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 73,
+      "nome": "Remada baixa na polia com triângulo",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 74,
+      "nome": "Remada baixa na polia com barra reta",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 75,
+      "nome": "Remada cavalinho com barra T",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 76,
+      "nome": "Remada cavalinho na máquina apoiada",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 77,
+      "nome": "Remada articulada na máquina (unilateral)",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 78,
+      "nome": "Remada inclinada com halteres (banco 45°)",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 79,
+      "nome": "Remada alta na polia baixa",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 80,
+      "nome": "Encolhimento de ombros com halteres",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 81,
+      "nome": "Encolhimento de ombros com barra por trás",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 82,
+      "nome": "Encolhimento de ombros no Smith",
+      "grupo_muscular": "Costas",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 83,
+      "nome": "Supino reto com barra",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 84,
+      "nome": "Supino reto com halteres",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 85,
+      "nome": "Supino inclinado com barra",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 86,
+      "nome": "Supino inclinado com halteres",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 87,
+      "nome": "Supino declinado com barra",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 88,
+      "nome": "Supino declinado com halteres",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 89,
+      "nome": "Press de peito em máquina articulada horizontal",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 90,
+      "nome": "Press de peito em máquina inclinada",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 91,
+      "nome": "Crucifixo reto com halteres",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 92,
+      "nome": "Crucifixo inclinado com halteres",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 93,
+      "nome": "Pec Deck (Voador peitoral)",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 94,
+      "nome": "Crossover na polia alta",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 95,
+      "nome": "Crossover na polia média",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 96,
+      "nome": "Crossover na polia baixa",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 97,
+      "nome": "Press de peito na polia (em pé)",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 98,
+      "nome": "Flexão de braço tradicional no solo",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Ambos"
+    },
+    {
+      "id": 99,
+      "nome": "Flexão de braço inclinada (mãos no banco)",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Ambos"
+    },
+    {
+      "id": 100,
+      "nome": "Flexão de braço declinada (pés no banco)",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Ambos"
+    },
+    {
+      "id": 101,
+      "nome": "Mergulho nas paralelas para peito",
+      "grupo_muscular": "Peitoral",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 102,
+      "nome": "Desenvolvimento com halteres sentado",
+      "grupo_muscular": "Ombros",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 103,
+      "nome": "Desenvolvimento Militar (em pé com barra)",
+      "grupo_muscular": "Ombros",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 104,
+      "nome": "Desenvolvimento no Smith",
+      "grupo_muscular": "Ombros",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 105,
+      "nome": "Desenvolvimento na máquina articulada",
+      "grupo_muscular": "Ombros",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 106,
+      "nome": "Arnold Press com halteres",
+      "grupo_muscular": "Ombros",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 107,
+      "nome": "Elevação lateral com halteres em pé",
+      "grupo_muscular": "Ombros",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 108,
+      "nome": "Elevação lateral sentado com halteres",
+      "grupo_muscular": "Ombros",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 109,
+      "nome": "Elevação lateral na polia baixa",
+      "grupo_muscular": "Ombros",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 110,
+      "nome": "Elevação lateral inclinada no banco 45°",
+      "grupo_muscular": "Ombros",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 111,
+      "nome": "Elevação lateral mecânica (máquina)",
+      "grupo_muscular": "Ombros",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 112,
+      "nome": "Elevação frontal com halteres alternada",
+      "grupo_muscular": "Ombros",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 113,
+      "nome": "Elevação frontal com barra recta",
+      "grupo_muscular": "Ombros",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 114,
+      "nome": "Elevação frontal na polia com corda",
+      "grupo_muscular": "Ombros",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 115,
+      "nome": "Elevação frontal com anilha",
+      "grupo_muscular": "Ombros",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 116,
+      "nome": "Crucifixo inverso com halteres",
+      "grupo_muscular": "Ombros",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 117,
+      "nome": "Crucifixo inverso no Pec Deck",
+      "grupo_muscular": "Ombros",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 118,
+      "nome": "Crucifixo inverso na polia alta (Face Pull)",
+      "grupo_muscular": "Ombros",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 119,
+      "nome": "Remada alta com barra W",
+      "grupo_muscular": "Ombros",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 120,
+      "nome": "Rosca direta com barra reta",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 121,
+      "nome": "Rosca direta com barra W",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 122,
+      "nome": "Rosca direta com halteres alternada",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 123,
+      "nome": "Rosca direta com halteres simultânea",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 124,
+      "nome": "Rosca no banco inclinado 45°",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 125,
+      "nome": "Rosca Scott com barra W",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 126,
+      "nome": "Rosca Scott unilateral com halter",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 127,
+      "nome": "Rosca Scott na máquina articulada",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 128,
+      "nome": "Rosca Concentrada sentado com halter",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 129,
+      "nome": "Rosca Martelo com halteres em pé",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 130,
+      "nome": "Rosca Martelo alternada com halteres",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 131,
+      "nome": "Rosca Martelo na polia com corda",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 132,
+      "nome": "Rosca no cabo (polia baixa)",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 133,
+      "nome": "Rosca arrasto (Drag Curl) com barra",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 134,
+      "nome": "Rosca 21 com barra",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 135,
+      "nome": "Rosca inversa com barra",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 136,
+      "nome": "Rosca inversa na polia baixa",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 137,
+      "nome": "Flexão de punho com barra",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 138,
+      "nome": "Extensão de punho com barra",
+      "grupo_muscular": "Bíceps e Antebraço",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 139,
+      "nome": "Tríceps na polia alta com barra reta",
+      "grupo_muscular": "Tríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 140,
+      "nome": "Tríceps na polia alta com barra em V",
+      "grupo_muscular": "Tríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 141,
+      "nome": "Tríceps na polia alta com corda",
+      "grupo_muscular": "Tríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 142,
+      "nome": "Tríceps na polia alta unilateral (invertida)",
+      "grupo_muscular": "Tríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 143,
+      "nome": "Tríceps testa com barra W deitado",
+      "grupo_muscular": "Tríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 144,
+      "nome": "Tríceps testa com halteres deitado",
+      "grupo_muscular": "Tríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 145,
+      "nome": "Tríceps francês com halter bilateral",
+      "grupo_muscular": "Tríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 146,
+      "nome": "Tríceps francês unilateral com halter",
+      "grupo_muscular": "Tríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 147,
+      "nome": "Tríceps francês na polia baixa com corda",
+      "grupo_muscular": "Tríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 148,
+      "nome": "Tríceps coice com halter unilateral",
+      "grupo_muscular": "Tríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 149,
+      "nome": "Tríceps coice na polia baixa",
+      "grupo_muscular": "Tríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 150,
+      "nome": "Supino com pegada fechada",
+      "grupo_muscular": "Tríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 151,
+      "nome": "Mergulho no banco (Dips)",
+      "grupo_muscular": "Tríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 152,
+      "nome": "Mergulho nas paralelas para tríceps",
+      "grupo_muscular": "Tríceps",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 153,
+      "nome": "Flexão de braço fechada (diamante)",
+      "grupo_muscular": "Tríceps",
+      "foco_principal": "Ambos"
+    },
+    {
+      "id": 154,
+      "nome": "Abdominal crunch tradicional no solo",
+      "grupo_muscular": "Abdômen e Core",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 155,
+      "nome": "Abdominal crunch com carga",
+      "grupo_muscular": "Abdômen e Core",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 156,
+      "nome": "Abdominal infra (elevação de pernas)",
+      "grupo_muscular": "Abdômen e Core",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 157,
+      "nome": "Abdominal infra no banco inclinado",
+      "grupo_muscular": "Abdômen e Core",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 158,
+      "nome": "Abdominal na polia alta (ajoelhado)",
+      "grupo_muscular": "Abdômen e Core",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 159,
+      "nome": "Abdominal na máquina articulada",
+      "grupo_muscular": "Abdômen e Core",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 160,
+      "nome": "Abdominal remador (militar)",
+      "grupo_muscular": "Abdômen e Core",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 161,
+      "nome": "Abdominal bicicleta",
+      "grupo_muscular": "Abdômen e Core",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 162,
+      "nome": "Elevação de pernas suspenso na barra",
+      "grupo_muscular": "Abdômen e Core",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 163,
+      "nome": "Elevação de joelhos no capitão",
+      "grupo_muscular": "Abdômen e Core",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 164,
+      "nome": "Giro russo (Russian Twist)",
+      "grupo_muscular": "Abdômen e Core",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 165,
+      "nome": "Abdominal canivete unilateral",
+      "grupo_muscular": "Abdômen e Core",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 166,
+      "nome": "Prancha frontal estática",
+      "grupo_muscular": "Abdômen e Core",
+      "foco_principal": "Ambos"
+    },
+    {
+      "id": 167,
+      "nome": "Prancha lateral estática",
+      "grupo_muscular": "Abdômen e Core",
+      "foco_principal": "Ambos"
+    },
+    {
+      "id": 168,
+      "nome": "Prancha dinâmica (sobe e desce)",
+      "grupo_muscular": "Abdômen e Core",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 169,
+      "nome": "Roda abdominal (Ab Wheel)",
+      "grupo_muscular": "Abdômen e Core",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 170,
+      "nome": "Extensão lombar no banco romano",
+      "grupo_muscular": "Abdômen e Core",
+      "foco_principal": "Hipertrofia"
+    },
+    {
+      "id": 171,
+      "nome": "Levantamento Terra (Deadlift) tradicional",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Ambos"
+    },
+    {
+      "id": 172,
+      "nome": "Levantamento Terra Sumo",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Ambos"
+    },
+    {
+      "id": 173,
+      "nome": "Corrida contínua na esteira",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 174,
+      "nome": "Sprint na esteira (HIIT)",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 175,
+      "nome": "Caminhada com inclinação máxima",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 176,
+      "nome": "Bicicleta ergométrica horizontal",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 177,
+      "nome": "Bicicleta ergométrica vertical (Spinning)",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 178,
+      "nome": "Air Bike",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 179,
+      "nome": "Simulador de escadas (Stairmaster) constante",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 180,
+      "nome": "Simulador de escadas intervalado (HIIT)",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 181,
+      "nome": "Elíptico (Transport) carga leve",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 182,
+      "nome": "Elíptico com carga pesada",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 183,
+      "nome": "Remo seco (Indoor Rowing)",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 184,
+      "nome": "Burpee tradicional",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 185,
+      "nome": "Burpee com salto sobre a caixa",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 186,
+      "nome": "Saltos na caixa de madeira (Box Jump)",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 187,
+      "nome": "Polichinelo tradicional",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 188,
+      "nome": "Polichinelo com agachamento (Squat Jack)",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 189,
+      "nome": "Pular corda tradicional",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 190,
+      "nome": "Pular corda com joelhos altos",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 191,
+      "nome": "Corrida estacionária com joelhos altos",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 192,
+      "nome": "Corrida estacionária chutando calcanhar",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 193,
+      "nome": "Escalador no solo (Mountain Climber)",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 194,
+      "nome": "Escalador cruzado no solo",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 195,
+      "nome": "Saltos laterais (Skater Jumps)",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 196,
+      "nome": "Avanço pliométrico (saltado)",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 197,
+      "nome": "Agachamento com salto (Jump Squat)",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 198,
+      "nome": "Swing com Kettlebell",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 199,
+      "nome": "Arremesso de bola médica (Slam Ball)",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    },
+    {
+      "id": 200,
+      "nome": "Propulsão com halteres (Thruster)",
+      "grupo_muscular": "Cardio e Metabólicos",
+      "foco_principal": "Emagrecimento"
+    }
+  ]
+}

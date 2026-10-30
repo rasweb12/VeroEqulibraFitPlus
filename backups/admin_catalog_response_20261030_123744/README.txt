@@ -1,0 +1,1 @@
+Backup anterior ao tratamento seguro de respostas vazias do catalogo administrativo.

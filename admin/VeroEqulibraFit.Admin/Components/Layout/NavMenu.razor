@@ -1,7 +1,12 @@
 @inject VeroEqulibraFit.Admin.Services.AdminApiSession Session
 @inject NavigationManager Navigation
+@implements IDisposable
 
 <div class="brand"><span class="brand-mark">V</span><span>VeroEquilibraFit+<small>Administração</small></span></div>
+@if (Session.IsAuthenticated)
+{
+    <div class="session-state" role="status"><span aria-hidden="true">●</span> Sessão administrativa</div>
+}
 <input type="checkbox" title="Abrir navegação" class="navbar-toggler" />
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav aria-label="Navegação administrativa">
@@ -12,8 +17,8 @@
             <p class="nav-caption">GESTÃO</p>
             <NavLink class="nav-link" href="usuarios"><span>◉</span> Usuários</NavLink>
             <p class="nav-caption">CATÁLOGO</p>
-            <span class="nav-link unavailable" title="Será ativado junto da Sprint 7.7.6B"><span>⌁</span> Exercícios <small>em preparação</small></span>
-            <span class="nav-link unavailable" title="Será ativado junto da Sprint 7.7.6B"><span>▷</span> Mídias e demonstrações <small>em preparação</small></span>
+            <NavLink class="nav-link" href="catalogo/exercicios"><span>⌁</span> Exercícios</NavLink>
+            <NavLink class="nav-link" href="catalogo/midias"><span>▷</span> Mídias e demonstrações</NavLink>
             <p class="nav-caption">OPERAÇÃO</p>
             <span class="nav-link unavailable"><span>▤</span> Conteúdos e planos <small>indisponível</small></span>
             <span class="nav-link unavailable"><span>◷</span> Auditoria <small>indisponível</small></span>
@@ -30,9 +35,15 @@
 </div>
 
 @code {
-    private void SignOut()
+    protected override void OnInitialized() => Session.Changed += OnSessionChanged;
+
+    private async Task SignOut()
     {
-        Session.SignOut();
+        await Session.SignOutAsync();
         Navigation.NavigateTo("/entrar", forceLoad: true);
     }
+
+    private void OnSessionChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Session.Changed -= OnSessionChanged;
 }

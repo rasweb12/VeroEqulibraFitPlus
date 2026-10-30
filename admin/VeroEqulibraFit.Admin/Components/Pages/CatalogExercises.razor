@@ -1,0 +1,23 @@
+@page "/catalogo/exercicios"
+@inject VeroEqulibraFit.Admin.Services.AdminApiSession Session
+@inject NavigationManager Navigation
+
+<PageTitle>Catálogo de exercícios</PageTitle>
+<div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+    <div><h1>Exercícios</h1><p class="text-muted">Catálogo global administrado. Exercícios pessoais não são exibidos aqui.</p></div>
+    <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/catalogo/exercicios/novo")'>Novo exercício</button>
+</div>
+@if (_error is not null) { <div class="alert alert-warning">@_error</div> }
+<div class="card p-3 mb-3"><div class="row g-2"><div class="col-md-7"><input class="form-control" @bind="_query" placeholder="Pesquisar por nome" /></div><div class="col-md-3"><select class="form-select" @bind="_publication"><option value="all">Todos os estados</option><option value="published">Publicados</option><option value="unpublished">Não publicados</option></select></div><div class="col-md-2"><button class="btn btn-outline-primary w-100" @onclick="FilterAsync" disabled="@_busy">Filtrar</button></div></div></div>
+@if (_busy) { <p>Carregando catálogo…</p> }
+else if (_page is null || _page.Items.Count == 0) { <div class="alert alert-light border">Nenhum exercício global foi cadastrado.</div> }
+else { <div class="table-responsive"><table class="table align-middle"><thead><tr><th>Exercício</th><th>Grupo muscular</th><th>Equipamento</th><th>Estado</th><th>Mídias</th><th></th></tr></thead><tbody>@foreach (var item in _page.Items) { <tr><td><strong>@item.Name</strong><br/><small class="text-muted">@item.Id</small></td><td>@item.PrimaryMuscle</td><td>@item.Equipment</td><td><span class="badge @(item.IsPublished ? "text-bg-success" : "text-bg-secondary")">@(item.IsPublished ? "Publicado" : "Rascunho")</span></td><td>@item.MediaCount</td><td><button class="btn btn-sm btn-outline-primary" @onclick='() => Navigation.NavigateTo($"/catalogo/exercicios/{item.Id}")'>Editar</button></td></tr>}</tbody></table></div>
+    <div class="d-flex justify-content-between"><span>Página @_page.Page de @Pages · @_page.TotalCount registros</span><div><button class="btn btn-outline-secondary me-2" disabled="@(_page.Page <= 1)" @onclick='() => LoadAsync(_page.Page - 1)'>Anterior</button><button class="btn btn-outline-secondary" disabled="@(_page.Page >= Pages)" @onclick='() => LoadAsync(_page.Page + 1)'>Próxima</button></div></div> }
+
+@code {
+    private AdminCatalogExercisePage? _page; private string _query = "", _publication = "all"; private string? _error; private bool _busy;
+    private int Pages => _page is null ? 1 : Math.Max(1, (int)Math.Ceiling((double)_page.TotalCount / _page.PageSize));
+    protected override async Task OnInitializedAsync() { if (!Session.IsAuthenticated) { Navigation.NavigateTo("/entrar"); return; } await LoadAsync(1); }
+    private Task FilterAsync() => LoadAsync(1);
+    private async Task LoadAsync(int page) { _busy = true; _error = null; try { var result = await Session.ListCatalogExercisesAsync(page, _query, _publication); _page = result.Page; _error = result.Error; } finally { _busy = false; } }
+}

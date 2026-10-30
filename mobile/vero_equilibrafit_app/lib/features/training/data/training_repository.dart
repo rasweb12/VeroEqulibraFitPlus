@@ -8,6 +8,7 @@ import '../../../core/persistence/stable_id.dart';
 import '../../../core/offline/sync_operation_queue.dart';
 
 import '../domain/exercise.dart';
+import 'exercise_catalog.dart';
 import '../domain/planned_exercise.dart';
 import '../domain/training_plan.dart';
 
@@ -24,8 +25,11 @@ class TrainingRepository {
   final Map<String, int> _customRevisions = {};
   Future<void> _pendingSave = Future<void>.value();
   Future<void>? _loadFuture;
+  List<Exercise> _officialCatalog = List<Exercise>.of(legacyCatalog);
+  String? _catalogLoadError;
 
-  static const catalog = <Exercise>[
+  /// Kept only as a safe, offline fallback until the versioned asset loads.
+  static const legacyCatalog = <Exercise>[
     Exercise(
       id: 'incline-dumbbell',
       name: 'Supino inclinado com halteres',
@@ -130,6 +134,21 @@ class TrainingRepository {
       aliases: ['Panturrilha em pé'],
     ),
   ];
+  static const _legacyIdMappings = <String, String>{
+    'squat': 'exercise-001',
+    'leg-press': 'exercise-005',
+    'lat-pulldown': 'exercise-058',
+    'incline-dumbbell': 'exercise-086',
+    'shoulder-press': 'exercise-102',
+    'biceps-curl': 'exercise-120',
+    'triceps-pushdown': 'exercise-139',
+    'deadlift': 'exercise-171',
+    'calf-raise': 'exercise-050',
+    'seated-row': 'exercise-073',
+  };
+
+  List<Exercise> get catalog => List<Exercise>.unmodifiable(_officialCatalog);
+  String? get catalogLoadError => _catalogLoadError;
   List<TrainingPlan> activePlans() => _plans
       .where((plan) => !plan.isDeleted && !plan.isArchived)
       .toList(growable: false);
@@ -184,8 +203,8 @@ class TrainingRepository {
 
   List<Exercise> search(String query) {
     final normalized = _normalize(query);
-    if (normalized.isEmpty) return [...catalog, ..._customExercises];
-    return [...catalog, ..._customExercises]
+    if (normalized.isEmpty) return [..._officialCatalog, ..._customExercises];
+    return [..._officialCatalog, ..._customExercises]
         .where(
           (exercise) =>
               _normalize(exercise.name).contains(normalized) ||
@@ -359,8 +378,9 @@ class TrainingRepository {
   }
 
   Exercise? exerciseById(String id) {
-    for (final exercise in [...catalog, ..._customExercises]) {
-      if (exercise.id == id) return exercise;
+    final canonicalId = _legacyIdMappings[id] ?? id;
+    for (final exercise in [..._officialCatalog, ..._customExercises]) {
+      if (exercise.id == canonicalId) return exercise;
     }
     return null;
   }
@@ -447,6 +467,7 @@ class TrainingRepository {
   }
 
   Future<void> _loadFromStore() async {
+    await _loadCatalog();
     final encoded = await store.read(_storageKey);
     if (encoded == null || encoded.isEmpty) return;
     try {
@@ -509,6 +530,17 @@ class TrainingRepository {
       }
     } on FormatException {
       // A corrupt cache is ignored; no remote or historical data is removed.
+    }
+  }
+
+  Future<void> _loadCatalog() async {
+    try {
+      _officialCatalog = await ExerciseCatalog().load();
+      _catalogLoadError = null;
+    } on FormatException catch (error) {
+      _catalogLoadError = error.message;
+    } catch (_) {
+      _catalogLoadError = 'Não foi possível carregar o catálogo oficial.';
     }
   }
 

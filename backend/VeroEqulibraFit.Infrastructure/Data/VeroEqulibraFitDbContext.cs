@@ -14,6 +14,8 @@ public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbC
     public DbSet<TrainingPlanExercise> TrainingPlanExercises => Set<TrainingPlanExercise>();
     public DbSet<TrainingSession> TrainingSessions => Set<TrainingSession>();
     public DbSet<CustomExercise> CustomExercises => Set<CustomExercise>();
+    public DbSet<ExerciseCatalogItem> ExerciseCatalogItems => Set<ExerciseCatalogItem>();
+    public DbSet<ExerciseCatalogMedia> ExerciseCatalogMedia => Set<ExerciseCatalogMedia>();
     public DbSet<SyncOperation> SyncOperations => Set<SyncOperation>();
     public DbSet<MealEntry> MealEntries => Set<MealEntry>();
     public DbSet<NutritionPlan> NutritionPlans => Set<NutritionPlan>();
@@ -83,6 +85,28 @@ public sealed class VeroEqulibraFitDbContext(DbContextOptions<VeroEqulibraFitDbC
             entity.Property(exercise => exercise.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.HasIndex(exercise => new { exercise.OwnerId, exercise.UpdatedAt });
             entity.HasQueryFilter(exercise => exercise.DeletedAt == null);
+        });
+        modelBuilder.Entity<ExerciseCatalogItem>(entity =>
+        {
+            entity.ToTable("exercise_catalog_items");
+            entity.HasKey(item => item.Id);
+            entity.Property(item => item.Id).HasMaxLength(120);
+            entity.Property(item => item.Name).HasMaxLength(160).IsRequired();
+            entity.Property(item => item.PrimaryMuscle).HasMaxLength(80).IsRequired();
+            entity.Property(item => item.Equipment).HasMaxLength(80).IsRequired();
+            entity.Property(item => item.Instructions).HasMaxLength(4000);
+            entity.HasIndex(item => new { item.IsPublished, item.Name });
+            entity.HasMany(item => item.Media).WithOne().HasForeignKey(media => media.ExerciseId).OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<ExerciseCatalogMedia>(entity =>
+        {
+            entity.ToTable("exercise_catalog_media");
+            entity.HasKey(media => media.Id);
+            entity.Property(media => media.ExerciseId).HasMaxLength(120).IsRequired();
+            entity.Property(media => media.AssetPath).HasMaxLength(512).IsRequired();
+            entity.Property(media => media.Label).HasMaxLength(120);
+            entity.HasIndex(media => media.AssetPath).IsUnique();
+            entity.HasIndex(media => new { media.ExerciseId, media.IsPrimary });
         });
         modelBuilder.Entity<SyncOperation>(entity =>
         {
