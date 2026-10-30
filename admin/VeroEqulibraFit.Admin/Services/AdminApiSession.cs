@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
 namespace VeroEqulibraFit.Admin.Services;
@@ -121,7 +122,7 @@ public sealed class AdminApiSession(IHttpClientFactory clients, ProtectedSession
         if (publication is "published" or "unpublished") path += $"&publication={publication}";
         using var response = await AuthorizedClient().GetAsync(path, cancellationToken);
         if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden) return new(null, "Sua sessão não tem permissão administrativa.");
-        if (!response.IsSuccessStatusCode) return new(null, "Não foi possível carregar o catálogo.");
+        if (!response.IsSuccessStatusCode) return new(null, await ReadProblemAsync(response, "Não foi possível carregar o catálogo."));
         return new(await response.Content.ReadFromJsonAsync<AdminCatalogExercisePage>(cancellationToken: cancellationToken), null);
     }
 
@@ -157,7 +158,7 @@ public sealed class AdminApiSession(IHttpClientFactory clients, ProtectedSession
         if (!IsAuthenticated) return new(null, "Entre para acessar as mídias.");
         using var response = await AuthorizedClient().GetAsync("api/v1/admin/catalog/media-inventory", cancellationToken);
         if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden) return new(null, "Sua sessão não tem permissão administrativa.");
-        if (!response.IsSuccessStatusCode) return new(null, "Não foi possível carregar o inventário de mídias.");
+        if (!response.IsSuccessStatusCode) return new(null, await ReadProblemAsync(response, "Não foi possível carregar o inventário de mídias."));
         return new(await response.Content.ReadFromJsonAsync<AdminCatalogMediaInventory>(cancellationToken: cancellationToken), null);
     }
 
@@ -168,14 +169,37 @@ public sealed class AdminApiSession(IHttpClientFactory clients, ProtectedSession
         if (response.IsSuccessStatusCode) return null;
         if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden) return "Sua sessão não tem permissão para esta ação.";
         if (response.StatusCode == HttpStatusCode.Conflict) return "A operação foi bloqueada para preservar o último administrador ativo.";
-        var problem = await response.Content.ReadFromJsonAsync<ApiProblem>(cancellationToken: cancellationToken);
-        return problem?.Title ?? "Não foi possível concluir a alteração.";
+        return await ReadProblemAsync(response, "Não foi possível concluir a alteração.", cancellationToken);
     }
 
-    private static async Task<string> ReadProblemAsync(HttpResponseMessage response, string fallback)
+    private static async Task<string> ReadProblemAsync(HttpResponseMessage response, string fallback, CancellationToken cancellationToken = default)
     {
-        var problem = await response.Content.ReadFromJsonAsync<ApiProblem>();
-        return problem?.Title ?? fallback;
+        var suffix = response.StatusCode == HttpStatusCode.NotFound
+            ? " O ambiente conectado ainda não disponibiliza este recurso administrativo."
+            : $" (HTTP {(int)response.StatusCode}).";
+
+        string content;
+        try
+        {
+            content = await response.Content.ReadAsStringAsync(cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            return fallback + suffix;
+        }
+
+        if (string.IsNullOrWhiteSpace(content)) return fallback + suffix;
+
+        try
+        {
+            var problem = JsonSerializer.Deserialize<ApiProblem>(content, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            var message = string.IsNullOrWhiteSpace(problem?.Title) ? problem?.Error : problem.Title;
+            return string.IsNullOrWhiteSpace(message) ? fallback + suffix : message;
+        }
+        catch (JsonException)
+        {
+            return fallback + suffix;
+        }
     }
 
     public async Task SignOutAsync()
@@ -202,7 +226,7 @@ public sealed class AdminApiSession(IHttpClientFactory clients, ProtectedSession
     }
     private void NotifyChanged() => Changed?.Invoke();
     private sealed record AuthToken(string AccessToken);
-    private sealed record ApiProblem(string? Title);
+    private sealed record ApiProblem(string? Title, string? Error);
 }
 
 public sealed record AdminOverview(int Users, int TrainingPlans, int MealEntries, int NutritionPlans, int? CustomExercises);

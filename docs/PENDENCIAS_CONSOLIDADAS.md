@@ -33,3 +33,12 @@ Data: 30/10/2026
 - [x] lutter analyze sem problemas.
 - [x] lutter test --no-pub: 44 aprovados e 4 ignorados por dependência de API de teste.
 - [x] 166 vídeos originais preservados.
+
+## Atualização de 30/10/2026 — homologação manual
+
+- [x] APK novo instalado no emulador sem remover dados.
+- [x] Catálogo móvel: 200 exercícios, pesquisas e filtros homologados.
+- [x] Cinco demonstrações de vídeo homologadas no Android.
+- [x] Fichas com exercício oficial, parâmetros, execução, histórico e IDs legados homologadas.
+- [x] Cliente Blazor protegido contra resposta HTTP vazia/não JSON ao salvar ou carregar catálogo e mídias.
+- [ ] O Admin continua bloqueado até que a API com `AdminCatalogController` e a migration `20261026000407_AddAdminExerciseCatalog` sejam publicadas em homologação e recebam a carga oficial dos 200 registros. A API de produção conectada pelo Admin local ainda não contém esses recursos.
