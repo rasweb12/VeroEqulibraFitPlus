@@ -109,10 +109,15 @@ final exerciseSearchProvider = StateProvider<String>((ref) => '');
 final exerciseMuscleFilterProvider = StateProvider<String>((ref) => '');
 final exerciseEquipmentFilterProvider = StateProvider<String>((ref) => '');
 final exerciseOriginFilterProvider = StateProvider<String>((ref) => '');
+final exerciseObjectiveFilterProvider = StateProvider<String>((ref) => '');
+final exerciseVideoFilterProvider = StateProvider<String>((ref) => '');
 final exerciseSearchResetProvider = StateProvider<int>((ref) => 0);
 final catalogRevisionProvider = StateProvider<int>((ref) => 0);
 final catalogExercisesProvider = Provider.autoDispose<List<Exercise>>((ref) {
   ref.watch(catalogRevisionProvider);
+  // Loading plans also loads the bundled official catalogue. The state update
+  // after restoration rebuilds this provider without blocking the UI.
+  ref.watch(plansProvider);
   return ref.read(trainingRepositoryProvider).search('');
 });
 final exercisesProvider = Provider.autoDispose<List<Exercise>>(
@@ -122,6 +127,8 @@ final exercisesProvider = Provider.autoDispose<List<Exercise>>(
     muscle: ref.watch(exerciseMuscleFilterProvider),
     equipment: ref.watch(exerciseEquipmentFilterProvider),
     origin: ref.watch(exerciseOriginFilterProvider),
+    objective: ref.watch(exerciseObjectiveFilterProvider),
+    video: ref.watch(exerciseVideoFilterProvider),
   ),
 );
 final archivedPlansProvider = Provider<List<TrainingPlan>>((ref) {

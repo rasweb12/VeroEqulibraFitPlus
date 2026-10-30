@@ -1,16 +1,20 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
 namespace VeroEqulibraFit.Admin.Services;
 
 /// <summary>Server-side, per-circuit session for the administrative API.</summary>
-public sealed class AdminApiSession(IHttpClientFactory clients)
+public sealed class AdminApiSession(IHttpClientFactory clients, ProtectedSessionStorage storage)
 {
     private const string ClientName = "vero-api";
+    private const string AccessTokenStorageKey = "vero.admin.access-token";
     private string? _accessToken;
+    private bool _restoreAttempted;
     public bool IsAuthenticated => !string.IsNullOrWhiteSpace(_accessToken);
     public AdminOverview? Overview { get; private set; }
+    public event Action? Changed;
 
     public async Task<string?> SignInAsync(string email, string password, CancellationToken cancellationToken = default)
     {
@@ -37,8 +41,13 @@ public sealed class AdminApiSession(IHttpClientFactory clients)
             if (string.IsNullOrWhiteSpace(token?.AccessToken)) return "A API retornou uma sessão inválida.";
             _accessToken = token.AccessToken;
             var error = await RefreshAsync(cancellationToken);
-            if (error is null) return null;
-            SignOut();
+            if (error is null)
+            {
+                await storage.SetAsync(AccessTokenStorageKey, _accessToken);
+                NotifyChanged();
+                return null;
+            }
+            await SignOutAsync();
             return error;
         }
     }
@@ -47,10 +56,27 @@ public sealed class AdminApiSession(IHttpClientFactory clients)
     {
         if (!IsAuthenticated) return "Entre para acessar a operação.";
         using var response = await AuthorizedClient().GetAsync("api/v1/admin/overview", cancellationToken);
-        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden) return "Esta conta não tem permissão administrativa.";
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            await SignOutAsync();
+            return "Esta conta não tem permissão administrativa.";
+        }
         if (!response.IsSuccessStatusCode) return "Não foi possível carregar os indicadores operacionais.";
         Overview = await response.Content.ReadFromJsonAsync<AdminOverview>(cancellationToken: cancellationToken);
         return Overview is null ? "A API retornou indicadores inválidos." : null;
+    }
+
+    /// <summary>Restores the encrypted browser-session token after a circuit reconnect or page refresh.</summary>
+    public async Task RestoreAsync(CancellationToken cancellationToken = default)
+    {
+        if (_restoreAttempted || IsAuthenticated) return;
+        _restoreAttempted = true;
+        var stored = await storage.GetAsync<string>(AccessTokenStorageKey);
+        if (!stored.Success || string.IsNullOrWhiteSpace(stored.Value)) return;
+        _accessToken = stored.Value;
+        var error = await RefreshAsync(cancellationToken);
+        if (error is null) NotifyChanged();
+        else await SignOutAsync();
     }
 
     public async Task<AdminUserPageResult> ListUsersAsync(int page, string? search, string status, string? role, CancellationToken cancellationToken = default)
@@ -152,7 +178,16 @@ public sealed class AdminApiSession(IHttpClientFactory clients)
         return problem?.Title ?? fallback;
     }
 
-    public void SignOut() { _accessToken = null; Overview = null; }
+    public async Task SignOutAsync()
+    {
+        var changed = IsAuthenticated || Overview is not null;
+        _accessToken = null;
+        Overview = null;
+        _restoreAttempted = true;
+        await storage.DeleteAsync(AccessTokenStorageKey);
+        if (changed) NotifyChanged();
+    }
+
     public static Uri ReadBaseUrl(IConfiguration configuration)
     {
         var value = configuration["Api:BaseUrl"];
@@ -165,6 +200,7 @@ public sealed class AdminApiSession(IHttpClientFactory clients)
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
         return client;
     }
+    private void NotifyChanged() => Changed?.Invoke();
     private sealed record AuthToken(string AccessToken);
     private sealed record ApiProblem(string? Title);
 }

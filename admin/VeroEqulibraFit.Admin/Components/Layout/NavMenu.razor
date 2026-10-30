@@ -1,7 +1,12 @@
 @inject VeroEqulibraFit.Admin.Services.AdminApiSession Session
 @inject NavigationManager Navigation
+@implements IDisposable
 
 <div class="brand"><span class="brand-mark">V</span><span>VeroEquilibraFit+<small>Administração</small></span></div>
+@if (Session.IsAuthenticated)
+{
+    <div class="session-state" role="status"><span aria-hidden="true">●</span> Sessão administrativa</div>
+}
 <input type="checkbox" title="Abrir navegação" class="navbar-toggler" />
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav aria-label="Navegação administrativa">
@@ -30,9 +35,15 @@
 </div>
 
 @code {
-    private void SignOut()
+    protected override void OnInitialized() => Session.Changed += OnSessionChanged;
+
+    private async Task SignOut()
     {
-        Session.SignOut();
+        await Session.SignOutAsync();
         Navigation.NavigateTo("/entrar", forceLoad: true);
     }
+
+    private void OnSessionChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Session.Changed -= OnSessionChanged;
 }

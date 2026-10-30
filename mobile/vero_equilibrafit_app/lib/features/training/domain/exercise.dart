@@ -9,6 +9,10 @@ class Exercise {
     this.demoVideoAsset,
     this.instructions = const [],
     this.safetyTips = const [],
+    this.legacyId,
+    this.objective,
+    this.category,
+    this.schemaVersion,
   });
   final String id;
   final String name;
@@ -21,4 +25,8 @@ class Exercise {
   final String? demoVideoAsset;
   final List<String> instructions;
   final List<String> safetyTips;
+  final int? legacyId;
+  final String? objective;
+  final String? category;
+  final String? schemaVersion;
 }
